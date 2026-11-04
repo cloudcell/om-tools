@@ -83,7 +83,11 @@ export class OmApi {
   }
   setViewAxes(viewId: string, rowDimId: string, colDimId: string) { return this.t.request("command", { command_id: "set_view_axes", params: { view_id: viewId, row_dimension_id: rowDimId, col_dimension_id: colDimId } }); }
   setPageItemId(viewId: string, dimId: string, itemId: string) { return this.t.request("command", { command_id: "set_page_item_id", params: { view_id: viewId, dim_id: dimId, item_id: itemId } }); }
-  pageSelection(viewId: string): Promise<any> { return this.t.request("query", { query_id: "page_selection", params: { view_id: viewId } }); }
+  /** Selected page item for ONE page dimension of a view. Runtime requires both ids;
+   *  returns { type: "page_selection", view_id, dim_id, item_id: string | null }. */
+  pageSelection(viewId: string, dimId: string): Promise<{ dim_id: string; item_id: string | null }> {
+    return this.t.request("query", { query_id: "page_selection", params: { view_id: viewId, dim_id: dimId } });
+  }
   checkpoint(description: string, parentId?: string, branch?: string) { return this.t.request("command", { command_id: "create_checkpoint", params: { description, parent_id: parentId ?? null, branch: branch ?? null } }); }
   restoreCheckpoint(snapshotId: string) { return this.t.request("command", { command_id: "restore_checkpoint", params: { snapshot_id: snapshotId } }); }
   renameCheckpoint(checkpointId: string, description: string) { return this.t.request("command", { command_id: "rename_checkpoint", params: { checkpoint_id: checkpointId, description } }); }

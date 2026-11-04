@@ -259,7 +259,7 @@ export class MultilevelGrid {
       !e.is_leaf ? -1 : keyIndex(v.rowKeys, e.key ?? (e.item_id !== null ? [e.item_id] : [])));
     this.cellColMap = this.cols.map((e) =>
       !e.is_leaf ? -1 : keyIndex(v.colKeys, e.key ?? (e.item_id !== null ? [e.item_id] : [])));
-    console.log("[buildGrid] rowKeys:", v.rowKeys, "colKeys:", v.colKeys, "rows:", this.rows.length, "cols:", this.cols.length, "cellRowMap:", this.cellRowMap, "cellColMap:", this.cellColMap);
+    // console.log("[buildGrid] rowKeys:", v.rowKeys, "colKeys:", v.colKeys, "rows:", this.rows.length, "cols:", this.cols.length, "cellRowMap:", this.cellRowMap, "cellColMap:", this.cellColMap);
 
     // Compute bands
     this.rowBands = this.computeBands(this.rows, this.rowBandLevels, "row");

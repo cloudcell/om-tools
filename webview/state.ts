@@ -173,15 +173,17 @@ export class Store {
       const detail = await this.api.viewDetail(viewId);
       const allDimIds = [...detail.row_dim_ids, ...detail.col_dim_ids, ...detail.page_dim_ids];
       await this.ensureDimCache(allDimIds);
-      let pageSel: Record<string, string> = {};
-      try {
-        const ps = await this.api.pageSelection(viewId);
-        if (ps && typeof ps === "object") {
-          if (ps.selections) pageSel = ps.selections;
-          else if (ps.item_id) pageSel = { [ps.dim_id || ""]: ps.item_id };
-          else pageSel = ps;
+      // One page_selection query per page dimension (the runtime has no "all selections" query).
+      const pageSel: Record<string, string> = {};
+      await Promise.all(detail.page_dim_ids.map(async (dimId: string) => {
+        try {
+          const ps = await this.api.pageSelection(viewId, dimId);
+          if (ps?.item_id) pageSel[dimId] = ps.item_id;
+        } catch (e) {
+          // Non-fatal: grid data still uses the view's server-side selection; only the page chip label may be stale.
+          console.error(`page_selection failed for dim ${dimId}`, e);
         }
-      } catch {}
+      }));
       const rk = (await this.api.viewRowKeys(viewId)).keys;
       const ck = (await this.api.viewColKeys(viewId)).keys;
       const rowHeaders = await Promise.all(rk.map((_, i) => this.api.viewRowHeader(viewId, i).then((r) => r.header).catch(() => "")));
