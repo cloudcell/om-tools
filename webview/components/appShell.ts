@@ -1,0 +1,464 @@
+import { Store } from "../state";
+import { el, clear } from "../dom";
+import { ModelBrowser } from "./modelBrowser";
+import { MultilevelGrid } from "./multilevelGrid";
+import { RulePanel } from "./rulePanel";
+import { StatusBar } from "./statusBar";
+import { InfoToolbox } from "./infoToolbox";
+import { FormatToolbox } from "./formatToolbox";
+import { PerformanceWatch } from "./performanceWatch";
+import { inputDialog, confirmDialog, alertDialog, pickDialog } from "./dialogs";
+import { Timeline } from "./timeline";
+
+interface MenuItem { label?: string; sep?: boolean; disabled?: boolean; fn?: () => void; submenu?: MenuItem[]; checked?: boolean }
+
+/** App shell — assembles the full OM Core GUI layout per om-gui.conf:
+ *  menu bar + toolbar (top); left docks (Model Browser, Info, Format);
+ *  center view workspace with rule bar; right docks (Performance, Timeline);
+ *  bottom rule panel; status bar. Mirrors lib_gui/app.py MainWindow. */
+export class AppShell {
+  constructor(private store: Store) {}
+  private perf = new PerformanceWatch(this.store);
+  private matrixGrid = new MultilevelGrid(this.store);
+  private ruleBarInput: HTMLInputElement | null = null;
+
+  render(): HTMLElement {
+    const app = el("div", { id: "app" });
+    app.appendChild(this.menuBar());
+    app.appendChild(this.toolbar());
+    app.appendChild(this.ruleBar());
+    const body = el("div", { class: "body" });
+
+    const left = el("div", { class: "left-docks" });
+    left.appendChild(new ModelBrowser(this.store).render());
+    left.appendChild(new InfoToolbox(this.store).render());
+    left.appendChild(new FormatToolbox(this.store).render());
+
+    const center = el("div", { class: "center" });
+    center.appendChild(this.matrixGrid.render());
+    center.appendChild(new RulePanel(this.store).render());
+
+    const right = el("div", { class: "right-docks" });
+    right.appendChild(this.perf.render());
+    right.appendChild(new Timeline(this.store).render());
+
+    body.appendChild(left);
+    body.appendChild(center);
+    body.appendChild(right);
+    app.appendChild(body);
+    app.appendChild(new StatusBar(this.store).render());
+
+    this.store.subscribe(() => this.updateTitle());
+    this.updateTitle();
+
+    return app;
+  }
+
+  dispose() { this.perf.dispose(); }
+
+  private updateTitle() {
+    const s = this.store.state;
+    const dirty = s.dirty ? "*" : "";
+    const fname = s.filePath ? s.filePath.split("/").pop() : "New_Model.json";
+    document.title = `OM Core: ${dirty}${fname}`;
+  }
+
+  // ---- Menu bar ----
+  private menuBar(): HTMLElement {
+    const mb = el("div", { class: "menubar" });
+    const menus: [string, MenuItem[]][] = [
+      ["File", this.fileMenuItems()],
+      ["Edit", this.editMenuItems()],
+      ["Model", this.modelMenuItems()],
+      ["View", this.viewMenuItems()],
+      ["Tools", this.toolsMenuItems()],
+      ["Window", this.windowMenuItems()],
+      ["Developer", this.devMenuItems()],
+      ["Help", this.helpMenuItems()],
+    ];
+    for (const [label, items] of menus) {
+      const mi = el("div", { class: "menu-item" }, [label]);
+      const dd = el("div", { class: "menu-dropdown" });
+      for (const item of items) {
+        if (item.sep) { dd.appendChild(el("div", { class: "ctx-sep" })); continue; }
+        const cls = "ctx-item" + (item.disabled ? " disabled" : "") + (item.submenu ? " has-sub" : "");
+        const entry = el("div", { class: cls }, [item.checked ? "✓ " : "" + (item.label || "")]);
+        if (!item.disabled && item.fn) entry.addEventListener("click", () => { item.fn!(); this.closeAllMenus(); });
+        dd.appendChild(entry);
+      }
+      mi.appendChild(dd);
+      mi.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const wasOpen = mi.classList.contains("open");
+        this.closeAllMenus();
+        if (!wasOpen) mi.classList.add("open");
+      });
+      mb.appendChild(mi);
+    }
+    mb.appendChild(el("div", { class: "spacer" }));
+    const indicator = el("div", { class: "engine-indicator" }, [
+      el("span", { class: "engine-dot" }, []),
+      el("span", { class: "engine-text" }, ["disconnected"]),
+    ]);
+    this.store.subscribe(() => {
+      const s = this.store.state;
+      const dot = indicator.querySelector(".engine-dot") as HTMLElement;
+      const txt = indicator.querySelector(".engine-text") as HTMLElement;
+      dot.className = "engine-dot " + (s.connected ? "connected" : s.statusMessage.includes("connect") ? "connecting" : s.statusMessage.includes("error") ? "error" : "");
+      txt.textContent = s.connected ? `engine: ${s.endpoint || "auto"}` : s.statusMessage;
+    });
+    mb.appendChild(indicator);
+    return mb;
+  }
+
+  private closeAllMenus() {
+    document.querySelectorAll(".menu-item.open").forEach((m) => m.classList.remove("open"));
+  }
+
+  private fileMenuItems(): MenuItem[] {
+    return [
+      { label: "New", fn: () => this.confirmDirty(() => this.store.newWorkspace()) },
+      { label: "Open…", fn: () => this.openFile() },
+      { label: "Save…", fn: () => this.saveFile() },
+      { sep: true },
+      { label: "Quit", fn: () => alertDialog("Quit", "Quit is handled by closing the browser tab or VS Code window.") },
+    ];
+  }
+
+  private editMenuItems(): MenuItem[] {
+    const s = this.store.state;
+    return [
+      { label: "Undo" + (s.undoDesc ? ` (${s.undoDesc})` : ""), fn: () => this.store.undo(), disabled: !s.canUndo },
+      { label: "Redo" + (s.redoDesc ? ` (${s.redoDesc})` : ""), fn: () => this.store.redo(), disabled: !s.canRedo },
+      { sep: true },
+      { label: "Copy", fn: () => this.matrixGrid.copyToClipboard(), disabled: !s.activeView },
+      { label: "Paste", fn: () => this.matrixGrid.pasteFromClipboard(), disabled: !s.activeView },
+      { label: "Paste as New Cube…", fn: () => this.pasteAsNewCube() },
+      { sep: true },
+      { label: "Convert Selection to Dimension Labels…", fn: () => this.convertSelectionToDimLabels() },
+      { label: "Assign Item Labels from Selection…", fn: () => this.assignItemLabels() },
+      { label: "Delete Selected Dimension Items…", fn: () => this.deleteSelectedDimItems() },
+      { sep: true },
+      { label: "Clear Override", fn: () => this.store.clearSelectedCells(), disabled: !s.activeView },
+      { sep: true },
+      { label: "Set Rule…", fn: async () => { const e = await inputDialog("Set Rule", "", "LHS = RHS or =value"); if (e) this.store.setRuleForCell(e, e.startsWith("$")); }, disabled: !s.activeView },
+      { label: "Focus Rule Bar", fn: () => this.ruleBarInput?.focus() },
+    ];
+  }
+
+  private modelMenuItems(): MenuItem[] {
+    return [
+      { label: "New Dimension…", fn: () => this.createDimension() },
+      { label: "Create Dimension Item…", fn: () => this.createDimensionItem() },
+      { label: "Delete Dimension…", fn: () => this.deleteDimension() },
+      { sep: true },
+      { label: "Add Group to Row Dim…", fn: () => this.addGroupToAxis("row") },
+      { label: "Add Group to Col Dim…", fn: () => this.addGroupToAxis("col") },
+      { sep: true },
+      { label: "New Cube…", fn: () => this.createCube() },
+      { label: "Delete Cube…", fn: () => this.deleteCube() },
+      { sep: true },
+      { label: "Attach Dimension to Cube…", fn: () => this.attachDimension() },
+      { sep: true },
+      { label: "Edit View Axes…", fn: () => this.editViewAxes() },
+      { sep: true },
+      { label: "New View…", fn: () => this.createView() },
+    ];
+  }
+
+  private viewMenuItems(): MenuItem[] {
+    const s = this.store.state;
+    return [
+      { label: "Model Browser", checked: s.dockVisible.browser, fn: () => this.store.toggleDock("browser") },
+      { label: "Info Toolbox", checked: s.dockVisible.info, fn: () => this.store.toggleDock("info") },
+      { label: "Format Toolbox", checked: s.dockVisible.format, fn: () => this.store.toggleDock("format") },
+      { label: "Performance Watch", checked: s.dockVisible.perf, fn: () => this.store.toggleDock("perf") },
+      { label: "Timeline", checked: s.dockVisible.timeline, fn: () => this.store.toggleDock("timeline") },
+      { sep: true },
+      { label: "Toggle System Elements", checked: s.showSystemElements, fn: () => { this.store.state.showSystemElements = !this.store.state.showSystemElements; this.store.notify(); this.store.refreshModel(); } },
+      { sep: true },
+      { label: "Recalculate View (F9)", fn: () => this.store.recalc("dirty") },
+      { label: "Recalculate Full Model (Shift+F9)", fn: () => this.store.recalc("all") },
+    ];
+  }
+
+  private toolsMenuItems(): MenuItem[] {
+    const s = this.store.state;
+    return [
+      { label: "Calculation Engine", submenu: [
+        { label: "Python", checked: s.engineType === "python", fn: () => this.store.api.setEngine("python").then(() => { this.store.set({ engineType: "python", isRemote: false }); }) },
+        { label: "Remote", checked: s.engineType === "remote", fn: () => this.store.api.setEngine("remote").then(() => { this.store.set({ engineType: "remote", isRemote: true }); }) },
+      ]},
+      { sep: true },
+      { label: "Options…", fn: () => alertDialog("Options", "Options dialog — GUI configuration pending.") },
+    ];
+  }
+
+  private windowMenuItems(): MenuItem[] {
+    return [
+      { label: "New Window", fn: () => window.open(window.location.href) },
+      { label: "Close Window", fn: () => window.close() },
+    ];
+  }
+
+  private devMenuItems(): MenuItem[] {
+    return [
+      { label: "GUI Debug Tooltips", fn: () => alertDialog("Debug Tooltips", "Debug tooltips toggle pending.") },
+    ];
+  }
+
+  private helpMenuItems(): MenuItem[] {
+    return [
+      { label: "About OM Core", fn: () => alertDialog("About OM Core", "OM Core — multidimensional modeling engine GUI.\nVSCode/VSCodium extension connecting to the om-core runtime.\n\nhttps://cloudcell.github.io/om-docs/") },
+    ];
+  }
+
+  // ---- Toolbar ----
+  private toolbar(): HTMLElement {
+    const tb = el("div", { class: "toolbar" });
+    const btn = (label: string, fn: () => void, title = "") =>
+      el("button", { class: "tb-btn", title: title || label, onclick: fn }, [label]);
+
+    tb.appendChild(btn("↻", () => this.store.refreshModel().catch(() => {}), "Refresh model"));
+    tb.appendChild(btn("⟳", () => this.store.recalc("all"), "Recalculate (Shift+F9)"));
+    tb.appendChild(btn("F9", () => this.store.recalc("dirty"), "Recalculate View (F9)"));
+    tb.appendChild(el("span", { class: "tb-sep" }));
+    tb.appendChild(btn("↶", () => this.store.undo(), "Undo"));
+    tb.appendChild(btn("↷", () => this.store.redo(), "Redo"));
+    tb.appendChild(el("span", { class: "tb-sep" }));
+    tb.appendChild(btn("📋", () => this.matrixGrid.copyToClipboard(), "Copy"));
+    tb.appendChild(btn("📥", () => this.matrixGrid.pasteFromClipboard(), "Paste"));
+    tb.appendChild(el("span", { class: "tb-sep" }));
+
+    // Format buttons
+    const boldBtn = el("button", { class: "tb-btn", title: "Bold (Ctrl+B)", style: { fontWeight: "700" } }, ["B"]);
+    boldBtn.addEventListener("click", () => this.store.api.formatBold("selection", true).catch(() => {}));
+    tb.appendChild(boldBtn);
+    const italicBtn = el("button", { class: "tb-btn", title: "Italic (Ctrl+I)", style: { fontStyle: "italic" } }, ["I"]);
+    italicBtn.addEventListener("click", () => this.store.api.formatItalic("selection", true).catch(() => {}));
+    tb.appendChild(italicBtn);
+    const underlineBtn = el("button", { class: "tb-btn", title: "Underline (Ctrl+U)", style: { textDecoration: "underline" } }, ["U"]);
+    underlineBtn.addEventListener("click", () => this.store.api.formatUnderline("selection", true).catch(() => {}));
+    tb.appendChild(underlineBtn);
+    tb.appendChild(el("span", { class: "tb-sep" }));
+
+    // Fill color
+    const fillInput = el("input", { class: "tb-color", type: "color", value: "#ffffff", title: "Fill color" }) as HTMLInputElement;
+    fillInput.addEventListener("change", () => this.store.api.formatBgColor("selection", fillInput.value).catch(() => {}));
+    tb.appendChild(el("span", { class: "tb-label" }, ["Fill"]));
+    tb.appendChild(fillInput);
+
+    // Font color
+    const fontInput = el("input", { class: "tb-color", type: "color", value: "#000000", title: "Font color" }) as HTMLInputElement;
+    fontInput.addEventListener("change", () => this.store.api.formatColor("selection", fontInput.value).catch(() => {}));
+    tb.appendChild(el("span", { class: "tb-label" }, ["Font"]));
+    tb.appendChild(fontInput);
+    tb.appendChild(el("span", { class: "tb-sep" }));
+
+    // Number format
+    const fmt = el("select", { class: "tb-select", title: "Number format" }) as HTMLSelectElement;
+    [["general", "General"], ["number", "Number"], ["currency", "Currency"], ["percent", "Percent"], ["scientific", "Scientific"]].forEach(([v, l]) => fmt.appendChild(el("option", { value: v }, [l])));
+    fmt.addEventListener("change", () => this.store.api.formatNumberFormat("selection", fmt.value).catch(() => {}));
+    tb.appendChild(el("span", { class: "tb-label" }, ["Format"]));
+    tb.appendChild(fmt);
+
+    return tb;
+  }
+
+  // ---- Rule bar ----
+  private ruleBar(): HTMLElement {
+    const bar = el("div", { class: "rule-bar" });
+    const nameBox = el("div", { class: "name-box" }, ["—"]);
+    const input = el("input", { type: "text", placeholder: "LHS = expression  or  =value  (prefix $ for anchored rule)" }) as HTMLInputElement;
+    this.ruleBarInput = input;
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        const anchored = text.startsWith("$");
+        const expr = anchored ? text.slice(1) : text;
+        this.store.setRuleForCell(expr, anchored);
+        input.value = "";
+      } else if (e.key === "Escape") { input.blur(); }
+    });
+    bar.appendChild(nameBox);
+    bar.appendChild(input);
+    this.store.subscribe(() => {
+      const v = this.store.state.activeView;
+      if (v && v.selectedRow >= 0 && v.selectedCol >= 0 && v.cells) {
+        const cell = v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol];
+        nameBox.textContent = cell ? `${v.rowHeaders[v.selectedRow] || ""} / ${v.colHeaders[v.selectedCol] || ""}` : "—";
+      } else nameBox.textContent = "—";
+    });
+    return bar;
+  }
+
+  // ---- Menu action implementations ----
+  private async confirmDirty(fn: () => void) {
+    if (this.store.state.dirty && !(await confirmDialog("Unsaved Changes", "You have unsaved changes. Discard and continue?", "Discard", true))) return;
+    fn();
+  }
+
+  private async openFile() {
+    this.confirmDirty(async () => {
+      const path = await inputDialog("Open Workspace", "", "File path");
+      if (path) this.store.loadWorkspaceFile(path);
+    });
+  }
+
+  private async saveFile() {
+    const path = await inputDialog("Save Workspace", this.store.state.filePath || "", "File path");
+    if (path) this.store.saveWorkspace(path);
+  }
+
+  private async createDimension() {
+    const name = await inputDialog("Create Dimension", "", "Dimension name");
+    if (!name || !name.trim()) return;
+    const isSeq = await confirmDialog("Dimension Type", "Sequential (ordered) dimension?", "Sequential", false);
+    const type = isSeq ? "seq" : "set";
+    try { await this.store.api.createDimension(name.trim(), type); this.store.markDirty(); this.store.refreshModel(); }
+    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
+  }
+
+  private async createDimensionItem() {
+    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
+    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available."); return; }
+    const dimName = await pickDialog("Dimension", dims.map((d) => d.name));
+    if (!dimName) return;
+    const dim = dims.find((d) => d.name === dimName.trim());
+    if (!dim) { await alertDialog("Not Found", "Dimension not found."); return; }
+    const name = await inputDialog("Create Item", "", "Item name");
+    if (!name || !name.trim()) return;
+    try {
+      await this.store.api.createDimensionItem(dim.id, name.trim());
+      this.store.markDirty(); this.store.invalidateDimCache(dim.id); this.store.refreshModel();
+      if (this.store.state.activeView) this.store.loadView(this.store.state.activeView.viewId);
+    } catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
+  }
+
+  private async deleteDimension() {
+    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
+    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available."); return; }
+    const dimName = await pickDialog("Delete Dimension", dims.map((d) => d.name));
+    if (!dimName) return;
+    const dim = dims.find((d) => d.name === dimName.trim());
+    if (!dim) { await alertDialog("Not Found", "Dimension not found."); return; }
+    if (!(await confirmDialog("Delete Dimension", `Delete dimension "${dim.name}"? This will detach it from all cubes.`, "Delete", true))) return;
+    try { await this.store.api.deleteDimension(dim.id); this.store.markDirty(); this.store.invalidateDimCache(dim.id); this.store.refreshModel(); }
+    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
+  }
+
+  private async addGroupToAxis(axis: "row" | "col") {
+    const v = this.store.state.activeView;
+    if (!v) { await alertDialog("No Active View", "Open a view first."); return; }
+    const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
+    if (!dimIds.length) { await alertDialog("No Dimensions", `No dimensions on the ${axis} axis.`); return; }
+    let dimId = dimIds[0];
+    if (dimIds.length > 1) {
+      const dimNames = dimIds.map((id) => this.store.dimName(id));
+      const chosen = await pickDialog("Which dimension to group?", dimNames);
+      if (!chosen) return;
+      const dim = this.store.state.dimensions.find((d) => d.name === chosen.trim());
+      if (!dim) { await alertDialog("Not Found", "Dimension not found."); return; }
+      dimId = dim.id;
+    }
+    const label = await inputDialog("Add Group", "", "Group name");
+    if (!label || !label.trim()) return;
+    console.log("[addGroupToAxis] creating group", { dimId, label: label.trim() });
+    try {
+      const r = await this.store.api.createGroup(dimId, label.trim());
+      console.log("[addGroupToAxis] group created:", r);
+      this.store.markDirty();
+      this.store.invalidateDimCache(dimId);
+      this.store.loadView(v.viewId);
+      this.store.refreshModel();
+    } catch (e: any) { await alertDialog("Create Group Failed", e?.message || String(e)); }
+  }
+
+  private async createCube() {
+    const name = await inputDialog("Create Cube", "", "Cube name");
+    if (!name || !name.trim()) return;
+    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
+    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available to attach."); return; }
+    const dimNames = dims.map((d) => d.name);
+    // Multi-select via comma-separated input
+    const selected = await inputDialog("Attach Dimensions", dimNames.join(", "), "Comma-separated dimension names");
+    if (!selected) return;
+    const ids = selected.split(",").map((s) => s.trim()).map((n) => dims.find((d) => d.name === n)?.id).filter(Boolean) as string[];
+    if (!ids.length) { await alertDialog("No Valid Dimensions", "No valid dimensions selected."); return; }
+    try { await this.store.api.createCube(name.trim(), ids); this.store.markDirty(); this.store.refreshModel(); }
+    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
+  }
+
+  private async deleteCube() {
+    const cubes = this.store.visibleCubes();
+    if (!cubes.length) { await alertDialog("No Cubes", "No cubes available."); return; }
+    const cubeName = await pickDialog("Delete Cube", cubes.map((c) => c.name));
+    if (!cubeName) return;
+    const cube = cubes.find((c) => c.name === cubeName.trim());
+    if (!cube) { await alertDialog("Not Found", "Cube not found."); return; }
+    if (!(await confirmDialog("Delete Cube", `Delete cube "${cube.name}"? This will also delete all views for this cube.`, "Delete", true))) return;
+    try { await this.store.api.deleteCube(cube.id); this.store.markDirty(); this.store.refreshModel(); }
+    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
+  }
+
+  private async attachDimension() {
+    const cubes = this.store.visibleCubes();
+    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
+    if (!cubes.length || !dims.length) { await alertDialog("Missing Data", "Need at least one cube and one dimension."); return; }
+    const cubeName = await pickDialog("Cube", cubes.map((c) => c.name));
+    if (!cubeName) return;
+    const cube = cubes.find((c) => c.name === cubeName.trim());
+    if (!cube) return;
+    const dimName = await pickDialog("Dimension to Attach", dims.map((d) => d.name));
+    if (!dimName) return;
+    const dim = dims.find((d) => d.name === dimName.trim());
+    if (!dim) return;
+    try { await this.store.api.attachDimensionToCube(cube.id, dim.id); this.store.markDirty(); this.store.refreshModel(); }
+    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
+  }
+
+  private async editViewAxes() {
+    const v = this.store.state.activeView;
+    if (!v) { await alertDialog("No Active View", "Open a view first."); return; }
+    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
+    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available."); return; }
+    const dimNames = dims.map((d) => d.name);
+    const rowName = await pickDialog("Row Dimension", dimNames);
+    if (!rowName) return;
+    const rowDim = dims.find((d) => d.name === rowName.trim());
+    if (!rowDim) return;
+    const colName = await pickDialog("Column Dimension", dimNames);
+    if (!colName) return;
+    const colDim = dims.find((d) => d.name === colName.trim());
+    if (!colDim) return;
+    try { await this.store.api.setViewAxes(v.viewId, rowDim.id, colDim.id); this.store.markDirty(); this.store.loadView(v.viewId); }
+    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
+  }
+
+  private async createView() {
+    const cubes = this.store.visibleCubes();
+    if (!cubes.length) { await alertDialog("No Cubes", "No cubes available."); return; }
+    const cubeName = await pickDialog("Cube", cubes.map((c) => c.name));
+    if (!cubeName) return;
+    const cube = cubes.find((c) => c.name === cubeName.trim());
+    if (!cube) return;
+    const name = await inputDialog("View Name", "", "View name");
+    if (!name || !name.trim()) return;
+    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
+    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available."); return; }
+    const dimNames = dims.map((d) => d.name);
+    const rowName = await inputDialog("Row Dimensions", dimNames.join(", "), "Comma-separated dimension names");
+    const colName = await inputDialog("Column Dimensions", dimNames.join(", "), "Comma-separated dimension names");
+    const rowDims = rowName?.split(",").map((s) => dims.find((d) => d.name === s.trim())?.id).filter(Boolean) as string[] || [];
+    const colDims = colName?.split(",").map((s) => dims.find((d) => d.name === s.trim())?.id).filter(Boolean) as string[] || [];
+    try { await this.store.api.createView(name.trim(), cube.id, rowDims, colDims); this.store.markDirty(); this.store.refreshModel(); }
+    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
+  }
+
+  private async pasteAsNewCube() { await alertDialog("Paste as New Cube", "Requires clipboard data with row/col dimension structure."); }
+  private async convertSelectionToDimLabels() { await alertDialog("Convert Selection", "Select cells first, then use this."); }
+  private async assignItemLabels() { await alertDialog("Assign Item Labels", "Select rows/columns first."); }
+  private async deleteSelectedDimItems() { await alertDialog("Delete Items", "Select items in the Model Browser."); }
+}

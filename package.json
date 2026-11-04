@@ -1,0 +1,132 @@
+{
+  "name": "om-core",
+  "displayName": "OM Core",
+  "description": "Multidimensional modeling engine GUI for OM Core — connects to the om-core runtime.",
+  "version": "0.1.0",
+  "publisher": "om-core",
+  "license": "AGPL-3.0-or-later",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other",
+    "Data Science",
+    "Visualization"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "omCore.openGui",
+        "title": "OM Core: Open GUI",
+        "category": "OM Core",
+        "icon": "media/icon.svg"
+      },
+      {
+        "command": "omCore.startRuntime",
+        "title": "OM Core: Start Runtime",
+        "category": "OM Core"
+      },
+      {
+        "command": "omCore.stopRuntime",
+        "title": "OM Core: Stop Runtime",
+        "category": "OM Core"
+      },
+      {
+        "command": "omCore.reconnect",
+        "title": "OM Core: Reconnect to Runtime",
+        "category": "OM Core"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "omCore",
+          "title": "OM Core",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "omCore": [
+        {
+          "id": "omCore.launchPad",
+          "name": "OM Core",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "omCore.launchPad",
+        "contents": "OM Core Multidimensional Modeling Engine\n\nConnect to the om-core runtime and open the interactive grid GUI.\n\n[Open GUI](command:omCore.openGui)\n[Start Runtime](command:omCore.startRuntime)\n[Reconnect](command:omCore.reconnect)",
+        "when": "true"
+      }
+    ],
+    "configuration": {
+      "title": "OM Core",
+      "properties": {
+        "omCore.runtimeEndpoint": {
+          "type": "string",
+          "default": "",
+          "description": "Transport endpoint for the om-core runtime. Empty = auto-detect. Examples: 'tcp://127.0.0.1:17391', 'unix:///tmp/openm-<user>.sock'."
+        },
+        "omCore.autoStartRuntime": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically launch the om-core runtime when opening the GUI if no endpoint is detected."
+        },
+        "omCore.omCorePath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the om-core project root (used to launch the runtime)."
+        },
+        "omCore.showSystemElements": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show system elements (names beginning with '%') in the Model Browser, tabs, and selectors."
+        }
+      }
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "omCore.openGui"
+        },
+        {
+          "command": "omCore.startRuntime"
+        },
+        {
+          "command": "omCore.stopRuntime"
+        },
+        {
+          "command": "omCore.reconnect"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "npm run build:ext && npm run build:webview && npm run build:bridge",
+    "build:ext": "esbuild ./src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
+    "build:webview": "esbuild ./webview/main.ts --bundle --platform=browser --format=iife --outfile=dist/webview.js && node -e \"require('fs').copyFileSync('webview/index.html','dist/index.html')\"",
+    "build:bridge": "esbuild ./bridge/server.ts --bundle --platform=node --format=cjs --external:ws --outfile=dist/bridge.js",
+    "watch:ext": "esbuild ./src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js --watch",
+    "watch:webview": "esbuild ./webview/main.ts --bundle --platform=browser --format=iife --outfile=dist/webview.js --watch",
+    "compile": "tsc --noEmit",
+    "test": "esbuild ./test-harness.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/test-harness.js && node dist/test-harness.js",
+    "web": "npm run build && node dist/bridge.js",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.80.0",
+    "@types/ws": "^8.5.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.4.0",
+    "ws": "^8.16.0"
+  }
+}
