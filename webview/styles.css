@@ -157,8 +157,8 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .dock:last-child { border-bottom: none; }
-.dock-title {
-  font-size: 12px;
+.dock-header {
+  font-size: 11px;
   font-weight: 600;
   padding: 4px 8px;
   background: var(--header-bg);
@@ -169,8 +169,8 @@ body {
   justify-content: space-between;
   cursor: default;
 }
-.dock-body { flex: 1; overflow: auto; padding: 4px; min-height: 0; }
-.dock.collapsed .dock-body { display: none; }
+.dock-content { flex: 1; overflow: auto; padding: 4px; min-height: 0; }
+.dock.collapsed .dock-content { display: none; }
 
 /* ---- Model browser tree ---- */
 .tree { font-size: 13px; }
@@ -644,10 +644,46 @@ table.matrix td.cell.rule-marker::before { content: ""; }
   background: var(--panel-bg);
   flex-shrink: 0;
 }
-.rule-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--header-bg); }
-.rule-tab { padding: 4px 14px; cursor: default; border: 1px solid transparent; border-bottom: none; font-size: 13px; color: var(--text-muted); }
-.rule-tab.active { background: var(--panel-bg); color: var(--text); border-color: var(--border-strong); }
-.rule-body { flex: 1; overflow: auto; padding: 4px; }
+/* Tab strips: bottom panel (Rules / Calculation Flow / Circular References)
+   and Format dock sections (Background / Font / Alignment / Borders / Number). */
+.lower-tabs, .format-section-list {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--header-bg);
+}
+.lower-tab, .format-section-item {
+  padding: 4px 12px;
+  margin-bottom: -1px;          /* active tab overlaps the strip's bottom border */
+  border: 1px solid transparent;
+  border-bottom: none;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.format-section-item { padding: 3px 8px; }
+.lower-tab:hover, .format-section-item:hover { background: #e8eaf0; }
+.lower-tab.active, .format-section-item.active {
+  background: var(--panel-bg);
+  color: var(--text);
+  border-color: var(--border-strong);
+  font-weight: 600;
+}
+.lower-content { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: auto; }
+.rule-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.rule-title { font-weight: 600; }
+.rule-count { color: var(--text-muted); }
 .rule-list { width: 100%; border-collapse: collapse; font-size: 12px; }
 .rule-list th, .rule-list td { border-bottom: 1px solid var(--grid-line); padding: 3px 6px; text-align: left; }
 .rule-list th { background: var(--grid-header); font-weight: 600; position: sticky; top: 0; }
