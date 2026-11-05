@@ -1,5 +1,6 @@
 import { Store } from "../state";
-import { el, clear } from "../dom";
+import { el, clear, ICONS } from "../dom";
+import { materialIconSvg as msym } from "../menuIcons";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
 import { RulePanel } from "./rulePanel";
@@ -10,7 +11,8 @@ import { PerformanceWatch } from "./performanceWatch";
 import { inputDialog, confirmDialog, alertDialog, pickDialog } from "./dialogs";
 import { Timeline } from "./timeline";
 
-interface MenuItem { label?: string; sep?: boolean; disabled?: boolean; fn?: () => void; submenu?: MenuItem[]; checked?: boolean }
+/** `icon` is inline SVG markup; a `checked` item shows a check mark in the icon column instead. */
+interface MenuItem { label?: string; icon?: string; sep?: boolean; disabled?: boolean; fn?: () => void; submenu?: MenuItem[]; checked?: boolean }
 
 /** App shell — assembles the full OM Core GUI layout per om-gui.conf:
  *  menu bar + toolbar (top); left docks (Model Browser, Info, Format);
@@ -135,8 +137,11 @@ export class AppShell {
     for (const item of items) {
       if (item.sep) { list.appendChild(el("div", { class: "ctx-sep" })); continue; }
       const entryCls = "ctx-item" + (item.disabled ? " disabled" : "") + (item.submenu ? " has-sub" : "");
+      const iconCol = el("span", { class: "ctx-icon" });
+      if (item.checked) iconCol.appendChild(el("span", { class: "ctx-checkmark" }, ["✓"]));
+      else if (item.icon) iconCol.innerHTML = item.icon;
       const entry = el("div", { class: entryCls }, [
-        el("span", { class: "ctx-check" }, [item.checked ? "✓" : ""]),
+        iconCol,
         el("span", { class: "ctx-label" }, [item.label || ""]),
       ]);
       if (item.submenu) entry.appendChild(this.buildMenuList(item.submenu, "menu-submenu"));
@@ -154,52 +159,52 @@ export class AppShell {
 
   private fileMenuItems(): MenuItem[] {
     return [
-      { label: "New", fn: () => this.confirmDirty(() => this.store.newWorkspace()) },
-      { label: "Open…", fn: () => this.openFile() },
-      { label: "Save…", fn: () => this.saveFile() },
+      { icon: msym("note_add"), label: "New", fn: () => this.confirmDirty(() => this.store.newWorkspace()) },
+      { icon: msym("folder_open"), label: "Open…", fn: () => this.openFile() },
+      { icon: msym("save"), label: "Save…", fn: () => this.saveFile() },
       { sep: true },
-      { label: "Quit", fn: () => alertDialog("Quit", "Quit is handled by closing the browser tab or VS Code window.") },
+      { icon: msym("logout"), label: "Quit", fn: () => alertDialog("Quit", "Quit is handled by closing the browser tab or VS Code window.") },
     ];
   }
 
   private editMenuItems(): MenuItem[] {
     const s = this.store.state;
     return [
-      { label: "Undo" + (s.undoDesc ? ` (${s.undoDesc})` : ""), fn: () => this.store.undo(), disabled: !s.canUndo },
-      { label: "Redo" + (s.redoDesc ? ` (${s.redoDesc})` : ""), fn: () => this.store.redo(), disabled: !s.canRedo },
+      { icon: msym("undo"), label: "Undo" + (s.undoDesc ? ` (${s.undoDesc})` : ""), fn: () => this.store.undo(), disabled: !s.canUndo },
+      { icon: msym("redo"), label: "Redo" + (s.redoDesc ? ` (${s.redoDesc})` : ""), fn: () => this.store.redo(), disabled: !s.canRedo },
       { sep: true },
-      { label: "Copy", fn: () => this.matrixGrid.copyToClipboard(), disabled: !s.activeView },
-      { label: "Paste", fn: () => this.matrixGrid.pasteFromClipboard(), disabled: !s.activeView },
-      { label: "Paste as New Cube…", fn: () => this.pasteAsNewCube() },
+      { icon: msym("content_copy"), label: "Copy", fn: () => this.matrixGrid.copyToClipboard(), disabled: !s.activeView },
+      { icon: msym("content_paste"), label: "Paste", fn: () => this.matrixGrid.pasteFromClipboard(), disabled: !s.activeView },
+      { icon: msym("content_paste_go"), label: "Paste as New Cube…", fn: () => this.pasteAsNewCube() },
       { sep: true },
-      { label: "Convert Selection to Dimension Labels…", fn: () => this.convertSelectionToDimLabels() },
-      { label: "Assign Item Labels from Selection…", fn: () => this.assignItemLabels() },
-      { label: "Delete Selected Dimension Items…", fn: () => this.deleteSelectedDimItems() },
+      { icon: msym("label"), label: "Convert Selection to Dimension Labels…", fn: () => this.convertSelectionToDimLabels() },
+      { icon: msym("new_label"), label: "Assign Item Labels from Selection…", fn: () => this.assignItemLabels() },
+      { icon: msym("delete"), label: "Delete Selected Dimension Items…", fn: () => this.deleteSelectedDimItems() },
       { sep: true },
-      { label: "Clear Override", fn: () => this.store.clearSelectedCells(), disabled: !s.activeView },
+      { icon: msym("format_clear"), label: "Clear Override", fn: () => this.store.clearSelectedCells(), disabled: !s.activeView },
       { sep: true },
-      { label: "Set Rule…", fn: async () => { const e = await inputDialog("Set Rule", "", "LHS = RHS or =value"); if (e) this.store.setRuleForCell(e, e.startsWith("$")); }, disabled: !s.activeView },
+      { icon: msym("function"), label: "Set Rule…", fn: async () => { const e = await inputDialog("Set Rule", "", "LHS = RHS or =value"); if (e) this.store.setRuleForCell(e, e.startsWith("$")); }, disabled: !s.activeView },
       { label: "Focus Rule Bar", fn: () => this.ruleBarInput?.focus() },
     ];
   }
 
   private modelMenuItems(): MenuItem[] {
     return [
-      { label: "New Dimension…", fn: () => this.createDimension() },
-      { label: "Create Dimension Item…", fn: () => this.createDimensionItem() },
-      { label: "Delete Dimension…", fn: () => this.deleteDimension() },
+      { icon: ICONS.dim, label: "New Dimension…", fn: () => this.createDimension() },
+      { icon: msym("add"), label: "Create Dimension Item…", fn: () => this.createDimensionItem() },
+      { icon: msym("delete"), label: "Delete Dimension…", fn: () => this.deleteDimension() },
       { sep: true },
-      { label: "Add Group to Row Dim…", fn: () => this.addGroupToAxis("row") },
-      { label: "Add Group to Col Dim…", fn: () => this.addGroupToAxis("col") },
+      { icon: msym("table_rows"), label: "Add Group to Row Dim…", fn: () => this.addGroupToAxis("row") },
+      { icon: msym("view_column"), label: "Add Group to Col Dim…", fn: () => this.addGroupToAxis("col") },
       { sep: true },
-      { label: "New Cube…", fn: () => this.createCube() },
-      { label: "Delete Cube…", fn: () => this.deleteCube() },
+      { icon: ICONS.cube, label: "New Cube…", fn: () => this.createCube() },
+      { icon: msym("delete"), label: "Delete Cube…", fn: () => this.deleteCube() },
       { sep: true },
-      { label: "Attach Dimension to Cube…", fn: () => this.attachDimension() },
+      { icon: msym("link"), label: "Attach Dimension to Cube…", fn: () => this.attachDimension() },
       { sep: true },
-      { label: "Edit View Axes…", fn: () => this.editViewAxes() },
+      { icon: msym("pivot_table_chart"), label: "Edit View Axes…", fn: () => this.editViewAxes() },
       { sep: true },
-      { label: "New View…", fn: () => this.createView() },
+      { icon: ICONS.view, label: "New View…", fn: () => this.createView() },
     ];
   }
 
@@ -214,39 +219,39 @@ export class AppShell {
       { sep: true },
       { label: "Toggle System Elements", checked: s.showSystemElements, fn: () => { this.store.state.showSystemElements = !this.store.state.showSystemElements; this.store.notify(); this.store.refreshModel(); } },
       { sep: true },
-      { label: "Recalculate View (F9)", fn: () => this.store.recalc("dirty") },
-      { label: "Recalculate Full Model (Shift+F9)", fn: () => this.store.recalc("all") },
+      { icon: msym("refresh"), label: "Recalculate View (F9)", fn: () => this.store.recalc("dirty") },
+      { icon: msym("sync"), label: "Recalculate Full Model (Shift+F9)", fn: () => this.store.recalc("all") },
     ];
   }
 
   private toolsMenuItems(): MenuItem[] {
     const s = this.store.state;
     return [
-      { label: "Calculation Engine", submenu: [
+      { icon: msym("memory"), label: "Calculation Engine", submenu: [
         { label: "Python", checked: s.engineType === "python", fn: () => this.store.api.setEngine("python").then(() => { this.store.set({ engineType: "python", isRemote: false }); }) },
         { label: "Remote", checked: s.engineType === "remote", fn: () => this.store.api.setEngine("remote").then(() => { this.store.set({ engineType: "remote", isRemote: true }); }) },
       ]},
       { sep: true },
-      { label: "Options…", fn: () => alertDialog("Options", "Options dialog — GUI configuration pending.") },
+      { icon: msym("settings"), label: "Options…", fn: () => alertDialog("Options", "Options dialog — GUI configuration pending.") },
     ];
   }
 
   private windowMenuItems(): MenuItem[] {
     return [
-      { label: "New Window", fn: () => window.open(window.location.href) },
-      { label: "Close Window", fn: () => window.close() },
+      { icon: msym("open_in_new"), label: "New Window", fn: () => window.open(window.location.href) },
+      { icon: msym("close"), label: "Close Window", fn: () => window.close() },
     ];
   }
 
   private devMenuItems(): MenuItem[] {
     return [
-      { label: "GUI Debug Tooltips", fn: () => alertDialog("Debug Tooltips", "Debug tooltips toggle pending.") },
+      { icon: msym("bug_report"), label: "GUI Debug Tooltips", fn: () => alertDialog("Debug Tooltips", "Debug tooltips toggle pending.") },
     ];
   }
 
   private helpMenuItems(): MenuItem[] {
     return [
-      { label: "About OM Core", fn: () => alertDialog("About OM Core", "OM Core — multidimensional modeling engine GUI.\nVSCode/VSCodium extension connecting to the om-core runtime.\n\nhttps://cloudcell.github.io/om-docs/") },
+      { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core", "OM Core — multidimensional modeling engine GUI.\nVSCode/VSCodium extension connecting to the om-core runtime.\n\nhttps://cloudcell.github.io/om-docs/") },
     ];
   }
 

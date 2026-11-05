@@ -474,9 +474,15 @@ body {
   display: none;
 }
 .menubar .menu-item.open .menu-dropdown { display: block; }
-.menubar .menu-dropdown .ctx-item { position: relative; display: flex; align-items: center; padding: 6px 24px 6px 4px; line-height: 20px; color: var(--text); }
+.menubar .menu-dropdown .ctx-item { position: relative; display: flex; align-items: center; padding: 6px 24px 6px 12px; line-height: 20px; color: var(--text); }
 .menubar .menu-dropdown .ctx-item:hover { background: var(--menu-item-hover); }
-.menubar .menu-dropdown .ctx-check { flex: 0 0 24px; text-align: center; }
+.menubar .menu-dropdown .ctx-item.disabled { color: #aaa; }
+.menubar .menu-dropdown .ctx-item.disabled:hover { background: transparent; }
+/* Icon column: holds either an 18px icon or the check mark, so labels stay aligned. */
+.menubar .menu-dropdown .ctx-icon { flex: 0 0 32px; display: flex; align-items: center; color: #444746; }
+.menubar .menu-dropdown .ctx-item.disabled .ctx-icon { color: inherit; }
+.menubar .menu-dropdown .ctx-icon svg { width: 18px; height: 18px; display: block; }
+.menubar .menu-dropdown .ctx-checkmark { width: 18px; text-align: center; color: var(--text); }
 .menubar .menu-dropdown .ctx-label { flex: 1; white-space: nowrap; }
 .menubar .menu-dropdown .ctx-item.has-sub::after { content: "▸"; margin-left: 16px; color: #888; }
 .menubar .menu-submenu {
