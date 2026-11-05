@@ -66,35 +66,53 @@ export class AppShell {
   // ---- Menu bar ----
   private menuBar(): HTMLElement {
     const mb = el("div", { class: "menubar" });
-    const menus: [string, MenuItem[]][] = [
-      ["File", this.fileMenuItems()],
-      ["Edit", this.editMenuItems()],
-      ["Model", this.modelMenuItems()],
-      ["View", this.viewMenuItems()],
-      ["Tools", this.toolsMenuItems()],
-      ["Window", this.windowMenuItems()],
-      ["Developer", this.devMenuItems()],
-      ["Help", this.helpMenuItems()],
+    // Item lists are produced on each open so checked/disabled states reflect current store state.
+    const menus: [string, () => MenuItem[]][] = [
+      ["File", () => this.fileMenuItems()],
+      ["Edit", () => this.editMenuItems()],
+      ["Model", () => this.modelMenuItems()],
+      ["View", () => this.viewMenuItems()],
+      ["Tools", () => this.toolsMenuItems()],
+      ["Window", () => this.windowMenuItems()],
+      ["Developer", () => this.devMenuItems()],
+      ["Help", () => this.helpMenuItems()],
     ];
-    for (const [label, items] of menus) {
+    for (const [label, getItems] of menus) {
       const mi = el("div", { class: "menu-item" }, [label]);
-      const dd = el("div", { class: "menu-dropdown" });
-      for (const item of items) {
-        if (item.sep) { dd.appendChild(el("div", { class: "ctx-sep" })); continue; }
-        const cls = "ctx-item" + (item.disabled ? " disabled" : "") + (item.submenu ? " has-sub" : "");
-        const entry = el("div", { class: cls }, [item.checked ? "✓ " : "" + (item.label || "")]);
-        if (!item.disabled && item.fn) entry.addEventListener("click", () => { item.fn!(); this.closeAllMenus(); });
-        dd.appendChild(entry);
-      }
+      let dd = this.buildMenuList(getItems(), "menu-dropdown");
       mi.appendChild(dd);
+      const open = () => {
+        this.closeAllMenus();
+        const fresh = this.buildMenuList(getItems(), "menu-dropdown");
+        dd.replaceWith(fresh);
+        dd = fresh;
+        mi.classList.add("open");
+      };
       mi.addEventListener("click", (e) => {
         e.stopPropagation();
-        const wasOpen = mi.classList.contains("open");
-        this.closeAllMenus();
-        if (!wasOpen) mi.classList.add("open");
+        // Clicks inside the dropdown are handled by the entries themselves.
+        if (dd.contains(e.target as Node)) return;
+        if (mi.classList.contains("open")) this.closeAllMenus();
+        else open();
+      });
+      // Once a menu is open, hovering another top-level item switches to it.
+      mi.addEventListener("mouseenter", () => {
+        if (mi.classList.contains("open")) return;
+        if (!mb.querySelector(".menu-item.open")) return;
+        open();
       });
       mb.appendChild(mi);
     }
+    // Close open menus on any press outside a top-level item or its dropdown.
+    // Capture phase so handlers that stop propagation (grid, tree) can't block it.
+    document.addEventListener("mousedown", (e) => {
+      const target = e.target as Element | null;
+      if (!target?.closest?.(".menubar .menu-item")) this.closeAllMenus();
+    }, true);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") this.closeAllMenus();
+    });
+    window.addEventListener("blur", () => this.closeAllMenus());
     mb.appendChild(el("div", { class: "spacer" }));
     const indicator = el("div", { class: "engine-indicator" }, [
       el("span", { class: "engine-dot" }, []),
@@ -109,6 +127,25 @@ export class AppShell {
     });
     mb.appendChild(indicator);
     return mb;
+  }
+
+  /** Builds a dropdown (or nested submenu) list; submenus open on hover via CSS. */
+  private buildMenuList(items: MenuItem[], cls: string): HTMLElement {
+    const list = el("div", { class: cls });
+    for (const item of items) {
+      if (item.sep) { list.appendChild(el("div", { class: "ctx-sep" })); continue; }
+      const entryCls = "ctx-item" + (item.disabled ? " disabled" : "") + (item.submenu ? " has-sub" : "");
+      const entry = el("div", { class: entryCls }, [
+        el("span", { class: "ctx-check" }, [item.checked ? "✓" : ""]),
+        el("span", { class: "ctx-label" }, [item.label || ""]),
+      ]);
+      if (item.submenu) entry.appendChild(this.buildMenuList(item.submenu, "menu-submenu"));
+      if (!item.disabled && item.fn) {
+        entry.addEventListener("click", (e) => { e.stopPropagation(); item.fn!(); this.closeAllMenus(); });
+      }
+      list.appendChild(entry);
+    }
+    return list;
   }
 
   private closeAllMenus() {
