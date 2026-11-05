@@ -82,7 +82,7 @@
         "omCore.omCorePath": {
           "type": "string",
           "default": "",
-          "description": "Path to the om-core project root (used to launch the runtime)."
+          "description": "Absolute path to the om-core project root (used to launch the runtime). Required for auto-start."
         },
         "omCore.showSystemElements": {
           "type": "boolean",

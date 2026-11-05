@@ -18,3 +18,8 @@ Thumbs.db
 # Local env files
 .env
 .env.*
+
+# Local agent config
+.devin/config.local.json
+
+docs/

@@ -31,6 +31,9 @@ export class EngineProcess {
 
   async start(): Promise<void> {
     if (this.isRunning) return;
+    if (!this.omCorePath) {
+      throw new Error("om-core path is not set. Configure the 'omCore.omCorePath' setting.");
+    }
     if (!fs.existsSync(this.omCorePath)) {
       throw new Error(`om-core path not found: ${this.omCorePath}`);
     }

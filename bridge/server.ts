@@ -83,6 +83,6 @@ wss.on("connection", async (ws: WebSocket) => {
   ws.on("close", () => { try { client.close(); } catch {} });
 });
 
-server.listen(port, () => {
+server.listen(port, "127.0.0.1", () => {
   console.log(`OM Core bridge: http://127.0.0.1:${port}  (webview)  ->  ${endpointToString(endpoint)}  (om-core runtime)`);
 });
