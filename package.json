@@ -119,14 +119,20 @@
     "compile": "tsc --noEmit",
     "test": "esbuild ./test-harness.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/test-harness.js && node dist/test-harness.js",
     "web": "npm run build && node dist/bridge.js",
-    "package": "vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies",
+    "check:sensitive": "node scripts/check-sensitive.js --all",
+    "prepare": "simple-git-hooks"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.80.0",
     "@types/ws": "^8.5.0",
     "esbuild": "^0.20.0",
+    "simple-git-hooks": "^2.11.1",
     "typescript": "^5.4.0",
     "ws": "^8.16.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "node scripts/check-sensitive.js --staged"
   }
 }
