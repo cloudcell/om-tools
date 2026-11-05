@@ -159,6 +159,8 @@ export class MultilevelGrid {
 
   // Editor
   private editor: HTMLInputElement | null = null;
+  // Cell the open editor belongs to — selection can move while it is open
+  private editorCell: { r: number; c: number } | null = null;
 
   // Header label editor (native: inline QLineEdit over leaf header / group band)
   private headerEdit: {
@@ -706,6 +708,10 @@ export class MultilevelGrid {
     // Capture-phase mousedown so the edge grab beats cell select/drag handlers
     scroll.addEventListener("mousedown", (e) => {
       if (e.button !== 0) return;
+      // Native mousePressEvent → _hide_editor(): a click on the grid discards an open
+      // cell edit. Cell/header handlers preventDefault, so the editor never blurs on its own.
+      // e.target === scroll is the scrollbar — leave the editor open.
+      if (this.editor && e.target !== scroll) this.cancelEdit();
       const hit = this.resizeHit(scroll, e);
       if (!hit) return;
       e.preventDefault();
@@ -1253,8 +1259,14 @@ export class MultilevelGrid {
             this.cellDragCtrl = e.ctrlKey || e.metaKey;
           }
           this.selectCell(r, c, e.shiftKey, e.ctrlKey || e.metaKey);
+          // Double-click → edit (native mouseDoubleClickEvent). Detected via the click
+          // count on mousedown: selectCell re-renders the grid, so this element is gone
+          // before mouseup and the browser never fires click/dblclick on it.
+          if (e.detail === 2 && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+            this.cellDragActive = false;
+            this.startEdit(r, c);
+          }
         });
-        cellEl.addEventListener("dblclick", () => this.startEdit(r, c));
         cellEl.addEventListener("contextmenu", (e) => { e.preventDefault(); this.showContextMenu(e, "cell"); });
         layer.appendChild(cellEl);
       }
@@ -2230,6 +2242,7 @@ export class MultilevelGrid {
       else input.setSelectionRange(input.value.length, input.value.length);
     }, 0);
     this.editor = input;
+    this.editorCell = { r, c };
 
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === "Return") { e.preventDefault(); this.commitEdit(); this.moveSel(1, 0); }
@@ -2249,19 +2262,31 @@ export class MultilevelGrid {
   }
 
   private commitEdit() {
-    if (!this.editor) return;
+    if (!this.editor || !this.editorCell) return;
     const input = this.editor;
+    const { r, c } = this.editorCell;
     this.editor = null;
+    this.editorCell = null;
     const v = this.store.state.activeView;
     if (!v) { input.remove(); return; }
     const text = input.value;
     input.remove();
     if (text === "") return;
     const value = isNaN(Number(text)) ? text : Number(text);
-    this.store.editCell(this.selRow, this.selCol, value);
+    this.store.editCell(r, c, value);
   }
 
-  private cancelEdit() { if (this.editor) { this.editor.remove(); this.editor = null; } }
+  private cancelEdit() {
+    const input = this.editor;
+    if (!input) return;
+    // Clear state BEFORE remove(): removing a focused input fires 'blur'
+    // synchronously, and the blur handler would otherwise commit the edit.
+    this.editor = null;
+    this.editorCell = null;
+    input.remove();
+    // Native _hide_editor(restore_grid_focus=True)
+    (this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement | null)?.focus();
+  }
 
   // ---- Header editing (native: inline QLineEdit over header) ----
 
