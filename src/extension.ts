@@ -126,6 +126,9 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
       case "subscribe": {
         const topic = req.params!.topic;
         const cb = (env: any) => postToWebview({ type: "event", envelope: env });
+        // One host-side callback per topic: the webview re-subscribes on every (re)load
+        // ("Developer: Reload Webviews"); appending would deliver each event N times.
+        client!.unsubscribe(topic);
         client!.subscribe(topic, cb);
         return { type: "response", id: req.id, ok: true, data: { topic } };
       }
@@ -134,6 +137,9 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         return { type: "response", id: req.id, ok: true };
       }
       case "getConfig": {
+        // The webview asks for config on every (re)load. Status is otherwise pushed only when the
+        // host connects, so a reloaded webview would stay "disconnected" with a live connection.
+        if (client && currentSessionId) sendStatus("connected", `Connected · session ${currentSessionId.slice(0, 8)}`);
         return { type: "response", id: req.id, ok: true, data: getConfig() };
       }
       case "startRuntime": {
