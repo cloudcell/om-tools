@@ -1,5 +1,5 @@
 import { Store, AppState } from "../state";
-import { el, clear, ICONS } from "../dom";
+import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym } from "../menuIcons";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
@@ -14,7 +14,10 @@ import { Timeline } from "./timeline";
 /** `icon` is inline SVG markup; a `checked` item shows a check mark in the icon column instead. */
 type DockName = keyof AppState["dockVisible"];
 
-interface MenuItem { label?: string; icon?: string; sep?: boolean; disabled?: boolean; fn?: () => void; submenu?: MenuItem[]; checked?: boolean }
+interface MenuItem { label?: string; icon?: string; sep?: boolean; disabled?: boolean; fn?: () => void; submenu?: MenuItem[]; checked?: boolean; title?: string }
+
+/** Menu items for features outside the MVP preview: greyed out, not hidden. */
+const NOT_IN_MVP: Pick<MenuItem, "disabled" | "title"> = { disabled: true, title: NOT_IN_MVP_TITLE };
 
 /** App shell — assembles the full OM Core GUI layout per om-gui.conf:
  *  menu bar + toolbar (top); left docks (Model Browser, Info, Format);
@@ -158,7 +161,7 @@ export class AppShell {
       const iconCol = el("span", { class: "ctx-icon" });
       if (item.checked) iconCol.appendChild(el("span", { class: "ctx-checkmark" }, ["✓"]));
       else if (item.icon) iconCol.innerHTML = item.icon;
-      const entry = el("div", { class: entryCls }, [
+      const entry = el("div", { class: entryCls, title: item.title || item.label || "" }, [
         iconCol,
         el("span", { class: "ctx-label" }, [item.label || ""]),
       ]);
@@ -193,11 +196,11 @@ export class AppShell {
       { sep: true },
       { icon: msym("content_copy"), label: "Copy", fn: () => this.matrixGrid.copyToClipboard(), disabled: !s.activeView },
       { icon: msym("content_paste"), label: "Paste", fn: () => this.matrixGrid.pasteFromClipboard(), disabled: !s.activeView },
-      { icon: msym("content_paste_go"), label: "Paste as New Cube…", fn: () => this.pasteAsNewCube() },
+      { icon: msym("content_paste_go"), label: "Paste as New Cube…", fn: () => this.pasteAsNewCube(), ...NOT_IN_MVP },
       { sep: true },
-      { icon: msym("label"), label: "Convert Selection to Dimension Labels…", fn: () => this.convertSelectionToDimLabels() },
-      { icon: msym("new_label"), label: "Assign Item Labels from Selection…", fn: () => this.assignItemLabels() },
-      { icon: msym("delete"), label: "Delete Selected Dimension Items…", fn: () => this.deleteSelectedDimItems() },
+      { icon: msym("label"), label: "Convert Selection to Dimension Labels…", fn: () => this.convertSelectionToDimLabels(), ...NOT_IN_MVP },
+      { icon: msym("new_label"), label: "Assign Item Labels from Selection…", fn: () => this.assignItemLabels(), ...NOT_IN_MVP },
+      { icon: msym("delete"), label: "Delete Selected Dimension Items…", fn: () => this.deleteSelectedDimItems(), ...NOT_IN_MVP },
       { sep: true },
       { icon: msym("format_clear"), label: "Clear Override", fn: () => this.store.clearSelectedCells(), disabled: !s.activeView },
       { sep: true },
@@ -212,8 +215,8 @@ export class AppShell {
       { icon: msym("add"), label: "Create Dimension Item…", fn: () => this.createDimensionItem() },
       { icon: msym("delete"), label: "Delete Dimension…", fn: () => this.deleteDimension() },
       { sep: true },
-      { icon: msym("table_rows"), label: "Add Group to Row Dim…", fn: () => this.addGroupToAxis("row") },
-      { icon: msym("view_column"), label: "Add Group to Col Dim…", fn: () => this.addGroupToAxis("col") },
+      { icon: msym("table_rows"), label: "Add Group to Row Dim…", fn: () => this.addGroupToAxis("row"), ...NOT_IN_MVP },
+      { icon: msym("view_column"), label: "Add Group to Col Dim…", fn: () => this.addGroupToAxis("col"), ...NOT_IN_MVP },
       { sep: true },
       { icon: ICONS.cube, label: "New Cube…", fn: () => this.createCube() },
       { icon: msym("delete"), label: "Delete Cube…", fn: () => this.deleteCube() },
@@ -231,9 +234,9 @@ export class AppShell {
     return [
       { label: "Model Browser", checked: s.dockVisible.browser, fn: () => this.store.toggleDock("browser") },
       { label: "Info Toolbox", checked: s.dockVisible.info, fn: () => this.store.toggleDock("info") },
-      { label: "Format Toolbox", checked: s.dockVisible.format, fn: () => this.store.toggleDock("format") },
-      { label: "Performance Watch", checked: s.dockVisible.perf, fn: () => this.store.toggleDock("perf") },
-      { label: "Timeline", checked: s.dockVisible.timeline, fn: () => this.store.toggleDock("timeline") },
+      { label: "Format Toolbox", checked: s.dockVisible.format, fn: () => this.store.toggleDock("format"), ...NOT_IN_MVP },
+      { label: "Performance Watch", checked: s.dockVisible.perf, fn: () => this.store.toggleDock("perf"), ...NOT_IN_MVP },
+      { label: "Timeline", checked: s.dockVisible.timeline, fn: () => this.store.toggleDock("timeline"), ...NOT_IN_MVP },
       { sep: true },
       { label: "Toggle System Elements", checked: s.showSystemElements, fn: () => { this.store.state.showSystemElements = !this.store.state.showSystemElements; this.store.notify(); this.store.refreshModel(); } },
       { sep: true },
@@ -248,22 +251,22 @@ export class AppShell {
       { icon: msym("memory"), label: "Calculation Engine", submenu: [
         { label: "Python", checked: s.engineType === "python", fn: () => this.store.api.setEngine("python").then(() => { this.store.set({ engineType: "python", isRemote: false }); }) },
         { label: "Remote", checked: s.engineType === "remote", fn: () => this.store.api.setEngine("remote").then(() => { this.store.set({ engineType: "remote", isRemote: true }); }) },
-      ]},
+      ], ...NOT_IN_MVP },
       { sep: true },
-      { icon: msym("settings"), label: "Options…", fn: () => alertDialog("Options", "Options dialog — GUI configuration pending.") },
+      { icon: msym("settings"), label: "Options…", fn: () => alertDialog("Options", "Options dialog — GUI configuration pending."), ...NOT_IN_MVP },
     ];
   }
 
   private windowMenuItems(): MenuItem[] {
     return [
-      { icon: msym("open_in_new"), label: "New Window", fn: () => window.open(window.location.href) },
+      { icon: msym("open_in_new"), label: "New Window", fn: () => window.open(window.location.href), ...NOT_IN_MVP },
       { icon: msym("close"), label: "Close Window", fn: () => window.close() },
     ];
   }
 
   private devMenuItems(): MenuItem[] {
     return [
-      { icon: msym("bug_report"), label: "GUI Debug Tooltips", fn: () => alertDialog("Debug Tooltips", "Debug tooltips toggle pending.") },
+      { icon: msym("bug_report"), label: "GUI Debug Tooltips", fn: () => alertDialog("Debug Tooltips", "Debug tooltips toggle pending."), ...NOT_IN_MVP },
     ];
   }
 

@@ -83,7 +83,8 @@ export class Store {
     depTrackingEnabled: true,
     mtEnabled: false,
     isRemote: false,
-    dockVisible: { browser: true, info: false, format: false, perf: true, timeline: true },
+    // perf/timeline are outside the MVP (their View menu items are disabled), so start hidden.
+    dockVisible: { browser: true, info: false, format: false, perf: false, timeline: false },
   };
   api: OmApi;
   private listeners = new Set<Listener>();
