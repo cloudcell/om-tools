@@ -1,5 +1,5 @@
 import { Store, SelMode } from "../state";
-import { el, clear } from "../dom";
+import { el, clear, NOT_IN_MVP_TITLE } from "../dom";
 import { CellDTO, DimDetail } from "../api";
 import { PivotBar } from "./pivotBar";
 import { inputDialog, confirmDialog, alertDialog, pickDialog } from "./dialogs";
@@ -2691,8 +2691,8 @@ export class MultilevelGrid {
 
     const close = (ev: MouseEvent) => { if (!menu.contains(ev.target as Node)) { menu.remove(); document.removeEventListener("mousedown", close); } };
 
-    const addItem = (label: string, fn: () => void, enabled = true) => {
-      const item = el("div", { class: "ctx-item" + (enabled ? "" : " disabled") }, [label]);
+    const addItem = (label: string, fn: () => void, enabled = true, title = label) => {
+      const item = el("div", { class: "ctx-item" + (enabled ? "" : " disabled"), title }, [label]);
       if (enabled) {
         item.addEventListener("mousedown", (e) => { e.preventDefault(); e.stopPropagation(); });
         item.addEventListener("click", (ev) => {
@@ -2711,10 +2711,11 @@ export class MultilevelGrid {
     const selSuffix = selCount > 1 ? ` (${selCount} items)` : "";
 
     // Check if right-clicking on a group band — native shows only these items
+    // Grouping is outside the MVP preview: its items are shown disabled, not hidden.
     const groupBand = this.findGroupBandAt(e.clientX, e.clientY);
     if (groupBand) {
-      addItem("Add Aggregate Item…", () => this.addAggregateItem(groupBand.axis, groupBand.path));
-      addItem("Ungroup This Group", () => this.ungroupGroup(groupBand.axis, groupBand.path));
+      addItem("Add Aggregate Item…", () => this.addAggregateItem(groupBand.axis, groupBand.path), false, NOT_IN_MVP_TITLE);
+      addItem("Ungroup This Group", () => this.ungroupGroup(groupBand.axis, groupBand.path), false, NOT_IN_MVP_TITLE);
       addSep();
     }
 
@@ -2723,9 +2724,9 @@ export class MultilevelGrid {
       const dimIds = ax === "row" ? v.rowDimIds : v.colDimIds;
       if (!dimIds.length) return;
 
-      addItem(`Add Group…${selSuffix}`, () => this.addGroupForAxis(ax));
-      addItem(`Move Selection To Group…${selSuffix}`, () => this.moveToGroup(ax));
-      addItem(`Ungroup Selection${selSuffix}`, () => this.ungroupItems(ax));
+      addItem(`Add Group…${selSuffix}`, () => this.addGroupForAxis(ax), false, NOT_IN_MVP_TITLE);
+      addItem(`Move Selection To Group…${selSuffix}`, () => this.moveToGroup(ax), false, NOT_IN_MVP_TITLE);
+      addItem(`Ungroup Selection${selSuffix}`, () => this.ungroupItems(ax), false, NOT_IN_MVP_TITLE);
       addSep();
       addItem("Insert Before", () => this.insertRelative(ax, false));
       addItem("Insert After", () => this.insertRelative(ax, true));
@@ -2737,11 +2738,11 @@ export class MultilevelGrid {
       addAxisActions("col");
     } else {
       // Cell context: native shows Row / Column / Mode submenus
-      const addSubmenu = (label: string, items: { label: string; fn: () => void; enabled?: boolean }[]) => {
+      const addSubmenu = (label: string, items: { label: string; fn: () => void; enabled?: boolean; title?: string }[]) => {
         const sub = el("div", { class: "ctx-item ctx-submenu" }, [label + " ▸"]) as HTMLElement;
         const subMenu = el("div", { class: "ctx-menu", style: { display: "none", position: "absolute", left: "100%", top: "0" } });
         for (const it of items) {
-          const mi = el("div", { class: "ctx-item" + (it.enabled === false ? " disabled" : "") }, [it.label]);
+          const mi = el("div", { class: "ctx-item" + (it.enabled === false ? " disabled" : ""), title: it.title || it.label }, [it.label]);
           if (it.enabled !== false) {
             mi.addEventListener("mousedown", (e) => { e.preventDefault(); e.stopPropagation(); });
             mi.addEventListener("click", (ev) => {
@@ -2766,9 +2767,9 @@ export class MultilevelGrid {
 
       if (hasRow) {
         addSubmenu("Row", [
-          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("row") },
-          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("row") },
-          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("row") },
+          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("row"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("row"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("row"), enabled: false, title: NOT_IN_MVP_TITLE },
           { label: "", fn: () => {}, enabled: false },
           { label: "Insert Before", fn: () => this.insertRelative("row", false) },
           { label: "Insert After", fn: () => this.insertRelative("row", true) },
@@ -2776,9 +2777,9 @@ export class MultilevelGrid {
       }
       if (hasCol) {
         addSubmenu("Column", [
-          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("col") },
-          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("col") },
-          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("col") },
+          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("col"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("col"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("col"), enabled: false, title: NOT_IN_MVP_TITLE },
           { label: "", fn: () => {}, enabled: false },
           { label: "Insert Before", fn: () => this.insertRelative("col", false) },
           { label: "Insert After", fn: () => this.insertRelative("col", true) },

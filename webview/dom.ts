@@ -1,6 +1,10 @@
 /** Minimal DOM helper — keeps components terse and framework-free (web-portable). */
 export type Attrs = { [k: string]: any } & { _children?: (Node | string)[] };
 
+/** Tooltip for controls of features outside the first public (MVP) release. Such controls are
+ *  shown disabled, not hidden (design-guidelines: "disabled (greyed out), not hidden"). */
+export const NOT_IN_MVP_TITLE = "Not available in this preview version";
+
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Attrs = {}, children: (Node | string)[] = []): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {

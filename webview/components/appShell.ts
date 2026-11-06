@@ -293,36 +293,40 @@ export class AppShell {
     tb.appendChild(btn("📥", () => this.matrixGrid.pasteFromClipboard(), "Paste"));
     tb.appendChild(el("span", { class: "tb-sep" }));
 
+    // Formatting is outside the MVP preview: controls stay visible but disabled (handlers kept for later).
+    const off = (label: string) => ({ disabled: true, title: `${label} — ${NOT_IN_MVP_TITLE}` });
+    const offLabel = (text: string) => el("span", { class: "tb-label disabled" }, [text]);
+
     // Format buttons
-    const boldBtn = el("button", { class: "tb-btn", title: "Bold (Ctrl+B)", style: { fontWeight: "700" } }, ["B"]);
+    const boldBtn = el("button", { class: "tb-btn", ...off("Bold"), style: { fontWeight: "700" } }, ["B"]);
     boldBtn.addEventListener("click", () => this.store.api.formatBold("selection", true).catch(() => {}));
     tb.appendChild(boldBtn);
-    const italicBtn = el("button", { class: "tb-btn", title: "Italic (Ctrl+I)", style: { fontStyle: "italic" } }, ["I"]);
+    const italicBtn = el("button", { class: "tb-btn", ...off("Italic"), style: { fontStyle: "italic" } }, ["I"]);
     italicBtn.addEventListener("click", () => this.store.api.formatItalic("selection", true).catch(() => {}));
     tb.appendChild(italicBtn);
-    const underlineBtn = el("button", { class: "tb-btn", title: "Underline (Ctrl+U)", style: { textDecoration: "underline" } }, ["U"]);
+    const underlineBtn = el("button", { class: "tb-btn", ...off("Underline"), style: { textDecoration: "underline" } }, ["U"]);
     underlineBtn.addEventListener("click", () => this.store.api.formatUnderline("selection", true).catch(() => {}));
     tb.appendChild(underlineBtn);
     tb.appendChild(el("span", { class: "tb-sep" }));
 
     // Fill color
-    const fillInput = el("input", { class: "tb-color", type: "color", value: "#ffffff", title: "Fill color" }) as HTMLInputElement;
+    const fillInput = el("input", { class: "tb-color", type: "color", value: "#ffffff", ...off("Fill color") }) as HTMLInputElement;
     fillInput.addEventListener("change", () => this.store.api.formatBgColor("selection", fillInput.value).catch(() => {}));
-    tb.appendChild(el("span", { class: "tb-label" }, ["Fill"]));
+    tb.appendChild(offLabel("Fill"));
     tb.appendChild(fillInput);
 
     // Font color
-    const fontInput = el("input", { class: "tb-color", type: "color", value: "#000000", title: "Font color" }) as HTMLInputElement;
+    const fontInput = el("input", { class: "tb-color", type: "color", value: "#000000", ...off("Font color") }) as HTMLInputElement;
     fontInput.addEventListener("change", () => this.store.api.formatColor("selection", fontInput.value).catch(() => {}));
-    tb.appendChild(el("span", { class: "tb-label" }, ["Font"]));
+    tb.appendChild(offLabel("Font"));
     tb.appendChild(fontInput);
     tb.appendChild(el("span", { class: "tb-sep" }));
 
     // Number format
-    const fmt = el("select", { class: "tb-select", title: "Number format" }) as HTMLSelectElement;
+    const fmt = el("select", { class: "tb-select", ...off("Number format") }) as HTMLSelectElement;
     [["general", "General"], ["number", "Number"], ["currency", "Currency"], ["percent", "Percent"], ["scientific", "Scientific"]].forEach(([v, l]) => fmt.appendChild(el("option", { value: v }, [l])));
     fmt.addEventListener("change", () => this.store.api.formatNumberFormat("selection", fmt.value).catch(() => {}));
-    tb.appendChild(el("span", { class: "tb-label" }, ["Format"]));
+    tb.appendChild(offLabel("Format"));
     tb.appendChild(fmt);
 
     return tb;

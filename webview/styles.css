@@ -120,6 +120,9 @@ body {
 .toolbar .tb-label { font-size: 12px; color: var(--text-muted); margin-right: 2px; }
 .toolbar .tb-select { font-size: 12px; height: 24px; border: 1px solid var(--border-strong); border-radius: 3px; background: #fff; }
 .toolbar .tb-color { width: 22px; height: 22px; padding: 0; border: 1px solid var(--border-strong); border-radius: 3px; background: #fff; cursor: default; }
+.toolbar .tb-btn:disabled, .toolbar .tb-color:disabled, .toolbar .tb-select:disabled { opacity: 0.4; cursor: default; }
+.toolbar .tb-btn:disabled:hover { background: transparent; border-color: transparent; }
+.toolbar .tb-label.disabled { opacity: 0.5; }
 
 /* ---- Main body (docks + center) ---- */
 .body {
@@ -696,6 +699,8 @@ table.matrix td.cell.rule-marker::before { content: ""; }
 }
 .format-section-item { padding: 3px 8px; }
 .lower-tab:hover, .format-section-item:hover { background: #e8eaf0; }
+.lower-tab.disabled { color: #aaa; cursor: default; }
+.lower-tab.disabled:hover { background: transparent; }
 .lower-tab.active, .format-section-item.active {
   background: var(--panel-bg);
   color: var(--text);

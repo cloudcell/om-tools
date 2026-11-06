@@ -1,5 +1,5 @@
 import { Store } from "../state";
-import { el, clear } from "../dom";
+import { el, clear, NOT_IN_MVP_TITLE } from "../dom";
 import { RuleDTO } from "../api";
 import { confirmDialog, alertDialog } from "./dialogs";
 
@@ -17,8 +17,12 @@ export class RulePanel {
     const tabs = el("div", { class: "lower-tabs" });
     const tabNames = [["rules", "Rules"], ["calcflow", "Calculation Flow"], ["circrefs", "Circular References"]];
     for (const [id, label] of tabNames) {
-      const t = el("div", { class: "lower-tab" + (id === this.activeTab ? " active" : "") }, [label]);
-      t.addEventListener("click", () => { this.activeTab = id; this.refresh(panel); });
+      const off = disabledTabs.has(id);
+      const t = el("div", {
+        class: "lower-tab" + (id === this.activeTab ? " active" : "") + (off ? " disabled" : ""),
+        title: off ? NOT_IN_MVP_TITLE : label,
+      }, [label]);
+      if (!off) t.addEventListener("click", () => { this.activeTab = id; this.refresh(panel); });
       tabs.appendChild(t);
     }
     panel.appendChild(tabs);
@@ -297,3 +301,5 @@ export class RulePanel {
 }
 
 const tabNames = [["rules", "Rules"], ["calcflow", "Calculation Flow"], ["circrefs", "Circular References"]];
+/** Diagnostics tabs are outside the MVP preview: shown greyed out, not clickable. */
+const disabledTabs = new Set(["calcflow", "circrefs"]);
