@@ -153,6 +153,8 @@ body {
 }
 
 /* ---- Dock panel ---- */
+/* View-menu toggles set the hidden attribute; the flex display rules would otherwise override it. */
+.left-docks[hidden], .right-docks[hidden], .dock[hidden] { display: none; }
 .dock {
   display: flex;
   flex-direction: column;

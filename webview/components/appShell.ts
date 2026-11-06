@@ -1,4 +1,4 @@
-import { Store } from "../state";
+import { Store, AppState } from "../state";
 import { el, clear, ICONS } from "../dom";
 import { materialIconSvg as msym } from "../menuIcons";
 import { ModelBrowser } from "./modelBrowser";
@@ -12,6 +12,8 @@ import { inputDialog, confirmDialog, alertDialog, pickDialog } from "./dialogs";
 import { Timeline } from "./timeline";
 
 /** `icon` is inline SVG markup; a `checked` item shows a check mark in the icon column instead. */
+type DockName = keyof AppState["dockVisible"];
+
 interface MenuItem { label?: string; icon?: string; sep?: boolean; disabled?: boolean; fn?: () => void; submenu?: MenuItem[]; checked?: boolean }
 
 /** App shell — assembles the full OM Core GUI layout per om-gui.conf:
@@ -31,18 +33,34 @@ export class AppShell {
     app.appendChild(this.ruleBar());
     const body = el("div", { class: "body" });
 
+    const docks: Record<DockName, HTMLElement> = {
+      browser: new ModelBrowser(this.store).render(),
+      info: new InfoToolbox(this.store).render(),
+      format: new FormatToolbox(this.store).render(),
+      perf: this.perf.render(),
+      timeline: new Timeline(this.store).render(),
+    };
+
     const left = el("div", { class: "left-docks" });
-    left.appendChild(new ModelBrowser(this.store).render());
-    left.appendChild(new InfoToolbox(this.store).render());
-    left.appendChild(new FormatToolbox(this.store).render());
+    left.append(docks.browser, docks.info, docks.format);
 
     const center = el("div", { class: "center" });
     center.appendChild(this.matrixGrid.render());
     center.appendChild(new RulePanel(this.store).render());
 
     const right = el("div", { class: "right-docks" });
-    right.appendChild(this.perf.render());
-    right.appendChild(new Timeline(this.store).render());
+    right.append(docks.perf, docks.timeline);
+
+    // View menu toggles flip store.state.dockVisible; show/hide panels to match.
+    // A side column with no visible panels is hidden too, so the grid takes the space.
+    const applyDockVisibility = () => {
+      const vis = this.store.state.dockVisible;
+      for (const name of Object.keys(docks) as DockName[]) docks[name].hidden = !vis[name];
+      left.hidden = !(vis.browser || vis.info || vis.format);
+      right.hidden = !(vis.perf || vis.timeline);
+    };
+    this.store.subscribe(applyDockVisibility);
+    applyDockVisibility();
 
     body.appendChild(left);
     body.appendChild(center);
