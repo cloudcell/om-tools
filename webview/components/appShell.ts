@@ -1,4 +1,4 @@
-import { Store, AppState } from "../state";
+import { Store, AppState, SET_RULE_PLACEHOLDER } from "../state";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, type MaterialIcon } from "../menuIcons";
 import { ModelBrowser } from "./modelBrowser";
@@ -204,7 +204,7 @@ export class AppShell {
       { sep: true },
       { icon: msym("format_clear"), label: "Clear Override", fn: () => this.store.clearSelectedCells(), disabled: !s.activeView },
       { sep: true },
-      { icon: msym("function"), label: "Set Rule…", fn: async () => { const e = await inputDialog("Set Rule", "", "LHS = RHS or =value"); if (e) this.store.setRuleForCell(e, e.startsWith("$")); }, disabled: !s.activeView },
+      { icon: msym("function"), label: "Set Rule…", fn: async () => { const t = await inputDialog("Set Value or Rule", "", SET_RULE_PLACEHOLDER); if (t) this.store.applyInput(t); }, disabled: !s.activeView },
       { label: "Focus Rule Bar", fn: () => this.ruleBarInput?.focus() },
     ];
   }
@@ -298,6 +298,16 @@ export class AppShell {
     tb.appendChild(pasteBtn);
     tb.appendChild(el("span", { class: "tb-sep" }));
 
+    // Same enable rules as the Edit menu.
+    const syncEnabled = () => {
+      const s = this.store.state;
+      undoBtn.disabled = !s.canUndo;
+      redoBtn.disabled = !s.canRedo;
+      copyBtn.disabled = pasteBtn.disabled = !s.activeView;
+    };
+    syncEnabled();
+    this.store.subscribe(syncEnabled);
+
     // Formatting is outside the MVP preview: controls stay visible but disabled (handlers kept for later).
     const off = (label: string) => ({ disabled: true, title: `${label} — ${NOT_IN_MVP_TITLE}` });
     const offLabel = (text: string) => el("span", { class: "tb-label disabled" }, [text]);
@@ -341,16 +351,14 @@ export class AppShell {
   private ruleBar(): HTMLElement {
     const bar = el("div", { class: "rule-bar" });
     const nameBox = el("div", { class: "name-box" }, ["—"]);
-    const input = el("input", { type: "text", placeholder: "LHS = expression  or  =value  (prefix $ for anchored rule)" }) as HTMLInputElement;
+    const input = el("input", { type: "text", placeholder: "Rule: Dim.Item = expr  •  Cell: =expr or value" }) as HTMLInputElement;
     this.ruleBarInput = input;
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         const text = input.value.trim();
         if (!text) return;
-        const anchored = text.startsWith("$");
-        const expr = anchored ? text.slice(1) : text;
-        this.store.setRuleForCell(expr, anchored);
+        this.store.applyInput(text);
         input.value = "";
       } else if (e.key === "Escape") { input.blur(); }
     });

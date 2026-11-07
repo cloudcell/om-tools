@@ -319,18 +319,49 @@ export class Store {
     try { this.api.setSelection(row, col, mode, v.anchorRow, v.anchorCol, [...indices] as any, v.viewId); } catch {}
   }
 
-  async editCell(row: number, col: number, value: any) {
+  /** Apply text the user typed into a cell editor, the rule bar or the Set Rule dialog.
+   *  Grammar is parseCellInput(). `at` is the target cell for the grid editor; without it the
+   *  active cell is used and, as in Qt, a multi-cell selection is refused for cell entries. */
+  async applyInput(raw: string, at?: { row: number; col: number }) {
     const v = this.state.activeView;
     if (!v || !v.cells) return;
-    const cell = v.cells.cells[row * v.colKeys.length + col];
-    const addr = cell?.addr;
-    if (!addr) return;
+    const input = parseCellInput(raw);
+    if (!input) return;
     try {
-      await this.api.setCellHardvalueByAddr(v.cubeId, addr, value);
+      if (input.kind === "cubeRule") {
+        const resolved = await this.api.ruleTargetResolve(v.cubeId, input.lhs);
+        if (resolved?.error || !resolved?.targets?.length) {
+          throw new Error(resolved?.error || `Cannot resolve rule target "${input.lhs}"`);
+        }
+        await this.api.setRule(v.cubeId, resolved.targets, input.expr, input.anchored);
+      } else {
+        if (!at && this.hasMultiCellSelection()) {
+          await alertDialog("Single cell only", "Several cells are selected. A value or =expression applies to one cell. Select a single cell and try again.");
+          return;
+        }
+        const row = at ? at.row : v.selectedRow;
+        const col = at ? at.col : v.selectedCol;
+        const cell = row >= 0 && col >= 0 ? v.cells.cells[row * v.colKeys.length + col] : undefined;
+        if (!cell?.addr) { await alertDialog("No cell selected", "Select a cell and try again."); return; }
+        if (input.kind === "cellRule") {
+          await this.api.setRuleAnchored(v.viewId, { kind: "ids", row_key: cell.row_key, col_key: cell.col_key }, input.expr);
+        } else {
+          await this.api.setCellHardvalueByAddr(v.cubeId, cell.addr, input.value);
+        }
+      }
       this.markDirty();
       await this.api.recalc("dirty");
       await this.loadView(v.viewId);
-    } catch (e: any) { await alertDialog("Set cell failed", e?.message || String(e)); }
+      if (input.kind !== "value") await this.refreshRules();
+    } catch (e: any) {
+      await alertDialog(input.kind === "value" ? "Set cell failed" : "Rule error", e?.message || String(e));
+    }
+  }
+
+  private hasMultiCellSelection(): boolean {
+    let n = 0;
+    for (const _ of this.iterSelectedCells()) if (++n > 1) return true;
+    return false;
   }
 
   async clearSelectedCells() {
@@ -347,27 +378,6 @@ export class Store {
       await this.api.recalc("dirty");
       await this.loadView(v.viewId);
     } catch (e: any) { console.error("clearSelectedCells", e); }
-  }
-
-  async setRuleForCell(expression: string, anchored = false) {
-    const v = this.state.activeView;
-    if (!v || v.selectedRow < 0 || v.selectedCol < 0) return;
-    const cell = v.cells?.cells[v.selectedRow * v.colKeys.length + v.selectedCol];
-    if (!cell) return;
-    try {
-      if (anchored) {
-        await this.api.setRuleAnchored(v.viewId, { kind: "ids", row_key: cell.row_key, col_key: cell.col_key }, expression);
-      } else {
-        const lhs = expression.split("=")[0]?.trim() || "";
-        const rhs = expression.split("=").slice(1).join("=").trim();
-        const resolved = await this.api.ruleTargetResolve(v.cubeId, lhs);
-        if (resolved?.targets) await this.api.setRule(v.cubeId, resolved.targets, rhs, false);
-      }
-      this.markDirty();
-      await this.api.recalc("dirty");
-      await this.loadView(v.viewId);
-      await this.refreshRules();
-    } catch (e: any) { await alertDialog("Set rule failed", e?.message || String(e)); }
   }
 
   async copySelectionToClipboard(): Promise<string> {
@@ -441,4 +451,37 @@ export class Store {
     this.state.dockVisible[name] = !this.state.dockVisible[name];
     this.notify();
   }
+}
+
+/** Hint shown wherever a value or rule is typed (Set Rule dialog). */
+export const SET_RULE_PLACEHOLDER = "value, =expr for this cell, or Dim.Item = expr";
+
+export type CellInput =
+  | { kind: "cubeRule"; lhs: string; expr: string; anchored: boolean }
+  | { kind: "cellRule"; expr: string }
+  | { kind: "value"; value: string | number };
+
+/** Classify typed text the way the Qt rule bar does (om-core lib_gui/app.py, _on_rule_bar_enter):
+ *  - `=expr`               → rule for the target cell (set_rule_anchored);
+ *  - `Dim.Item = expr`     → rule for the cube; `$` before the target makes it anchored (set_rule);
+ *  - anything else         → value (hardvalue override); numeric text becomes a number.
+ *  Surrounding double quotes are stripped. Returns null for empty input. */
+export function parseCellInput(raw: string): CellInput | null {
+  let text = raw.trim();
+  if (text.length >= 2 && text.startsWith("\"") && text.endsWith("\"")) text = text.slice(1, -1).trim();
+  if (!text) return null;
+  if (text.startsWith("=")) {
+    const expr = text.slice(1).trim();
+    return expr ? { kind: "cellRule", expr } : null;
+  }
+  // Split on the first "=" only, so the expression may contain "=" itself.
+  const m = /^(.*?)\s*=\s*([\s\S]+)$/.exec(text);
+  if (m && m[1].trim()) {
+    let lhs = m[1].trim();
+    let anchored = false;
+    if (lhs.startsWith("$")) { anchored = true; lhs = lhs.slice(1).trim(); }
+    if (lhs === "*") lhs = "*.*";
+    return { kind: "cubeRule", lhs, expr: m[2].trim(), anchored };
+  }
+  return { kind: "value", value: isNaN(Number(text)) ? text : Number(text) };
 }

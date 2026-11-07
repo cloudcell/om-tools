@@ -1,4 +1,4 @@
-import { Store, SelMode } from "../state";
+import { Store, SelMode, SET_RULE_PLACEHOLDER } from "../state";
 import { el, clear, NOT_IN_MVP_TITLE } from "../dom";
 import { CellDTO, DimDetail } from "../api";
 import { PivotBar } from "./pivotBar";
@@ -657,10 +657,17 @@ export class MultilevelGrid {
       }
     });
 
-    // Focus for keyboard — but never steal focus from an open editor
+    // Focus for keyboard — but never steal focus from an open editor or from another input
+    // (rule bar, dialog). The grid rebuilds several times per action, and taking focus here sent
+    // keystrokes typed into the rule bar to the grid, which then wrote them into a cell.
     scroll.tabIndex = 0;
     scroll.addEventListener("keydown", (e) => this.onKeyDown(e));
-    if (!this.editor && !this.headerEdit) scroll.focus();
+    const active = document.activeElement;
+    const focusIsFree = !active || active === document.body || mount.contains(active);
+    if (!this.editor && !this.headerEdit && focusIsFree) scroll.focus();
+    // Cell and header mousedown handlers call preventDefault (no native focus change), so a
+    // click inside the grid takes focus explicitly — e.g. coming back from the rule bar.
+    scroll.addEventListener("mousedown", () => { if (!this.editor && !this.headerEdit) scroll.focus(); }, true);
 
     // Cell drag-select (rubberband): mousemove extends range from anchor, mouseup ends
     scroll.addEventListener("mousemove", (e) => {
@@ -2272,8 +2279,7 @@ export class MultilevelGrid {
     const text = input.value;
     input.remove();
     if (text === "") return;
-    const value = isNaN(Number(text)) ? text : Number(text);
-    this.store.editCell(r, c, value);
+    this.store.applyInput(text, { row: r, col: c });
   }
 
   private cancelEdit() {
@@ -2789,8 +2795,8 @@ export class MultilevelGrid {
       addItem("Edit Cell", () => this.startEdit(this.selRow, this.selCol));
       addItem("Clear Override", () => this.store.clearSelectedCells());
       addItem("Set Rule…", async () => {
-        const expr = await inputDialog("Set Rule", "", "LHS = RHS or =value");
-        if (expr) this.store.setRuleForCell(expr, expr.startsWith("$"));
+        const text = await inputDialog("Set Value or Rule", "", SET_RULE_PLACEHOLDER);
+        if (text) this.store.applyInput(text);
       });
       addSep();
       addItem("Copy", () => this.doCopy());
