@@ -114,6 +114,7 @@ body {
   cursor: default;
   font-size: 13px;
 }
+.toolbar .tb-btn svg { display: block; }
 .toolbar .tb-btn:hover { background: var(--selection); border-color: var(--border-strong); }
 .toolbar .tb-btn.active { background: var(--selection); border-color: var(--selection-border); }
 .toolbar .tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 3px; }

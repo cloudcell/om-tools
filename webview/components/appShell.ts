@@ -1,6 +1,6 @@
 import { Store, AppState } from "../state";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
-import { materialIconSvg as msym } from "../menuIcons";
+import { materialIconSvg as msym, type MaterialIcon } from "../menuIcons";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
 import { RulePanel } from "./rulePanel";
@@ -279,18 +279,23 @@ export class AppShell {
   // ---- Toolbar ----
   private toolbar(): HTMLElement {
     const tb = el("div", { class: "toolbar" });
-    const btn = (label: string, fn: () => void, title = "") =>
-      el("button", { class: "tb-btn", title: title || label, onclick: fn }, [label]);
+    // Icon-only buttons: aria-label gives them an accessible name (title alone is not reliable).
+    const ibtn = (name: MaterialIcon, fn: () => void, title: string) =>
+      el("button", { class: "tb-btn", title, "aria-label": title, onclick: fn, html: msym(name) }) as HTMLButtonElement;
 
-    tb.appendChild(btn("↻", () => this.store.refreshModel().catch(() => {}), "Refresh model"));
-    tb.appendChild(btn("⟳", () => this.store.recalc("all"), "Recalculate (Shift+F9)"));
-    tb.appendChild(btn("F9", () => this.store.recalc("dirty"), "Recalculate View (F9)"));
+    tb.appendChild(ibtn("database", () => this.store.refreshModel().catch(() => {}), "Refresh model"));
+    tb.appendChild(ibtn("sync", () => this.store.recalc("all"), "Recalculate (Shift+F9)"));
+    tb.appendChild(ibtn("refresh", () => this.store.recalc("dirty"), "Recalculate View (F9)"));
     tb.appendChild(el("span", { class: "tb-sep" }));
-    tb.appendChild(btn("↶", () => this.store.undo(), "Undo"));
-    tb.appendChild(btn("↷", () => this.store.redo(), "Redo"));
+    const undoBtn = ibtn("undo", () => this.store.undo(), "Undo");
+    const redoBtn = ibtn("redo", () => this.store.redo(), "Redo");
+    tb.appendChild(undoBtn);
+    tb.appendChild(redoBtn);
     tb.appendChild(el("span", { class: "tb-sep" }));
-    tb.appendChild(btn("📋", () => this.matrixGrid.copyToClipboard(), "Copy"));
-    tb.appendChild(btn("📥", () => this.matrixGrid.pasteFromClipboard(), "Paste"));
+    const copyBtn = ibtn("content_copy", () => this.matrixGrid.copyToClipboard(), "Copy");
+    const pasteBtn = ibtn("content_paste", () => this.matrixGrid.pasteFromClipboard(), "Paste");
+    tb.appendChild(copyBtn);
+    tb.appendChild(pasteBtn);
     tb.appendChild(el("span", { class: "tb-sep" }));
 
     // Formatting is outside the MVP preview: controls stay visible but disabled (handlers kept for later).
