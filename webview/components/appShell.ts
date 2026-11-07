@@ -135,6 +135,8 @@ export class AppShell {
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") this.closeAllMenus();
     });
+    // Capture phase, so the grid's own key handler never sees these combinations.
+    document.addEventListener("keydown", (e) => this.onShortcut(e), true);
     window.addEventListener("blur", () => this.closeAllMenus());
     mb.appendChild(el("div", { class: "spacer" }));
     const indicator = el("div", { class: "engine-indicator" }, [
@@ -188,6 +190,37 @@ export class AppShell {
     ];
   }
 
+  /** Window-wide shortcuts, as in Qt (lib_gui/actions.py): Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo,
+   *  F9 recalculate view, Shift+F9 recalculate full model, Ctrl+= Set Rule…, Ctrl+L focus rule bar.
+   *  Letters are matched by e.code (physical key), so they also work with a non-Latin layout.
+   *  Skipped while a dialog is open or a text field has focus: there the field keeps native
+   *  editing (its own Ctrl+Z), and a recalc would rebuild the grid under an open cell editor. */
+  private onShortcut(e: KeyboardEvent) {
+    if (e.repeat || e.altKey) return;
+    if (document.querySelector(".dlg-overlay")) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+    const s = this.store.state;
+    const ctrl = e.ctrlKey || e.metaKey;
+    let action: (() => void) | null = null;
+    if (ctrl && !e.shiftKey && e.code === "KeyZ") action = () => { if (s.canUndo) this.store.undo(); };
+    else if (ctrl && ((!e.shiftKey && e.code === "KeyY") || (e.shiftKey && e.code === "KeyZ"))) action = () => { if (s.canRedo) this.store.redo(); };
+    else if (!ctrl && !e.shiftKey && e.key === "F9") action = () => this.store.recalc("dirty");
+    else if (!ctrl && e.shiftKey && e.key === "F9") action = () => this.store.recalc("all");
+    else if (ctrl && !e.shiftKey && (e.code === "Equal" || e.key === "=")) action = () => { if (s.activeView) this.openSetRuleDialog(); };
+    else if (ctrl && !e.shiftKey && e.code === "KeyL") action = () => { this.ruleBarInput?.focus(); this.ruleBarInput?.select(); };
+    if (!action) return;
+    e.preventDefault();
+    e.stopPropagation();
+    this.closeAllMenus();
+    action();
+  }
+
+  private async openSetRuleDialog() {
+    const text = await inputDialog("Set Value or Rule", "", SET_RULE_PLACEHOLDER);
+    if (text) this.store.applyInput(text);
+  }
+
   private editMenuItems(): MenuItem[] {
     const s = this.store.state;
     return [
@@ -204,7 +237,7 @@ export class AppShell {
       { sep: true },
       { icon: msym("format_clear"), label: "Clear Override", fn: () => this.store.clearSelectedCells(), disabled: !s.activeView },
       { sep: true },
-      { icon: msym("function"), label: "Set Rule…", fn: async () => { const t = await inputDialog("Set Value or Rule", "", SET_RULE_PLACEHOLDER); if (t) this.store.applyInput(t); }, disabled: !s.activeView },
+      { icon: msym("function"), label: "Set Rule…", fn: () => this.openSetRuleDialog(), disabled: !s.activeView },
       { label: "Focus Rule Bar", fn: () => this.ruleBarInput?.focus() },
     ];
   }
