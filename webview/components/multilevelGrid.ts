@@ -2282,6 +2282,11 @@ export class MultilevelGrid {
     this.store.applyInput(text, { row: r, col: c });
   }
 
+  /** Give the keyboard to the grid, e.g. after Enter or Escape in the rule bar (as in Qt). */
+  focusGrid() {
+    (this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement | null)?.focus();
+  }
+
   private cancelEdit() {
     const input = this.editor;
     if (!input) return;

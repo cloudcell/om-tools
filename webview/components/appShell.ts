@@ -1,4 +1,4 @@
-import { Store, AppState, SET_RULE_PLACEHOLDER } from "../state";
+import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText } from "../state";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, type MaterialIcon } from "../menuIcons";
 import { ModelBrowser } from "./modelBrowser";
@@ -353,24 +353,34 @@ export class AppShell {
     const nameBox = el("div", { class: "name-box" }, ["—"]);
     const input = el("input", { type: "text", placeholder: "Rule: Dim.Item = expr  •  Cell: =expr or value" }) as HTMLInputElement;
     this.ruleBarInput = input;
+    // The bar mirrors the active cell (ruleBarText) whenever the user is not typing in it.
+    let shown = "";
+    const sync = () => {
+      const v = this.store.state.activeView;
+      const cell = v && v.selectedRow >= 0 && v.selectedCol >= 0 && v.cells
+        ? v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol] : undefined;
+      nameBox.textContent = v && cell ? `${v.rowHeaders[v.selectedRow] || ""} / ${v.colHeaders[v.selectedCol] || ""}` : "—";
+      shown = ruleBarText(cell);
+      if (document.activeElement !== input) input.value = shown;
+    };
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         const text = input.value.trim();
-        if (!text) return;
-        this.store.applyInput(text);
-        input.value = "";
-      } else if (e.key === "Escape") { input.blur(); }
+        // As in Qt, Enter and Escape hand the keyboard back to the grid. Enter on unchanged text
+        // does nothing: re-applying "=expr" shown for a cube rule would turn it into a cell rule.
+        if (text && text !== shown.trim()) this.store.applyInput(text);
+        this.matrixGrid.focusGrid();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        input.value = shown;
+        this.matrixGrid.focusGrid();
+      }
     });
+    input.addEventListener("blur", sync);
     bar.appendChild(nameBox);
     bar.appendChild(input);
-    this.store.subscribe(() => {
-      const v = this.store.state.activeView;
-      if (v && v.selectedRow >= 0 && v.selectedCol >= 0 && v.cells) {
-        const cell = v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol];
-        nameBox.textContent = cell ? `${v.rowHeaders[v.selectedRow] || ""} / ${v.colHeaders[v.selectedCol] || ""}` : "—";
-      } else nameBox.textContent = "—";
-    });
+    this.store.subscribe(sync);
     return bar;
   }
 

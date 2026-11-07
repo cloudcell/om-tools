@@ -453,6 +453,17 @@ export class Store {
   }
 }
 
+/** What the rule bar shows for the active cell. Qt (lib_gui/app.py, _sync_rule_bar_from_current)
+ *  shows `=expr` for any cell a rule computes (cube rules too, via the rule_detail query) and for
+ *  error cells, otherwise the value. One deliberate difference: for an override Qt shows the rule
+ *  hidden under it (`=3` while the cell holds 5); here the bar shows the value the cell holds. */
+export function ruleBarText(cell: CellDTO | null | undefined): string {
+  if (!cell) return "";
+  const ex = cell.explain;
+  if (ex && (ex.source === "rule" || ex.source === "error") && ex.rule_body != null) return `=${ex.rule_body}`;
+  return cell.value == null ? "" : String(cell.value);
+}
+
 /** Hint shown wherever a value or rule is typed (Set Rule dialog). */
 export const SET_RULE_PLACEHOLDER = "value, =expr for this cell, or Dim.Item = expr";
 
