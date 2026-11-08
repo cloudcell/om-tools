@@ -235,7 +235,8 @@ export class AppShell {
       { icon: msym("new_label"), label: "Assign Item Labels from Selection…", fn: () => this.assignItemLabels(), ...NOT_IN_MVP },
       { icon: msym("delete"), label: "Delete Selected Dimension Items…", fn: () => this.deleteSelectedDimItems(), ...NOT_IN_MVP },
       { sep: true },
-      { icon: msym("format_clear"), label: "Clear Override", fn: () => this.store.clearSelectedCells(), disabled: !s.activeView },
+      // As in Qt: enabled only when the active cell holds an override; clears that cell only.
+      { icon: msym("format_clear"), label: "Clear Override", fn: () => this.store.clearActiveOverride(), disabled: this.store.activeCell()?.explain?.source !== "override" },
       { sep: true },
       { icon: msym("function"), label: "Set Rule…", fn: () => this.openSetRuleDialog(), disabled: !s.activeView },
       { label: "Focus Rule Bar", fn: () => this.ruleBarInput?.focus() },
@@ -293,7 +294,8 @@ export class AppShell {
   private windowMenuItems(): MenuItem[] {
     return [
       { icon: msym("open_in_new"), label: "New Window", fn: () => window.open(window.location.href), ...NOT_IN_MVP },
-      { icon: msym("close"), label: "Close Window", fn: () => window.close() },
+      // window.close() does nothing in a VS Code webview or a tab the user opened, so it is gated too.
+      { icon: msym("close"), label: "Close Window", fn: () => window.close(), ...NOT_IN_MVP },
     ];
   }
 

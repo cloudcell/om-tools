@@ -364,20 +364,40 @@ export class Store {
     return false;
   }
 
+  /** Delete key: remove stored values (override or plain input) from the selection, as Qt does
+   *  (clipboard.clear_selection). Cells that only a rule computes, or that are empty, hold
+   *  nothing to clear: they are skipped, so no empty undo steps and no false "unsaved" flag.
+   *  A cell's own rule (=expr) is not removed — neither does Qt; delete it in the Rules tab. */
   async clearSelectedCells() {
     const v = this.state.activeView;
     if (!v || !v.cells) return;
-    const cells = [...this.iterSelectedCells()];
-    if (!cells.length) return;
+    const cells = [...this.iterSelectedCells()]
+      .map(([r, c]) => v.cells!.cells[r * v.colKeys.length + c])
+      .filter((cell) => cell?.addr && !["rule", "empty"].includes(cell.explain?.source));
+    await this.clearHardvalues(cells);
+  }
+
+  /** Edit → Clear Override: the active cell only, and only when it holds an override (Qt _on_clear_override). */
+  async clearActiveOverride() {
+    const cell = this.activeCell();
+    if (cell?.explain?.source === "override") await this.clearHardvalues([cell]);
+  }
+
+  activeCell(): CellDTO | undefined {
+    const v = this.state.activeView;
+    if (!v || !v.cells || v.selectedRow < 0 || v.selectedCol < 0) return undefined;
+    return v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol];
+  }
+
+  private async clearHardvalues(cells: CellDTO[]) {
+    const v = this.state.activeView;
+    if (!v || !cells.length) return;
     try {
-      for (const [r, c] of cells) {
-        const cell = v.cells.cells[r * v.colKeys.length + c];
-        if (cell?.addr) await this.api.clearCellHardvalue(v.viewId, { kind: "ids", row_key: cell.row_key, col_key: cell.col_key });
-      }
+      for (const cell of cells) await this.api.clearCellHardvalue(v.viewId, { kind: "ids", row_key: cell.row_key, col_key: cell.col_key });
       this.markDirty();
       await this.api.recalc("dirty");
       await this.loadView(v.viewId);
-    } catch (e: any) { console.error("clearSelectedCells", e); }
+    } catch (e: any) { await alertDialog("Clear failed", e?.message || String(e)); }
   }
 
   async copySelectionToClipboard(): Promise<string> {

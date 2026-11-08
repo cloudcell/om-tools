@@ -2798,7 +2798,7 @@ export class MultilevelGrid {
       }
       if (hasRow || hasCol) addSep();
       addItem("Edit Cell", () => this.startEdit(this.selRow, this.selCol));
-      addItem("Clear Override", () => this.store.clearSelectedCells());
+      addItem("Clear Override", () => this.store.clearActiveOverride(), this.store.activeCell()?.explain?.source === "override");
       addItem("Set Rule…", async () => {
         const text = await inputDialog("Set Value or Rule", "", SET_RULE_PLACEHOLDER);
         if (text) this.store.applyInput(text);
