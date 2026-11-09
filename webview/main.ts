@@ -34,6 +34,8 @@ async function main() {
   transport.getConfig().then((cfg) => {
     store.state.showSystemElements = cfg.showSystemElements;
     store.state.endpoint = cfg.endpoint;
+    store.state.nativeFileDialogs = !!cfg.nativeFileDialogs;
+    store.state.defaultDir = cfg.defaultDir || "";
     store.notify();
   }).catch(() => {});
 

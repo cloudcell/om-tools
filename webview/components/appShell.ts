@@ -16,6 +16,12 @@ type DockName = keyof AppState["dockVisible"];
 
 interface MenuItem { label?: string; icon?: string; sep?: boolean; disabled?: boolean; fn?: () => void; submenu?: MenuItem[]; checked?: boolean; title?: string }
 
+/** `YYYYMMDD_HHMMSS`, local time — Qt's default save name is `New_Model_<this>.json`. */
+function timestamp(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
 /** Menu items for features outside the MVP preview: greyed out, not hidden. */
 const NOT_IN_MVP: Pick<MenuItem, "disabled" | "title"> = { disabled: true, title: NOT_IN_MVP_TITLE };
 
@@ -82,7 +88,7 @@ export class AppShell {
   private updateTitle() {
     const s = this.store.state;
     const dirty = s.dirty ? "*" : "";
-    const fname = s.filePath ? s.filePath.split("/").pop() : "New_Model.json";
+    const fname = s.filePath ? s.filePath.split(/[\\/]/).pop() : "New_Model.json";
     document.title = `OM Core: ${dirty}${fname}`;
   }
 
@@ -427,14 +433,36 @@ export class AppShell {
 
   private async openFile() {
     this.confirmDirty(async () => {
-      const path = await inputDialog("Open Workspace", "", "File path");
-      if (path) this.store.loadWorkspaceFile(path);
+      const path = await this.pickWorkspacePath("open");
+      if (path) await this.store.loadWorkspaceFile(path);
     });
   }
 
-  private async saveFile() {
-    const path = await inputDialog("Save Workspace", this.store.state.filePath || "", "File path");
-    if (path) this.store.saveWorkspace(path);
+  /** Qt `_on_save`: always asks for the path (prefilled), appends `.json` when missing. Returns true when saved. */
+  private async saveFile(): Promise<boolean> {
+    const path = await this.pickWorkspacePath("save");
+    return path ? this.store.saveWorkspace(path) : false;
+  }
+
+  /** A workspace file path from the user, or null when cancelled. The runtime reads and writes the file
+   *  itself, so only the path is needed. VS Code: the native dialog, shown by the extension host.
+   *  Browser: no API returns a file path, so a text field prefilled with an absolute path. */
+  private async pickWorkspacePath(mode: "open" | "save"): Promise<string | null> {
+    const s = this.store.state;
+    const defaultName = `New_Model_${timestamp()}.json`;
+    let path: string | null;
+    if (s.nativeFileDialogs) {
+      try { path = (await this.store.api.pickFile({ mode, current: s.filePath, defaultName })).path; }
+      catch (e: any) { await alertDialog(mode === "save" ? "Save failed" : "Load failed", e?.message || String(e)); return null; }
+    } else {
+      const dir = s.defaultDir.replace(/[\\/]+$/, "");
+      const sep = dir.includes("\\") ? "\\" : "/";
+      const prefill = s.filePath || (dir ? dir + sep + (mode === "save" ? defaultName : "") : mode === "save" ? defaultName : "");
+      path = await inputDialog(mode === "save" ? "Save Workspace" : "Open Workspace", prefill, "File path");
+    }
+    path = path?.trim() || null;
+    if (path && mode === "save" && !/\.json$/i.test(path)) path += ".json";
+    return path;
   }
 
   private async createDimension() {

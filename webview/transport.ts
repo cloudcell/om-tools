@@ -1,3 +1,5 @@
+import type { AppConfig } from "../shared/messages";
+
 /** Transport interface — the only webview/VSCode coupling point.
  *  In VSCode, the implementation posts messages to the extension host which
  *  proxies to the om-core socket. In a future browser build, swap in a
@@ -12,7 +14,7 @@ export interface Transport {
   request(method: string, params?: Record<string, any>): Promise<any>;
   subscribe(topic: string, cb: (envelope: any) => void): void;
   onStatus(cb: (status: string, message?: string) => void): void;
-  getConfig(): Promise<{ showSystemElements: boolean; endpoint: string }>;
+  getConfig(): Promise<AppConfig>;
 }
 
 declare function acquireVsCodeApi(): {
@@ -49,7 +51,7 @@ export class WebSocketTransport implements Transport {
   private statusCbs = new Set<(status: string, message?: string) => void>();
   private eventCbs = new Map<string, Set<(env: any) => void>>();
   private seq = 0;
-  private cfg: { showSystemElements: boolean; endpoint: string } | null = null;
+  private cfg: AppConfig | null = null;
   private sendQueue: string[] = [];
   private ready = false;
 
@@ -113,7 +115,7 @@ export class WebSocketTransport implements Transport {
     this.request("subscribe", { topic }).catch(() => {});
   }
   onStatus(cb: (status: string, message?: string) => void): void { this.statusCbs.add(cb); }
-  async getConfig(): Promise<{ showSystemElements: boolean; endpoint: string }> {
+  async getConfig(): Promise<AppConfig> {
     if (this.cfg) return this.cfg;
     return this.request("getConfig");
   }
@@ -174,7 +176,7 @@ export class VsCodeTransport implements Transport {
     this.statusCbs.add(cb);
   }
 
-  async getConfig(): Promise<{ showSystemElements: boolean; endpoint: string }> {
+  async getConfig(): Promise<AppConfig> {
     return this.request("getConfig");
   }
 }

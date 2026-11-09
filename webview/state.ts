@@ -43,6 +43,10 @@ export interface AppState {
   selectionStats: Record<string, any>;
   dirty: boolean;
   filePath: string | null;
+  /** From the host config: native Open/Save dialogs (VS Code) or a text field (browser). */
+  nativeFileDialogs: boolean;
+  /** From the host config: absolute folder for default file paths in the text field. */
+  defaultDir: string;
   canUndo: boolean;
   canRedo: boolean;
   undoDesc: string;
@@ -75,6 +79,8 @@ export class Store {
     selectionStats: {},
     dirty: false,
     filePath: null,
+    nativeFileDialogs: false,
+    defaultDir: "",
     canUndo: false,
     canRedo: false,
     undoDesc: "",
@@ -457,14 +463,59 @@ export class Store {
     try { await this.api.recalc(scope); if (this.state.activeView) await this.loadView(this.state.activeView.viewId); } catch (e: any) { await alertDialog("Recalc failed", e?.message || String(e)); }
   }
 
+  /** File → New. Like Qt (`_on_new`), the runtime creates its demo workspace (dims A, B, cube C, view C). */
   async newWorkspace() {
-    try { await this.api.createNewWorkspace(); this.state.filePath = null; this.markDirty(false); await this.refreshModel(); await this.refreshRules(); await this.refreshUndoState(); } catch (e: any) { await alertDialog("New workspace failed", e?.message || String(e)); }
+    try { await this.api.createNewWorkspace(); } catch (e: any) { await alertDialog("New workspace failed", e?.message || String(e)); return; }
+    await this.resetWorkspaceUi(null, false);
   }
-  async saveWorkspace(path?: string) {
-    try { await this.api.saveWorkspace(path); this.state.filePath = path || null; this.markDirty(false); } catch (e: any) { await alertDialog("Save failed", e?.message || String(e)); }
+  /** Returns true when saved. `filePath` becomes the path the runtime reports (absolute in VS Code and the bridge). */
+  async saveWorkspace(path: string): Promise<boolean> {
+    try {
+      const r: any = await this.api.saveWorkspace(path);
+      this.state.filePath = (r && typeof r.path === "string" && r.path) || path;
+      this.markDirty(false);
+      return true;
+    } catch (e: any) { await alertDialog("Save failed", e?.message || String(e)); return false; }
   }
+  /** File → Open. On failure the runtime keeps the current workspace (cmd_load fails before replacing it),
+   *  so the UI is left as it was. */
   async loadWorkspaceFile(path: string) {
-    try { await this.api.loadWorkspace(path); this.state.filePath = path; this.markDirty(false); await this.refreshModel(); await this.refreshRules(); await this.refreshUndoState(); } catch (e: any) { await alertDialog("Load failed", e?.message || String(e)); }
+    try { await this.api.loadWorkspace(path); } catch (e: any) { await alertDialog("Load failed", e?.message || String(e)); return; }
+    await this.resetWorkspaceUi(path, true);
+  }
+
+  /** After New / Open the runtime holds another workspace: tabs, the active view and cached dims and cubes
+   *  refer to the old one. Drop them, reload, then open a view as Qt does (`_reload_active_view`): the saved
+   *  default view, else the first one. On Open a workspace with cubes but no views gets one
+   *  (Qt `_ensure_default_view`), so the main area is not empty. */
+  private async resetWorkspaceUi(filePath: string | null, ensureView: boolean) {
+    this.dimCache.clear();
+    this.cubeCache.clear();
+    Object.assign(this.state, { openTabs: [], activeTab: null, activeView: null, selectionStats: {}, filePath, dirty: false });
+    this.notify();
+    try {
+      await this.refreshModel();
+      if (ensureView && await this.ensureDefaultView()) await this.refreshModel();
+      await this.refreshRules();
+      await this.refreshUndoState();
+      const views = this.visibleViews();
+      const saved = this.state.workspaceSummary?.saved_default_view_id;
+      const v = views.find((x) => x.id === saved) || views[0];
+      if (v) await this.openView(v.id, v.name);
+    } catch (e: any) { await alertDialog("Reload failed", e?.message || String(e)); }
+  }
+
+  /** Qt `_ensure_default_view`: no views but a cube → a view of the first cube, rows = first dim,
+   *  columns = second, the rest (and the `@` channel) on the page. Returns true when a view was created. */
+  private async ensureDefaultView(): Promise<boolean> {
+    if (this.visibleViews().length) return false;
+    const cube = this.visibleCubes()[0];
+    if (!cube) return false;
+    const detail = await this.api.cubeDetail(cube.id);
+    const dims: string[] = (detail?.dimension_ids || []).filter((d: string) => d !== "@");
+    if (!dims.length) return false;
+    await this.api.createView(`View of ${cube.name}`, cube.id, [dims[0]], dims[1] ? [dims[1]] : [], ["@", ...dims.slice(2)]);
+    return true;
   }
 
   toggleDock(name: keyof AppState["dockVisible"]) {

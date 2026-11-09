@@ -11,7 +11,11 @@ import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString } from
  *  WS message protocol is identical to the extension host <-> webview protocol
  *  (see shared/messages.ts), so the webview's WebSocketTransport works unchanged.
  *
- *  Run: node dist/bridge.js [--endpoint tcp://127.0.0.1:17391] [--port 17392]
+ *  Run: node dist/bridge.js [--endpoint tcp://127.0.0.1:17391] [--port 17392] [--dir <folder>]
+ *
+ *  A browser has no API that returns a file path, so the webview asks for workspace paths in a text
+ *  field (`nativeFileDialogs: false`). The runtime resolves relative paths against its own cwd (the
+ *  om-core clone), so the bridge makes them absolute against `--dir` (default: the bridge's cwd).
  */
 
 interface HostRequest { type: "request"; id: string; method: string; params?: Record<string, any> }
@@ -25,17 +29,26 @@ function defaultEndpoint(): TransportEndpoint {
 const port = process.argv.includes("--port") ? parseInt(process.argv[process.argv.indexOf("--port") + 1], 10) : 17392;
 const endpoint = defaultEndpoint();
 const distDir = __dirname; // dist/ contains webview.js, webview.css, index.html
+const defaultDir = path.resolve(process.argv.includes("--dir") ? process.argv[process.argv.indexOf("--dir") + 1] : process.cwd());
+const config = () => ({ showSystemElements: false, endpoint: endpointToString(endpoint), nativeFileDialogs: false, defaultDir });
+const FILE_COMMANDS = new Set(["save_workspace", "load_workspace"]);
+
+/** Relative `path` of save_workspace / load_workspace → absolute against defaultDir. */
+function resolveFileParams(commandId: string, params: Record<string, any>): Record<string, any> {
+  if (!FILE_COMMANDS.has(commandId) || typeof params.path !== "string" || !params.path || path.isAbsolute(params.path)) return params;
+  return { ...params, path: path.resolve(defaultDir, params.path) };
+}
 
 async function handle(req: HostRequest, client: EngineClient, sessionId: () => string | null, setSession: (s: string) => void, send: (msg: any) => void): Promise<any> {
   const p = req.params || {};
   switch (req.method) {
     case "ping": return { ok: await client.ping(), data: { pong: true } };
     case "openSession": { const sid = await client.openSession(p.client_type || "repl"); setSession(sid); return { ok: true, data: { session_id: sid } }; }
-    case "command": { const r = await client.send(p.command_id, p.params || {}); return { ok: r.ok, data: r.data, error: r.error }; }
+    case "command": { const r = await client.send(p.command_id, resolveFileParams(p.command_id, p.params || {})); return { ok: r.ok, data: r.data, error: r.error }; }
     case "query": { const data = await client.query(p.query_id, p.params || {}); return { ok: true, data }; }
     case "subscribe": { client.subscribe(p.topic, (env) => send({ type: "event", envelope: env })); return { ok: true, data: { topic: p.topic } }; }
     case "unsubscribe": { client.unsubscribe(p.topic); return { ok: true }; }
-    case "getConfig": return { ok: true, data: { showSystemElements: false, endpoint: endpointToString(endpoint) } };
+    case "getConfig": return { ok: true, data: config() };
     case "reconnect": return { ok: true, data: { session_id: sessionId() } };
     case "startRuntime": return { ok: true, data: { endpoint: endpointToString(endpoint) } };
     case "stopRuntime": return { ok: true };
@@ -64,7 +77,7 @@ wss.on("connection", async (ws: WebSocket) => {
     await client.connect();
     sessionId = await client.openSession("repl");
     send({ type: "status", status: "connected", message: `Connected · session ${sessionId.slice(0, 8)}` });
-    send({ type: "config", config: { showSystemElements: false, endpoint: endpointToString(endpoint) } });
+    send({ type: "config", config: config() });
   } catch (e: any) {
     send({ type: "status", status: "error", message: `Connection failed: ${e?.message || e}` });
   }

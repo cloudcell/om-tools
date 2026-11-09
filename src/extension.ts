@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString, topicMatches } from "./engineClient";
 import { EngineProcess } from "./engineProcess";
-import { HostRequest, HostToWebview, AppConfig } from "../shared/messages";
+import { HostRequest, HostToWebview, AppConfig, PickFileParams } from "../shared/messages";
 import * as os from "os";
 import * as fs from "fs";
+import * as path from "path";
 
 let panel: vscode.WebviewPanel | null = null;
 let client: EngineClient | null = null;
@@ -30,7 +31,33 @@ function getConfig(): AppConfig {
   return {
     showSystemElements: cfg.get<boolean>("showSystemElements", false),
     endpoint: endpointToString(defaultEndpoint()),
+    nativeFileDialogs: true,
+    defaultDir: defaultDirUri().fsPath,
   };
+}
+
+/** Where file dialogs start without a current file: the first workspace folder, else the home folder. */
+function defaultDirUri(): vscode.Uri {
+  return vscode.workspace.workspaceFolders?.[0]?.uri ?? vscode.Uri.file(os.homedir());
+}
+
+/** Native Open/Save dialog for a workspace file. The runtime reads and writes the file itself, so the
+ *  webview only needs the absolute path (`fsPath`); null when the user cancels. */
+async function pickFile(p: PickFileParams): Promise<string | null> {
+  const filters = { "OpenM JSON": ["json"], "All Files": ["*"] };
+  const current = p.current && path.isAbsolute(p.current) ? p.current : null;
+  if (p.mode === "save") {
+    const defaultUri = current
+      ? vscode.Uri.file(current)
+      : vscode.Uri.joinPath(defaultDirUri(), p.defaultName || "New_Model.json");
+    const uri = await vscode.window.showSaveDialog({ title: "Save Workspace", saveLabel: "Save", defaultUri, filters });
+    return uri ? uri.fsPath : null;
+  }
+  const uris = await vscode.window.showOpenDialog({
+    title: "Open Workspace", openLabel: "Open", canSelectMany: false, canSelectFiles: true, canSelectFolders: false,
+    defaultUri: current ? vscode.Uri.file(path.dirname(current)) : defaultDirUri(), filters,
+  });
+  return uris && uris.length ? uris[0].fsPath : null;
 }
 
 async function ensureRuntime(): Promise<TransportEndpoint> {
@@ -154,6 +181,10 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
       case "reconnect": {
         await connect();
         return { type: "response", id: req.id, ok: true, data: { session_id: currentSessionId } };
+      }
+      case "pickFile": {
+        const p = await pickFile((req.params || {}) as PickFileParams);
+        return { type: "response", id: req.id, ok: true, data: { path: p } };
       }
       default:
         return { type: "response", id: req.id, ok: false, error: `unknown method: ${req.method}` };

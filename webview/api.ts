@@ -1,4 +1,5 @@
 import { Transport } from "./transport";
+import type { PickFileParams } from "../shared/messages";
 
 /** Typed OM Core API client. Wraps the query/command vocabulary exposed by the
  *  om-core runtime (see lib_command/core/query_service.py + bootstrap.py).
@@ -42,6 +43,8 @@ export class OmApi {
   reconnect() { return this.t.request("reconnect"); }
   startRuntime() { return this.t.request("startRuntime"); }
   stopRuntime() { return this.t.request("stopRuntime"); }
+  /** Native Open/Save dialog in the host (VS Code only, see AppConfig.nativeFileDialogs). */
+  pickFile(params: PickFileParams): Promise<{ path: string | null }> { return this.t.request("pickFile", params as any); }
 
   // ---- queries ----
   workspaceSummary(): Promise<WorkspaceSummary> { return this.t.request("query", { query_id: "workspace_summary" }); }
@@ -71,7 +74,11 @@ export class OmApi {
   createDimension(name: string, dimType = "set") { return this.t.request("command", { command_id: "create_dimension", params: { name, dim_type: dimType } }); }
   createDimensionItem(dimId: string, name: string) { return this.t.request("command", { command_id: "create_dimension_item", params: { dim_id: dimId, name } }); }
   createCube(name: string, dimensionIds: string[]) { return this.t.request("command", { command_id: "create_cube", params: { name, dimension_ids: dimensionIds } }); }
-  createView(name: string, cubeId: string, rowDims: string[], colDims: string[]) { return this.t.request("command", { command_id: "create_view", params: { name, cube_id: cubeId, row_dims: rowDims, col_dims: colDims } }); }
+  createView(name: string, cubeId: string, rowDims: string[], colDims: string[], pageDims?: string[]) {
+    const params: Record<string, any> = { name, cube_id: cubeId, row_dims: rowDims, col_dims: colDims };
+    if (pageDims) params.page_dim_ids = pageDims;
+    return this.t.request("command", { command_id: "create_view", params });
+  }
   setCellHardvalueByAddr(cubeId: string, addr: string[], value: any) { return this.t.request("command", { command_id: "set_cell_hardvalue_by_addr", params: { cube_id: cubeId, addr, value } }); }
   setCellHardvaluesBatchByAddr(cubeId: string, entries: { addr: string[]; value: any }[]) { return this.t.request("command", { command_id: "set_cell_hardvalues_batch_by_addr", params: { cube_id: cubeId, entries } }); }
   setRule(cubeId: string, targets: any[], expression: string, isAnchored = false) { return this.t.request("command", { command_id: "set_rule", params: { cube_id: cubeId, targets, expression, is_anchored: isAnchored } }); }
