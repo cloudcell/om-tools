@@ -675,14 +675,19 @@ export class AppShell {
   private async editViewAxes() {
     const v = this.store.state.activeView;
     if (!v) { await alertDialog("No Active View", "Open a view first."); return; }
-    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
-    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available."); return; }
+    // Qt `_on_edit_view_axes`: only the view's cube dimensions, current row / column preselected
+    let cubeDimIds: string[] = [];
+    try { cubeDimIds = ((await this.store.api.cubeDetail(v.cubeId))?.dimension_ids || []).filter((d: string) => d !== "@"); }
+    catch (e: any) { await alertDialog("Edit View Axes", e?.message || String(e)); return; }
+    const dims = cubeDimIds.map((id) => this.store.state.dimensions.find((d) => d.id === id)).filter(Boolean) as { id: string; name: string }[];
+    if (dims.length < 2) { await alertDialog("Edit View Axes", "Cube needs at least 2 dimensions."); return; }
     const dimNames = dims.map((d) => d.name);
-    const rowName = await pickDialog("Row Dimension", dimNames);
+    const at = (id: string | undefined) => Math.max(0, dims.findIndex((d) => d.id === id));
+    const rowName = await pickDialog("Row Dimension", dimNames, at(v.rowDimIds[0]));
     if (!rowName) return;
     const rowDim = dims.find((d) => d.name === rowName.trim());
     if (!rowDim) return;
-    const colName = await pickDialog("Column Dimension", dimNames);
+    const colName = await pickDialog("Column Dimension", dimNames, at(v.colDimIds[0]));
     if (!colName) return;
     const colDim = dims.find((d) => d.name === colName.trim());
     if (!colDim) return;
