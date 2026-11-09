@@ -170,7 +170,7 @@ export class RulePanel {
   }
 
   // ---- Calculation Flow tab ----
-  // Mirrors lib_gui/calculation_flow_panel.py (list mode). The engine
+  // Mirrors lib_gui/calculation_flow_panel.py (List and Graph modes). The engine
   // (trace_calculation_flow) returns a breadth-first list of nodes: each has
   // depth, source, expression, precedents/precedent_targets and
   // dependents/dependent_targets.
@@ -178,6 +178,9 @@ export class RulePanel {
   /** Last trace. Store notifies on every change (selection stats, status, …);
    *  re-query only when the cell, depth, rules or cell data change, or on Refresh. */
   private calcFlowCache: CalcFlowCache | null = null;
+  private calcFlowMode: "list" | "graph" = "list";
+  /** Graph canvas of the latest render: a pan that started before a re-render keeps moving the new one. */
+  private cfCanvas: HTMLElement | null = null;
 
   private renderCalcFlow(content: HTMLElement) {
     const panel = content.parentElement as HTMLElement;
@@ -193,7 +196,15 @@ export class RulePanel {
       this.refresh(panel);
     });
     controls.appendChild(depthInput);
-    const refreshBtn = el("button", { class: "tb-btn" }, ["Refresh"]);
+    const modeSelect = el("select", { title: "Show the trace as a list or as a graph" }) as HTMLSelectElement;
+    for (const [val, label] of [["list", "List"], ["graph", "Graph"]]) {
+      const opt = el("option", { value: val }, [label]) as HTMLOptionElement;
+      opt.selected = val === this.calcFlowMode;
+      modeSelect.appendChild(opt);
+    }
+    modeSelect.addEventListener("change", () => { this.calcFlowMode = modeSelect.value === "graph" ? "graph" : "list"; this.refresh(panel); });
+    controls.appendChild(modeSelect);
+    const refreshBtn = el("button", { class: "tb-btn", title: "Trace the selected cell again" }, ["Refresh"]);
     refreshBtn.addEventListener("click", () => { this.calcFlowCache = null; this.refresh(panel); });
     controls.appendChild(refreshBtn);
     content.appendChild(controls);
@@ -205,36 +216,36 @@ export class RulePanel {
     const cell = v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol];
     if (!cell?.addr) { content.appendChild(el("div", { class: "muted", style: { padding: "12px" } }, ["No cell address available."])); return; }
 
-    const list = el("div", { class: "calc-flow-list" });
-    content.appendChild(list);
+    const graph = this.calcFlowMode === "graph";
+    const body = el("div", { class: graph ? "cf-graph" : "calc-flow-list" });
+    content.appendChild(body);
 
     const key = `${v.cubeId}|${cell.addr.join("|")}|${this.calcFlowDepth}`;
     const rules = this.store.state.rules;
     const cached = this.calcFlowCache;
     if (cached && cached.key === key && cached.rules === rules && cached.cells === v.cells) {
-      if (cached.error !== undefined) list.appendChild(el("div", { class: "muted" }, [`Trace unavailable: ${cached.error}`]));
-      else if (cached.flow) this.renderFlowList(list, header, cached.flow);
-      else list.appendChild(el("div", { class: "grid-loading" }, ["Loading…"]));
+      if (cached.error !== undefined) body.appendChild(el("div", { class: "muted" }, [`Trace unavailable: ${cached.error}`]));
+      else if (!cached.flow) body.appendChild(el("div", { class: "grid-loading" }, ["Loading…"]));
+      else if (!cached.flow.length) body.appendChild(el("div", { class: "muted" }, ["No flow information available."]));
+      else {
+        const root = cached.flow.find((n) => (n.depth || 0) === 0) || cached.flow[0];
+        if (root.dependents_truncated) header.appendChild(el("span", { class: "cf-warning" }, [` — WARNING: TRUNCATED TO ${root.dependents_limit ?? "?"}`]));
+        if (graph) this.renderFlowGraph(body, cached);
+        else this.renderFlowList(body, cached.flow);
+      }
       return;
     }
 
     const entry: CalcFlowCache = { key, rules, cells: v.cells };
     this.calcFlowCache = entry;
-    list.appendChild(el("div", { class: "grid-loading" }, ["Loading…"]));
+    body.appendChild(el("div", { class: "grid-loading" }, ["Loading…"]));
     this.store.api.diagnosticsCalculationFlow(v.cubeId, cell.addr, this.calcFlowDepth)
       .then((flow) => { entry.flow = Array.isArray(flow) ? flow : []; })
       .catch((e) => { entry.error = String(e?.message || e); })
       .then(() => { if (this.calcFlowCache === entry && this.activeTab === "calcflow") this.refresh(panel); });
   }
 
-  private renderFlowList(list: HTMLElement, header: HTMLElement, flow: FlowNode[]) {
-    if (!flow.length) { list.appendChild(el("div", { class: "muted" }, ["No flow information available."])); return; }
-
-    const root = flow.find((n) => (n.depth || 0) === 0) || flow[0];
-    if (root?.dependents_truncated) {
-      header.appendChild(el("span", { class: "cf-warning" }, [` — WARNING: TRUNCATED TO ${root.dependents_limit ?? "?"}`]));
-    }
-
+  private renderFlowList(list: HTMLElement, flow: FlowNode[]) {
     const cellIndex = this.currentViewCellIndex();
     for (const node of flow) {
       const pad = 8 + 16 * (node.depth || 0);
@@ -254,6 +265,187 @@ export class RulePanel {
       section("Upstream (precedents)", node.precedents, node.precedent_targets, "upstream", "↳");
       section("Downstream (dependents)", node.dependents, node.dependent_targets, "downstream", "↰");
     }
+  }
+
+  /** Graph mode, as `_render_graph` in lib_gui/calculation_flow_panel.py: cards in columns
+   *  (precedents to the left of the traced cell, dependents to the right), curved arrows,
+   *  hover highlights a node with its neighbours, click selects the cell,
+   *  drag pans, wheel scrolls, Ctrl+wheel zooms. Pan/zoom survive re-renders (kept in the cache entry). */
+  private renderFlowGraph(box: HTMLElement, entry: CalcFlowCache) {
+    const { nodes, edges } = layoutFlowGraph(entry.flow || []);
+    if (!nodes.length) { box.appendChild(el("div", { class: "muted" }, ["No flow information available."])); return; }
+    const v = this.store.state.activeView;
+    const cellIndex = this.currentViewCellIndex();
+
+    const canvas = el("div", { class: "cf-graph-canvas" });
+    const svg = document.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("class", "cf-graph-edges");
+    canvas.appendChild(svg);
+    box.appendChild(canvas);
+
+    const adjacent = new Map<string, Set<string>>();
+    for (const e of edges) {
+      if (!adjacent.has(e.from)) adjacent.set(e.from, new Set());
+      if (!adjacent.has(e.to)) adjacent.set(e.to, new Set());
+      adjacent.get(e.from)!.add(e.to);
+      adjacent.get(e.to)!.add(e.from);
+    }
+    const nodeEls = new Map<string, HTMLElement>();
+    const edgeEls: { from: string; to: string; g: SVGGElement }[] = [];
+    const highlight = (key: string | null) => {
+      const near = (key && adjacent.get(key)) || new Set<string>();
+      box.classList.toggle("hovering", key !== null);
+      nodeEls.forEach((d, k) => { d.classList.toggle("primary", k === key); d.classList.toggle("secondary", near.has(k)); });
+      for (const { from, to, g } of edgeEls) {
+        const primary = key !== null && (from === key || to === key);
+        g.classList.toggle("primary", primary);
+        g.classList.toggle("secondary", !primary && (near.has(from) || near.has(to)));
+      }
+    };
+
+    // 1. Cards. The box is in the document, so their heights can be measured right away.
+    for (const n of nodes) {
+      const r = n.row;
+      const navigable = !!v && r.cube_id === v.cubeId && cellIndex.has(r.addr.join("|"));
+      const card = el("div", {
+        class: "cf-gnode" + (n.root ? " root" : "") + (navigable ? " link" : ""),
+        tabindex: "0",
+        style: { width: `${GRAPH_NODE_W}px` },
+        title: `${r.addr_label}  [${r.source}]\n${navigable ? "Click or press Enter to select this cell" : "Not on the current page of this view"}`,
+      }, [
+        el("div", { class: "cf-gnode-title" }, [r.addr_label || "?"]),
+        el("div", { class: "cf-gnode-source" }, [`[${r.source}]`]),
+      ]);
+      if (r.expression) card.appendChild(el("div", { class: "cf-gnode-expr" }, [`= ${r.expression}`]));
+      if (navigable) {
+        card.addEventListener("click", () => this.navigateToCell(r.cube_id, r.addr));
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.navigateToCell(r.cube_id, r.addr); }
+        });
+      }
+      card.addEventListener("mouseenter", () => highlight(n.key));
+      card.addEventListener("mouseleave", () => highlight(null));
+      card.addEventListener("focus", () => highlight(n.key));
+      card.addEventListener("blur", () => highlight(null));
+      canvas.appendChild(card);
+      nodeEls.set(n.key, card);
+    }
+
+    // 2. Positions: columns left to right, cards stacked top-down (nodes come sorted by column, label).
+    const M = 16, GAP_X = 56, GAP_Y = 14;
+    const rects = new Map<string, { x: number; y: number; w: number; h: number }>();
+    const colBottom = new Map<number, number>();
+    let width = 0, height = 0;
+    for (const n of nodes) {
+      const card = nodeEls.get(n.key)!;
+      const h = card.offsetHeight || 56;
+      const x = M + n.col * (GRAPH_NODE_W + GAP_X);
+      const y = colBottom.get(n.col) ?? M;
+      card.style.left = `${x}px`;
+      card.style.top = `${y}px`;
+      rects.set(n.key, { x, y, w: GRAPH_NODE_W, h });
+      colBottom.set(n.col, y + h + GAP_Y);
+      width = Math.max(width, x + GRAPH_NODE_W + M);
+      height = Math.max(height, y + h + M);
+    }
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    svg.setAttribute("width", String(width));
+    svg.setAttribute("height", String(height));
+
+    // 3. Arrows: right side of the source → left side of the target. A target in the same or an
+    //    earlier column (cycles, diamonds) is entered from its right side.
+    for (const e of edges) {
+      const a = rects.get(e.from)!, b = rects.get(e.to)!;
+      const sy = a.y + a.h / 2, ey = b.y + b.h / 2;
+      let sx: number, ex: number, c1x: number, c2x: number;
+      if (a.x + a.w < b.x) {
+        sx = a.x + a.w; ex = b.x;
+        const off = Math.max(40, (ex - sx) * 0.4);
+        c1x = sx + off; c2x = ex - off;
+      } else if (a.x === b.x) {
+        sx = a.x + a.w; ex = b.x + b.w; c1x = sx + 40; c2x = ex + 40;
+      } else {
+        sx = a.x; ex = b.x + b.w;
+        const off = Math.max(40, (sx - ex) * 0.4);
+        c1x = sx - off; c2x = ex + off;
+      }
+      const g = document.createElementNS(SVG_NS, "g");
+      g.setAttribute("class", `cf-edge ${e.dir}`);
+      const path = document.createElementNS(SVG_NS, "path");
+      path.setAttribute("d", `M${sx},${sy} C${c1x},${sy} ${c2x},${ey} ${ex},${ey}`);
+      const ang = Math.atan2(0, ex - c2x);   // the last control point is level with the end
+      const s = 8;
+      const head = document.createElementNS(SVG_NS, "polygon");
+      head.setAttribute("points", [
+        [ex, ey],
+        [ex - s * Math.cos(ang - Math.PI / 6), ey - s * Math.sin(ang - Math.PI / 6)],
+        [ex - s * Math.cos(ang + Math.PI / 6), ey - s * Math.sin(ang + Math.PI / 6)],
+      ].map((p) => p.join(",")).join(" "));
+      g.appendChild(path);
+      g.appendChild(head);
+      svg.appendChild(g);
+      edgeEls.push({ from: e.from, to: e.to, g });
+    }
+
+    // 4. Pan / zoom. Start with the traced cell in view; Fit and 100% buttons in the corner.
+    const root = rects.get(nodes.find((n) => n.root)!.key)!;
+    const initial = (): GraphView => {
+      const bw = box.clientWidth, bh = box.clientHeight;
+      const clampPos = (want: number, size: number, avail: number) => size <= avail ? 0 : Math.min(0, Math.max(avail - size, want));
+      return { x: clampPos(bw / 2 - (root.x + root.w / 2), width, bw), y: clampPos(bh / 2 - (root.y + root.h / 2), height, bh), s: 1 };
+    };
+    const view = entry.view ?? (entry.view = initial());
+    this.cfCanvas = canvas;
+    const apply = () => { if (this.calcFlowCache === entry && this.cfCanvas) this.cfCanvas.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.s})`; };
+    apply();
+
+    const tools = el("div", { class: "cf-graph-tools" });
+    const fitBtn = el("button", { class: "tb-btn", title: "Fit the whole graph into the panel" }, ["Fit"]);
+    fitBtn.addEventListener("click", () => {
+      const bw = box.clientWidth, bh = box.clientHeight;
+      view.s = Math.max(GRAPH_MIN_ZOOM, Math.min(1, (bw - 8) / width, (bh - 8) / height));
+      view.x = Math.max(0, (bw - width * view.s) / 2);
+      view.y = Math.max(0, (bh - height * view.s) / 2);
+      apply();
+    });
+    const resetBtn = el("button", { class: "tb-btn", title: "Actual size, centred on the selected cell" }, ["100%"]);
+    resetBtn.addEventListener("click", () => { Object.assign(view, initial()); apply(); });
+    tools.appendChild(fitBtn);
+    tools.appendChild(resetBtn);
+    box.appendChild(tools);
+
+    box.addEventListener("mousedown", (e) => {
+      if (e.button !== 0 || (e.target as HTMLElement).closest(".cf-gnode, .cf-graph-tools")) return;
+      e.preventDefault();
+      const sx = e.clientX, sy = e.clientY, ox = view.x, oy = view.y;
+      box.classList.add("panning");
+      const move = (ev: MouseEvent) => { view.x = ox + ev.clientX - sx; view.y = oy + ev.clientY - sy; apply(); };
+      const up = () => {
+        window.removeEventListener("mousemove", move);
+        window.removeEventListener("mouseup", up);
+        document.querySelector(".cf-graph")?.classList.remove("panning");
+      };
+      window.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", up);
+    });
+    box.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      if (e.ctrlKey) {
+        const r = box.getBoundingClientRect();
+        const px = e.clientX - r.left, py = e.clientY - r.top;
+        const s = Math.min(GRAPH_MAX_ZOOM, Math.max(GRAPH_MIN_ZOOM, view.s * (e.deltaY < 0 ? 1.18 : 1 / 1.18)));
+        view.x = px - (px - view.x) * (s / view.s);
+        view.y = py - (py - view.y) * (s / view.s);
+        view.s = s;
+      } else if (e.shiftKey) {
+        view.x -= e.deltaY || e.deltaX;
+      } else {
+        view.x -= e.deltaX;
+        view.y -= e.deltaY;
+      }
+      apply();
+    }, { passive: false });
   }
 
   /** One list line. Clickable (selects the cell) when the address is on the current grid page. */
@@ -364,4 +556,86 @@ interface FlowNode {
   dependents?: string[]; dependent_targets?: FlowTarget[];
   dependents_truncated?: boolean; dependents_limit?: number | null;
 }
-interface CalcFlowCache { key: string; rules: unknown; cells: unknown; flow?: FlowNode[]; error?: string }
+interface GraphView { x: number; y: number; s: number }
+interface CalcFlowCache { key: string; rules: unknown; cells: unknown; flow?: FlowNode[]; error?: string; view?: GraphView }
+
+// ---- Calculation Flow graph layout ----
+const SVG_NS = "http://www.w3.org/2000/svg";
+const GRAPH_NODE_W = 260;
+const GRAPH_MIN_ZOOM = 0.25;
+const GRAPH_MAX_ZOOM = 3;
+
+interface GraphNode { key: string; row: FlowNode; col: number; root: boolean }
+/** `from` feeds `to`. `up` comes from precedent_targets, `down` from dependent_targets. */
+interface GraphEdge { from: string; to: string; dir: "up" | "down" }
+
+const flowKey = (cubeId: string, addr: readonly string[]) => `${cubeId}|${addr.join("|")}`;
+
+/** Columns as in Qt `_render_graph`: the traced cell in column 0, what it is computed from to the
+ *  left, what depends on it to the right. Unlike Qt, an edge that appears both as a precedent of B
+ *  and as a dependent of A is drawn once. Targets missing from the trace (unresolved references)
+ *  are not drawn; Qt fetches them with extra queries, but the engine already returns every
+ *  resolved target as a node. */
+function layoutFlowGraph(flow: FlowNode[]): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  const rows = new Map<string, FlowNode>();
+  for (const r of flow) {
+    if (!r.cube_id || !r.addr?.length) continue;
+    const k = flowKey(r.cube_id, r.addr);
+    if (!rows.has(k)) rows.set(k, r);
+  }
+  if (!rows.size) return { nodes: [], edges: [] };
+  const rootRow = flow.find((r) => (r.depth || 0) === 0 && r.cube_id && r.addr?.length) || rows.values().next().value!;
+  const rootKey = flowKey(rootRow.cube_id, rootRow.addr);
+
+  const edges: GraphEdge[] = [];
+  const seen = new Set<string>();
+  const add = (from: string, to: string, dir: GraphEdge["dir"]) => {
+    if (from === to || !rows.has(from) || !rows.has(to) || seen.has(`${from}>${to}`)) return;
+    seen.add(`${from}>${to}`);
+    edges.push({ from, to, dir });
+  };
+  for (const [k, r] of rows) {
+    for (const t of r.precedent_targets || []) if (t.cube_id && t.addr) add(flowKey(t.cube_id, t.addr), k, "up");
+    for (const t of r.dependent_targets || []) if (t.cube_id && t.addr) add(k, flowKey(t.cube_id, t.addr), "down");
+  }
+
+  // Layers: BFS from the root (from feeds to ⇒ layer(to) = layer(from) + 1) …
+  const layer = new Map<string, number>([[rootKey, 0]]);
+  const links = new Map<string, { k: string; d: number }[]>();
+  for (const e of edges) {
+    if (!links.has(e.from)) links.set(e.from, []);
+    if (!links.has(e.to)) links.set(e.to, []);
+    links.get(e.from)!.push({ k: e.to, d: 1 });
+    links.get(e.to)!.push({ k: e.from, d: -1 });
+  }
+  const queue = [rootKey];
+  while (queue.length) {
+    const k = queue.shift()!;
+    for (const { k: nk, d } of links.get(k) || []) {
+      if (layer.has(nk)) continue;
+      layer.set(nk, layer.get(k)! + d);
+      queue.push(nk);
+    }
+  }
+  for (const [k, r] of rows) if (!layer.has(k)) layer.set(k, -(r.depth || 0));
+  // … then push nodes apart until every edge points right: on the precedent side move the source
+  // left, on the dependent side move the target right; the root stays put. Cycles stop at the pass limit.
+  for (let pass = 0; pass < rows.size; pass++) {
+    let moved = false;
+    for (const e of edges) {
+      const la = layer.get(e.from)!, lb = layer.get(e.to)!;
+      if (la < lb) continue;
+      const canFrom = e.from !== rootKey, canTo = e.to !== rootKey;
+      if (canFrom && (lb <= 0 || !canTo)) layer.set(e.from, lb - 1);
+      else if (canTo) layer.set(e.to, la + 1);
+      else continue;
+      moved = true;
+    }
+    if (!moved) break;
+  }
+
+  const cols = [...new Set(layer.values())].sort((a, b) => a - b);
+  const nodes: GraphNode[] = [...rows].map(([k, row]) => ({ key: k, row, col: cols.indexOf(layer.get(k)!), root: k === rootKey }));
+  nodes.sort((a, b) => a.col - b.col || (a.row.addr_label || "").localeCompare(b.row.addr_label || ""));
+  return { nodes, edges };
+}

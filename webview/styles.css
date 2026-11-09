@@ -562,7 +562,7 @@ body {
 /* Colours as in lib_gui/calculation_flow_panel.py */
 .calc-flow-entry { padding: 1px 8px; white-space: nowrap; }
 .calc-flow-entry.link { cursor: pointer; }
-.calc-flow-entry.link:hover { background: #f0f4fa; text-decoration: underline; }
+.calc-flow-entry.link:hover { background: #e8eaf0; text-decoration: underline; }
 .calc-flow-entry.cf-root { font-weight: 600; }
 .calc-flow-entry.cf-expr { color: #4d5b73; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
 .calc-flow-entry.cf-section { font-style: italic; }
@@ -570,6 +570,40 @@ body {
 .calc-flow-entry.cf-downstream { color: #6d4cc2; }
 .calc-flow-header { padding: 4px 8px; font-weight: 600; font-size: 11px; color: #666; }
 .calc-flow-header .cf-warning { color: #d32f2f; }
+/* Graph mode: cards and arrows as in Qt `_render_graph` */
+.cf-graph { position: relative; flex: 1; min-height: 120px; overflow: hidden; background: #fafbfd; border-top: 1px solid var(--border); cursor: grab; user-select: none; }
+.cf-graph.panning { cursor: grabbing; }
+.cf-graph-canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.cf-graph-edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.cf-graph-tools { position: absolute; right: 6px; top: 6px; display: flex; gap: 4px; z-index: 2; }
+.cf-graph-tools .tb-btn { font-size: 11px; padding: 1px 8px; background: #fff; border: 1px solid var(--border-strong); border-radius: 3px; cursor: pointer; }
+.cf-graph-tools .tb-btn:hover { background: #e8eaf0; }
+.cf-gnode {
+  position: absolute; box-sizing: border-box; padding: 6px 8px;
+  border: 1px solid #7a8599; border-radius: 8px; background: #f5f7fb;
+  font-size: 11px; color: #1d2533; cursor: default;
+}
+.cf-gnode.link { cursor: pointer; }
+.cf-gnode.link:hover:not(.root) { background: #e8eaf0; }
+.cf-gnode.root { background: #fff7da; }
+.cf-gnode:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cf-gnode.primary { box-shadow: 0 0 0 1.5px #7a8599; }
+.cf-graph.hovering .cf-gnode:not(.primary):not(.secondary) { opacity: 0.55; background: #e9ecf3; }
+.cf-gnode-title { font-weight: 600; overflow-wrap: anywhere; }
+.cf-gnode-source { color: var(--text-muted); }
+.cf-gnode-expr { margin-top: 4px; color: #4d5b73; font-family: ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+.cf-edge path { fill: none; stroke-width: 2; stroke-linecap: round; opacity: 0.75; }
+.cf-edge.up path { stroke: #2166b5; }
+.cf-edge.up polygon { fill: #2166b5; }
+.cf-edge.down path { stroke: #6d4cc2; }
+.cf-edge.down polygon { fill: #6d4cc2; }
+.cf-edge.secondary path { stroke-width: 2.5; opacity: 0.9; }
+.cf-edge.primary path { stroke-width: 3.4; opacity: 1; }
+.cf-edge.up.primary path { stroke: #00b8d4; }
+.cf-edge.up.primary polygon { fill: #00b8d4; }
+.cf-edge.down.primary path { stroke: #d04aff; }
+.cf-edge.down.primary polygon { fill: #d04aff; }
+.cf-graph.hovering .cf-edge:not(.primary):not(.secondary) { opacity: 0.3; }
 
 /* ---- Circular refs ---- */
 .circ-refs-summary { padding: 6px 10px; font-size: 12px; background: #fff8e0; border-bottom: 1px solid #e0c060; }
