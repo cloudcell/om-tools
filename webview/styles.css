@@ -135,7 +135,7 @@ body {
   width: var(--left-dock-width);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
+  max-width: 50%;          /* a saved width must not squeeze the grid in a smaller window (T-045) */
   background: var(--dock-bg);
   min-width: 160px;
 }
@@ -159,6 +159,48 @@ body {
 /* ---- Dock panel ---- */
 /* View-menu toggles set the hidden attribute; the flex display rules would otherwise override it. */
 .left-docks[hidden], .right-docks[hidden], .dock[hidden] { display: none; }
+
+/* ---- Splitters (T-045): left column | grid, grid / bottom panel ----
+   A 5 px grab zone drawn as a 1 px line; negative margins lay it over the neighbours' edges. */
+.splitter { flex: 0 0 auto; position: relative; z-index: 20; outline: none; touch-action: none; }
+.splitter[hidden] { display: none; }
+.splitter-x {
+  width: 5px; margin: 0 -2px; cursor: col-resize;
+  background: linear-gradient(to right, transparent 2px, var(--border) 2px, var(--border) 3px, transparent 3px);
+}
+.splitter-y {
+  height: 5px; margin: -2px 0; cursor: row-resize;
+  background: linear-gradient(to bottom, transparent 2px, var(--border) 2px, var(--border) 3px, transparent 3px);
+}
+.splitter-x:hover, .splitter-x.dragging, .splitter-x:focus-visible {
+  background: linear-gradient(to right, transparent 1px, var(--accent) 1px, var(--accent) 4px, transparent 4px);
+}
+.splitter-y:hover, .splitter-y.dragging, .splitter-y:focus-visible {
+  background: linear-gradient(to bottom, transparent 1px, var(--accent) 1px, var(--accent) 4px, transparent 4px);
+}
+/* Collapsed left column: an 8 px strip with a three-dot grip */
+.left-docks.collapsed { display: none; }
+.splitter-x.collapsed {
+  width: 8px; margin: 0;
+  background: var(--header-bg);
+  border-right: 1px solid var(--border);
+}
+.splitter-x.collapsed:hover, .splitter-x.collapsed.dragging { background: #e8eaf0; }
+.splitter-x.collapsed:focus-visible { background: var(--header-bg); outline: 2px solid var(--accent); outline-offset: -2px; }
+.splitter-x.collapsed::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 15px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #8a8a8a 1.2px, transparent 1.5px) 0 0 / 3px 5px repeat-y;
+}
+/* Collapsed bottom panel: only its tab row, no active tab; the empty part of the row drags like the splitter */
+.rule-panel.collapsed { height: auto; max-height: none; }
+.rule-panel.collapsed .lower-content { display: none; }
+.rule-panel.collapsed .lower-tabs { border-bottom: none; cursor: row-resize; }
+.rule-panel.collapsed .lower-tab.active { background: transparent; border-color: transparent; font-weight: normal; color: var(--text-muted); }
+.rule-panel.collapsed .lower-tab.active:hover { background: #e8eaf0; }
+/* While dragging: one cursor everywhere, no text selection */
+body.splitter-dragging-x, body.splitter-dragging-x * { cursor: col-resize !important; user-select: none !important; }
+body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !important; user-select: none !important; }
 .dock {
   display: flex;
   flex-direction: column;
@@ -713,7 +755,7 @@ table.matrix td.cell.rule-marker::before { content: ""; }
   height: var(--rule-panel-height);
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--border);
+  max-height: calc(100% - 120px);   /* the grid keeps 120 px (GRID_MIN_HEIGHT in appShell.ts) */
   background: var(--panel-bg);
   flex-shrink: 0;
 }

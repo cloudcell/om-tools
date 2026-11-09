@@ -2,7 +2,7 @@
  *  Kept transport-agnostic so the same webview bundle can run in a browser
  *  later (the browser transport would be a WebSocket instead of postMessage). */
 
-export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "setTitle";
+export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "setTitle" | "saveUiState";
 
 export interface HostRequest {
   type: "request";
@@ -56,3 +56,21 @@ export interface PickFileParams {
   /** File name Save suggests when there is no current file. */
   defaultName?: string;
 }
+
+/** Panel sizes the webview remembers (T-045). Kept by the host in `globalState` (VS Code) or in
+ *  `localStorage` (browser). Every field is optional: a missing or invalid one falls back to the default. */
+export interface UiLayout {
+  leftDockWidth?: number;
+  leftCollapsed?: boolean;
+  rulePanelHeight?: number;
+  rulePanelCollapsed?: boolean;
+}
+
+/** Everything the webview persists. `saveUiState` params: `{ state: UiState }`. */
+export interface UiState {
+  layout?: UiLayout;
+}
+
+/** Name of the `<meta>` tag through which the VS Code host hands the saved UiState to a new webview
+ *  (content: `encodeURIComponent(JSON.stringify(state))`). */
+export const UI_STATE_META = "om-ui-state";

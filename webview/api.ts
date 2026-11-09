@@ -1,5 +1,5 @@
 import { Transport } from "./transport";
-import type { PickFileParams } from "../shared/messages";
+import type { PickFileParams, UiState } from "../shared/messages";
 
 /** Typed OM Core API client. Wraps the query/command vocabulary exposed by the
  *  om-core runtime (see lib_command/core/query_service.py + bootstrap.py).
@@ -47,6 +47,9 @@ export class OmApi {
   pickFile(params: PickFileParams): Promise<{ path: string | null }> { return this.t.request("pickFile", params as any); }
   /** Editor tab title in VS Code (`panel.title`); a no-op in the bridge, where `document.title` is the tab title. */
   setTitle(title: string) { return this.t.request("setTitle", { title }); }
+  /** Saved panel sizes etc. (T-045): synchronous, null when nothing is saved. */
+  loadUiState(): UiState | null { return this.t.loadUiState(); }
+  saveUiState(state: UiState): void { this.t.saveUiState(state); }
 
   // ---- queries ----
   workspaceSummary(): Promise<WorkspaceSummary> { return this.t.request("query", { query_id: "workspace_summary" }); }

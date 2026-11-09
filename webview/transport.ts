@@ -1,4 +1,4 @@
-import type { AppConfig } from "../shared/messages";
+import { UI_STATE_META, type AppConfig, type UiState } from "../shared/messages";
 
 /** Transport interface — the only webview/VSCode coupling point.
  *  In VSCode, the implementation posts messages to the extension host which
@@ -15,6 +15,10 @@ export interface Transport {
   subscribe(topic: string, cb: (envelope: any) => void): void;
   onStatus(cb: (status: string, message?: string) => void): void;
   getConfig(): Promise<AppConfig>;
+  /** Saved UI state (panel sizes), read synchronously before the first render; null when nothing is saved. */
+  loadUiState(): UiState | null;
+  /** Persist UI state. Fire-and-forget: a failure only means the sizes are not remembered. */
+  saveUiState(state: UiState): void;
 }
 
 declare function acquireVsCodeApi(): {
@@ -119,7 +123,17 @@ export class WebSocketTransport implements Transport {
     if (this.cfg) return this.cfg;
     return this.request("getConfig");
   }
+
+  /** Browser: per-origin localStorage (private windows or blocked storage just forget). */
+  loadUiState(): UiState | null {
+    try { const raw = localStorage.getItem(UI_STATE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  }
+  saveUiState(state: UiState): void {
+    try { localStorage.setItem(UI_STATE_KEY, JSON.stringify(state)); } catch { /* not remembered */ }
+  }
 }
+
+const UI_STATE_KEY = "omCore.uiState";
 
 /** VSCode postMessage transport. */
 export class VsCodeTransport implements Transport {
@@ -178,6 +192,22 @@ export class VsCodeTransport implements Transport {
 
   async getConfig(): Promise<AppConfig> {
     return this.request("getConfig");
+  }
+
+  /** `vscode.getState()` first: it survives "Reload Webviews", where the page HTML (and its meta tag) is the
+   *  one from panel creation. Otherwise the host's globalState, handed over in the meta tag. */
+  loadUiState(): UiState | null {
+    try {
+      const own = this.vs.getState()?.uiState;
+      if (own) return own;
+      const meta = document.querySelector(`meta[name="${UI_STATE_META}"]`)?.getAttribute("content");
+      return meta ? JSON.parse(decodeURIComponent(meta)) : null;
+    } catch { return null; }
+  }
+  /** Both: setState for webview reloads, the host's globalState for VS Code restarts. */
+  saveUiState(state: UiState): void {
+    try { this.vs.setState({ ...(this.vs.getState() || {}), uiState: state }); } catch { /* ignore */ }
+    this.request("saveUiState", { state }).catch(() => {});
   }
 }
 

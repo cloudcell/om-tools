@@ -7,6 +7,8 @@ import { confirmDialog, alertDialog } from "./dialogs";
  *  Mirrors lib_gui/rule_panel.py + lib_gui/calculation_flow_panel.py + lib_gui/circular_refs_panel.py. */
 export class RulePanel {
   constructor(private store: Store) {}
+  /** Set by AppShell: open the panel when it is collapsed to its tab row and a tab is clicked. */
+  onExpand?: () => void;
   private activeTab = "rules";
   private activeCubeId: string | null = null;
   private channelFilter = "all";
@@ -22,7 +24,11 @@ export class RulePanel {
         class: "lower-tab" + (id === this.activeTab ? " active" : "") + (off ? " disabled" : ""),
         title: off ? NOT_IN_MVP_TITLE : label,
       }, [label]);
-      if (!off) t.addEventListener("click", () => { this.activeTab = id; this.refresh(panel); });
+      if (!off) t.addEventListener("click", () => {
+        this.activeTab = id;
+        if (this.store.state.layout.rulePanelCollapsed) this.onExpand?.();
+        this.refresh(panel);
+      });
       tabs.appendChild(t);
     }
     panel.appendChild(tabs);
@@ -39,9 +45,13 @@ export class RulePanel {
     if (!content) return;
     clear(content);
     // update tab active states
+    const collapsed = this.store.state.layout.rulePanelCollapsed;
     panel.querySelectorAll(".lower-tab").forEach((t, i) => {
       t.classList.toggle("active", tabNames[i][0] === this.activeTab);
+      if (!disabledTabs.has(tabNames[i][0])) (t as HTMLElement).title = collapsed ? `Show ${tabNames[i][1]}` : tabNames[i][1];
     });
+    // Collapsed to its tab row (T-045): render nothing, so Calculation Flow does not trace cells unseen.
+    if (collapsed) return;
 
     if (this.activeTab === "rules") this.renderRules(content);
     else if (this.activeTab === "calcflow") this.renderCalcFlow(content);

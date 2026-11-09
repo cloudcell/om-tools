@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString, topicMatches } from "./engineClient";
 import { EngineProcess } from "./engineProcess";
-import { HostRequest, HostToWebview, AppConfig, PickFileParams } from "../shared/messages";
+import { HostRequest, HostToWebview, AppConfig, PickFileParams, UiState, UI_STATE_META } from "../shared/messages";
 import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
@@ -12,6 +12,9 @@ let runtime: EngineProcess | null = null;
 let currentSessionId: string | null = null;
 let statusEmitter: ((s: { status: string; message?: string }) => void) | null = null;
 let statusBar: vscode.StatusBarItem | null = null;
+/** For globalState (saved panel sizes, T-045). Set in activate(). */
+let extContext: vscode.ExtensionContext | null = null;
+const UI_STATE_KEY = "omCore.uiState";
 
 function defaultEndpoint(): TransportEndpoint {
   const cfg = vscode.workspace.getConfiguration("omCore");
@@ -129,7 +132,7 @@ function postToWebview(msg: HostToWebview) {
 
 async function handleRequest(req: HostRequest): Promise<HostToWebview> {
   try {
-    if (!client && req.method !== "getConfig" && req.method !== "startRuntime" && req.method !== "reconnect" && req.method !== "setTitle") {
+    if (!client && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState"].includes(req.method)) {
       return { type: "response", id: req.id, ok: false, error: "not connected" };
     }
     switch (req.method) {
@@ -187,6 +190,12 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         if (panel && typeof req.params?.title === "string") panel.title = req.params.title;
         return { type: "response", id: req.id, ok: true };
       }
+      case "saveUiState": {
+        // Panel sizes (T-045): kept across VS Code restarts, handed to the next webview in getHtml().
+        const state = req.params?.state;
+        if (extContext && state && typeof state === "object") await extContext.globalState.update(UI_STATE_KEY, state);
+        return { type: "response", id: req.id, ok: true };
+      }
       case "pickFile": {
         const p = await pickFile((req.params || {}) as PickFileParams);
         return { type: "response", id: req.id, ok: true, data: { path: p } };
@@ -200,6 +209,7 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  extContext = context;
   // Status bar button — always visible, click to open GUI
   statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBar.command = "omCore.openGui";
@@ -258,13 +268,17 @@ function getHtml(context: vscode.ExtensionContext, webview: vscode.Webview): str
   const webviewJs = webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath("dist/webview.js")));
   const webviewCss = webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath("dist/webview.css")));
   const nonce = getNonce();
+  // Saved panel sizes, read by the webview before its first render (VsCodeTransport.loadUiState).
+  // encodeURIComponent leaves no quotes or angle brackets, so it is safe inside the attribute.
+  const uiState = context.globalState.get<UiState>(UI_STATE_KEY);
+  const uiStateMeta = uiState ? `<meta name="${UI_STATE_META}" content="${encodeURIComponent(JSON.stringify(uiState))}" />\n` : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}'; font-src ${webview.cspSource};" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>OM Core</title>
+${uiStateMeta}<title>OM Core</title>
 <link rel="stylesheet" href="${webviewCss}" />
 </head>
 <body>

@@ -1,5 +1,9 @@
 import { OmApi, DimSummary, DimDetail, CubeSummary, ViewSummary, ViewDetail, CellRangeDTO, RuleDTO, WorkspaceSummary, CellDTO } from "./api";
 import { alertDialog } from "./components/dialogs";
+import type { UiLayout } from "../shared/messages";
+
+/** Default panel sizes, px (T-045); same as the CSS variables in styles.css. */
+export const DEFAULT_LAYOUT: Required<UiLayout> = { leftDockWidth: 250, leftCollapsed: false, rulePanelHeight: 200, rulePanelCollapsed: false };
 
 export type SelMode = "cell" | "row" | "col" | "all";
 
@@ -56,6 +60,9 @@ export interface AppState {
   mtEnabled: boolean;
   isRemote: boolean;
   dockVisible: { browser: boolean; info: boolean; format: boolean; perf: boolean; timeline: boolean };
+  /** Left column / bottom panel sizes and collapsed state (T-045). Sizes change without notify() while
+   *  dragging; notify() only when a panel collapses or expands. Persisted via api.saveUiState. */
+  layout: Required<UiLayout>;
 }
 
 type Listener = () => void;
@@ -91,6 +98,7 @@ export class Store {
     isRemote: false,
     // perf/timeline are outside the MVP (their View menu items are disabled), so start hidden.
     dockVisible: { browser: true, info: false, format: false, perf: false, timeline: false },
+    layout: { ...DEFAULT_LAYOUT },
   };
   api: OmApi;
   private listeners = new Set<Listener>();

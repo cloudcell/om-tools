@@ -1,4 +1,5 @@
-import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText } from "../state";
+import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText, DEFAULT_LAYOUT } from "../state";
+import type { UiLayout } from "../../shared/messages";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, type MaterialIcon } from "../menuIcons";
 import { ModelBrowser } from "./modelBrowser";
@@ -10,6 +11,7 @@ import { FormatToolbox } from "./formatToolbox";
 import { PerformanceWatch } from "./performanceWatch";
 import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog } from "./dialogs";
 import { Timeline } from "./timeline";
+import { Splitter } from "./splitter";
 
 /** `icon` is inline SVG markup; a `checked` item shows a check mark in the icon column instead. */
 type DockName = keyof AppState["dockVisible"];
@@ -20,6 +22,26 @@ interface MenuItem { label?: string; icon?: string; sep?: boolean; disabled?: bo
 function timestamp(d = new Date()): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+/** Panel limits, px (T-045). The grid keeps at least GRID_MIN_HEIGHT under a tall bottom panel
+ *  (styles.css repeats it in `.rule-panel { max-height }` for when the window shrinks). */
+const LEFT_MIN = 160;
+const BOTTOM_MIN = 60;
+const GRID_MIN_HEIGHT = 120;
+
+/** Saved layout from storage: keep only sane values, the rest falls back to DEFAULT_LAYOUT. */
+function sanitizeLayout(raw: unknown): Partial<Required<UiLayout>> {
+  const out: Partial<Required<UiLayout>> = {};
+  if (!raw || typeof raw !== "object") return out;
+  const r = raw as Record<string, unknown>;
+  const px = (v: unknown, min: number) => typeof v === "number" && Number.isFinite(v) && v >= min && v < 10000 ? Math.round(v) : undefined;
+  const w = px(r.leftDockWidth, LEFT_MIN), h = px(r.rulePanelHeight, BOTTOM_MIN);
+  if (w !== undefined) out.leftDockWidth = w;
+  if (h !== undefined) out.rulePanelHeight = h;
+  if (typeof r.leftCollapsed === "boolean") out.leftCollapsed = r.leftCollapsed;
+  if (typeof r.rulePanelCollapsed === "boolean") out.rulePanelCollapsed = r.rulePanelCollapsed;
+  return out;
 }
 
 /** Menu items for features outside the MVP preview: greyed out, not hidden. */
@@ -50,28 +72,85 @@ export class AppShell {
       timeline: new Timeline(this.store).render(),
     };
 
+    // Saved panel sizes first: RulePanel's first render already checks whether it is collapsed.
+    const layout = this.store.state.layout;
+    Object.assign(layout, sanitizeLayout(this.store.api.loadUiState()?.layout));
+    const saveLayout = () => this.store.api.saveUiState({ layout: { ...layout } });
+
     const left = el("div", { class: "left-docks" });
     left.append(docks.browser, docks.info, docks.format);
 
     const center = el("div", { class: "center" });
-    center.appendChild(this.matrixGrid.render());
-    center.appendChild(new RulePanel(this.store).render());
+    const rulePanel = new RulePanel(this.store);
+    const rulePanelEl = rulePanel.render();
 
     const right = el("div", { class: "right-docks" });
     right.append(docks.perf, docks.timeline);
 
+    // ---- Resizable, collapsible left column and bottom panel (T-045) ----
+    // Sizes change without notify(): the grid would rebuild on every mouse move. Only the bottom
+    // panel's collapse/expand notifies, so RulePanel stops / resumes rendering.
+    const applyLeft = (size: number, collapsed: boolean) => {
+      layout.leftDockWidth = size;
+      layout.leftCollapsed = collapsed;
+      app.style.setProperty("--left-dock-width", `${size}px`);
+      left.classList.toggle("collapsed", collapsed);
+    };
+    const applyBottom = (size: number, collapsed: boolean) => {
+      const changed = collapsed !== layout.rulePanelCollapsed;
+      layout.rulePanelHeight = size;
+      layout.rulePanelCollapsed = collapsed;
+      app.style.setProperty("--rule-panel-height", `${size}px`);
+      rulePanelEl.classList.toggle("collapsed", collapsed);
+      if (changed) this.store.notify();
+    };
+    const leftMax = () => Math.max(LEFT_MIN, body.clientWidth * 0.5);
+    const bottomMax = () => Math.max(BOTTOM_MIN, center.clientHeight - GRID_MIN_HEIGHT);
+    const leftSplit = new Splitter({
+      axis: "x", grow: 1, min: LEFT_MIN, max: leftMax, defaultSize: DEFAULT_LAYOUT.leftDockWidth,
+      collapsedSize: 8, label: "the left panel",
+      get: () => ({ size: Math.min(layout.leftDockWidth, leftMax()), collapsed: layout.leftCollapsed }),
+      apply: applyLeft, commit: saveLayout,
+    });
+    const bottomSplit = new Splitter({
+      axis: "y", grow: -1, min: BOTTOM_MIN, max: bottomMax, defaultSize: DEFAULT_LAYOUT.rulePanelHeight,
+      collapsedSize: 24, label: "the bottom panel",
+      get: () => ({ size: Math.min(layout.rulePanelHeight, bottomMax()), collapsed: layout.rulePanelCollapsed }),
+      apply: applyBottom, commit: saveLayout,
+    });
+    applyLeft(layout.leftDockWidth, layout.leftCollapsed);
+    applyBottom(layout.rulePanelHeight, layout.rulePanelCollapsed);
+    // Collapsed bottom panel = its tab row: a tab click opens the panel on that tab,
+    // the empty part of the row works like the splitter (drag, or click to open).
+    rulePanel.onExpand = () => bottomSplit.setCollapsed(false);
+    const tabRow = rulePanelEl.querySelector(".lower-tabs") as HTMLElement;
+    tabRow.addEventListener("pointerdown", (e) => {
+      if (layout.rulePanelCollapsed && !(e.target as HTMLElement).closest(".lower-tab")) bottomSplit.beginDrag(e, tabRow);
+    });
+
+    center.appendChild(this.matrixGrid.render());
+    center.appendChild(bottomSplit.el);
+    center.appendChild(rulePanelEl);
+
     // View menu toggles flip store.state.dockVisible; show/hide panels to match.
-    // A side column with no visible panels is hidden too, so the grid takes the space.
+    // A side column with no visible panels is hidden too (with its splitter), so the grid takes the space.
+    // Turning a left dock on while the column is collapsed expands the column.
+    const prevVis = { ...this.store.state.dockVisible };
     const applyDockVisibility = () => {
       const vis = this.store.state.dockVisible;
       for (const name of Object.keys(docks) as DockName[]) docks[name].hidden = !vis[name];
       left.hidden = !(vis.browser || vis.info || vis.format);
+      leftSplit.el.hidden = left.hidden;
       right.hidden = !(vis.perf || vis.timeline);
+      const turnedOn = (["browser", "info", "format"] as const).some((n) => vis[n] && !prevVis[n]);
+      Object.assign(prevVis, vis);
+      if (turnedOn && layout.leftCollapsed) leftSplit.setCollapsed(false);
     };
     this.store.subscribe(applyDockVisibility);
     applyDockVisibility();
 
     body.appendChild(left);
+    body.appendChild(leftSplit.el);
     body.appendChild(center);
     body.appendChild(right);
     app.appendChild(body);
