@@ -112,6 +112,9 @@ export class Store {
 
   markDirty(d = true) { this.state.dirty = d; this.notify(); }
 
+  /** File name for the title and the status bar; `New_Model.json` while the workspace has no file. */
+  fileName(): string { return this.state.filePath ? this.state.filePath.split(/[\\/]/).pop() || this.state.filePath : "New_Model.json"; }
+
   isSystem(name: string): boolean { return typeof name === "string" && name.startsWith("%"); }
   visibleDims(): DimSummary[] { return this.state.showSystemElements ? this.state.dimensions : this.state.dimensions.filter((d) => !this.isSystem(d.name)); }
   visibleCubes(): CubeSummary[] { return this.state.showSystemElements ? this.state.cubes : this.state.cubes.filter((c) => !this.isSystem(c.name)); }

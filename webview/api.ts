@@ -45,6 +45,8 @@ export class OmApi {
   stopRuntime() { return this.t.request("stopRuntime"); }
   /** Native Open/Save dialog in the host (VS Code only, see AppConfig.nativeFileDialogs). */
   pickFile(params: PickFileParams): Promise<{ path: string | null }> { return this.t.request("pickFile", params as any); }
+  /** Editor tab title in VS Code (`panel.title`); a no-op in the bridge, where `document.title` is the tab title. */
+  setTitle(title: string) { return this.t.request("setTitle", { title }); }
 
   // ---- queries ----
   workspaceSummary(): Promise<WorkspaceSummary> { return this.t.request("query", { query_id: "workspace_summary" }); }

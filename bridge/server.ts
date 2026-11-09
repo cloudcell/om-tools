@@ -52,6 +52,7 @@ async function handle(req: HostRequest, client: EngineClient, sessionId: () => s
     case "reconnect": return { ok: true, data: { session_id: sessionId() } };
     case "startRuntime": return { ok: true, data: { endpoint: endpointToString(endpoint) } };
     case "stopRuntime": return { ok: true };
+    case "setTitle": return { ok: true }; // the browser tab already shows document.title
     default: return { ok: false, error: `unknown method: ${req.method}` };
   }
 }
@@ -69,23 +70,29 @@ const server = http.createServer((req, res) => {
 });
 
 const wss = new WebSocketServer({ server });
-wss.on("connection", async (ws: WebSocket) => {
+wss.on("connection", (ws: WebSocket) => {
   const client = new EngineClient(endpoint);
   let sessionId: string | null = null;
   const send = (msg: any) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(msg));
-  try {
-    await client.connect();
-    sessionId = await client.openSession("repl");
-    send({ type: "status", status: "connected", message: `Connected · session ${sessionId.slice(0, 8)}` });
-    send({ type: "config", config: config() });
-  } catch (e: any) {
-    send({ type: "status", status: "error", message: `Connection failed: ${e?.message || e}` });
-  }
+  // The webview sends getConfig and its subscriptions as soon as the socket opens. The message handler is
+  // registered right away and each request waits for the runtime connection; registering it after the
+  // awaits below dropped those first requests (getConfig never answered → no defaultDir).
+  const ready = (async () => {
+    try {
+      await client.connect();
+      sessionId = await client.openSession("repl");
+      send({ type: "status", status: "connected", message: `Connected · session ${sessionId.slice(0, 8)}` });
+      send({ type: "config", config: config() });
+    } catch (e: any) {
+      send({ type: "status", status: "error", message: `Connection failed: ${e?.message || e}` });
+    }
+  })();
   client.on("disconnect", () => send({ type: "status", status: "disconnected", message: "runtime connection lost" }));
   ws.on("message", async (data: any) => {
     let req: HostRequest;
     try { req = JSON.parse(data.toString()); } catch { return; }
     if (req.type !== "request") return;
+    await ready;
     try {
       const r = await handle(req, client, () => sessionId, (s) => { sessionId = s; }, send);
       send({ type: "response", id: req.id, ok: r.ok, data: r.data, error: r.error });

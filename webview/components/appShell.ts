@@ -8,7 +8,7 @@ import { StatusBar } from "./statusBar";
 import { InfoToolbox } from "./infoToolbox";
 import { FormatToolbox } from "./formatToolbox";
 import { PerformanceWatch } from "./performanceWatch";
-import { inputDialog, confirmDialog, alertDialog, pickDialog } from "./dialogs";
+import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog } from "./dialogs";
 import { Timeline } from "./timeline";
 
 /** `icon` is inline SVG markup; a `checked` item shows a check mark in the icon column instead. */
@@ -85,11 +85,16 @@ export class AppShell {
 
   dispose() { this.perf.dispose(); }
 
+  private lastTitle = "";
+  /** Qt `_update_window_title`: `OM Core: *<file>`. In VS Code `document.title` does not reach the editor tab,
+   *  so the host sets `panel.title` (`setTitle`; a no-op in the bridge). Sent only when the text changes. */
   private updateTitle() {
     const s = this.store.state;
-    const dirty = s.dirty ? "*" : "";
-    const fname = s.filePath ? s.filePath.split(/[\\/]/).pop() : "New_Model.json";
-    document.title = `OM Core: ${dirty}${fname}`;
+    const title = `OM Core: ${s.dirty ? "*" : ""}${this.store.fileName()}`;
+    if (title === this.lastTitle) return;
+    this.lastTitle = title;
+    document.title = title;
+    this.store.api.setTitle(title).catch(() => {});
   }
 
   // ---- Menu bar ----
@@ -426,15 +431,31 @@ export class AppShell {
   }
 
   // ---- Menu action implementations ----
-  private async confirmDirty(fn: () => void) {
-    if (this.store.state.dirty && !(await confirmDialog("Unsaved Changes", "You have unsaved changes. Discard and continue?", "Discard", true))) return;
-    fn();
+  /** Qt `_check_unsaved_changes`: Save / Discard / Cancel, Save is the default. After Save the action goes on
+   *  only if the file was actually saved (the dialog was not cancelled and the save did not fail). */
+  private async confirmDirty(fn: () => void | Promise<void>) {
+    if (this.store.state.dirty) {
+      const choice = await choiceDialog("Unsaved Changes", "The current workspace has unsaved changes. Do you want to save them?", [
+        { label: "Discard", value: "discard", kind: "destructive" },
+        { label: "Cancel", value: "cancel" },
+        { label: "Save", value: "save", kind: "primary" },
+      ], "save");
+      if (choice === null || choice === "cancel") return;
+      if (choice === "save" && !(await this.saveFile())) return;
+    }
+    await fn();
   }
 
   private async openFile() {
-    this.confirmDirty(async () => {
+    await this.confirmDirty(async () => {
       const path = await this.pickWorkspacePath("open");
-      if (path) await this.store.loadWorkspaceFile(path);
+      if (!path) return;
+      // load_workspace reads only JSON; an .openm script is run by om-core's REPL or `main.py --batch` (T-012, finding 1)
+      if (/\.openm$/i.test(path)) {
+        await alertDialog("Open Workspace", `"${path.split(/[\\/]/).pop()}" is an OpenM script, not a saved workspace. Open a workspace file (.json) instead. Scripts run in om-core with main.py --batch <file>.`);
+        return;
+      }
+      await this.store.loadWorkspaceFile(path);
     });
   }
 

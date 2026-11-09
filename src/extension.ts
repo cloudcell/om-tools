@@ -129,7 +129,7 @@ function postToWebview(msg: HostToWebview) {
 
 async function handleRequest(req: HostRequest): Promise<HostToWebview> {
   try {
-    if (!client && req.method !== "getConfig" && req.method !== "startRuntime" && req.method !== "reconnect") {
+    if (!client && req.method !== "getConfig" && req.method !== "startRuntime" && req.method !== "reconnect" && req.method !== "setTitle") {
       return { type: "response", id: req.id, ok: false, error: "not connected" };
     }
     switch (req.method) {
@@ -181,6 +181,11 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
       case "reconnect": {
         await connect();
         return { type: "response", id: req.id, ok: true, data: { session_id: currentSessionId } };
+      }
+      case "setTitle": {
+        // document.title inside a webview does not reach the editor tab
+        if (panel && typeof req.params?.title === "string") panel.title = req.params.title;
+        return { type: "response", id: req.id, ok: true };
       }
       case "pickFile": {
         const p = await pickFile((req.params || {}) as PickFileParams);
