@@ -481,6 +481,18 @@ export class Store {
     } catch (e: any) { await alertDialog(kind === "undo" ? "Undo failed" : "Redo failed", e?.message || String(e)); }
   }
 
+  /** After update_rule / delete_rule / set_rule_order from the Rules tab (Qt `rules_changed` → reload):
+   *  the grid shows new values, the list the new rules. `scope: "all"` for delete and reorder: om-core
+   *  does not mark dependents dirty after delete_rule (dirty_count 0, Profit keeps the deleted Rent; T-047). */
+  async afterRuleChange(scope: "dirty" | "all" = "dirty") {
+    this.markDirty();
+    try {
+      await this.api.recalc(scope);
+      if (this.state.activeView) await this.loadView(this.state.activeView.viewId);
+    } catch (e: any) { await alertDialog("Recalc failed", e?.message || String(e)); }
+    await this.refreshRules();
+  }
+
   async recalc(scope = "all") {
     try { await this.api.recalc(scope); if (this.state.activeView) await this.loadView(this.state.activeView.viewId); } catch (e: any) { await alertDialog("Recalc failed", e?.message || String(e)); }
   }

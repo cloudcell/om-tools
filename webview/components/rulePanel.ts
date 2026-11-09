@@ -62,11 +62,17 @@ export class RulePanel {
   private renderRules(content: HTMLElement) {
     const v = this.store.state.activeView;
     this.activeCubeId = v?.cubeId || null;
-    const rules = this.store.state.rules.filter((r) => !this.activeCubeId || r.cube_id === this.activeCubeId);
+    // Qt rule_panel.rebuild: rules in rule_order (evaluation order), then any the order does not list
+    const order = this.store.state.ruleOrder;
+    const pos = (id: string) => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
+    const rules = this.store.state.rules
+      .filter((r) => !this.activeCubeId || r.cube_id === this.activeCubeId)
+      .map((r, i) => ({ r, i })).sort((a, b) => pos(a.r.id) - pos(b.r.id) || a.i - b.i).map((x) => x.r);
+    const cubeName = v ? this.store.state.cubes.find((c) => c.id === v.cubeId)?.name : "";
 
-    // header
+    // header (Qt: "Rules: <cube>" — the list is the cube's rules, not the view's)
     const header = el("div", { class: "rule-header" }, [
-      el("span", { class: "rule-title" }, ["Rules" + (v ? `: ${v.viewName}` : "")]),
+      el("span", { class: "rule-title" }, ["Rules" + (cubeName ? `: ${cubeName}` : "")]),
       el("span", { class: "rule-count" }, [`${rules.length} total`]),
     ]);
     content.appendChild(header);
@@ -130,24 +136,55 @@ export class RulePanel {
   }
 
   private ruleToText(rule: RuleDTO): string {
-    const lhs = rule.targets?.map((t: any) => Array.isArray(t) ? t.join(".") : String(t)).join(", ") || "";
-    return `${lhs} = ${rule.expression}`;
+    return `${this.ruleLhs(rule)} = ${rule.expression}`;
   }
 
+  /** Qt `RulePanel._format_rule_lhs`, targets branch: the text must survive `rule_target_resolve`
+   *  when edited back. Several targets go in brackets — "Month.*, Metric.Price" without them
+   *  resolves to the dimension "Month.*, Metric". All wildcards → "Cube::*.*". */
+  private ruleLhs(rule: RuleDTO): string {
+    const cubeName = this.store.state.cubes.find((c) => c.id === rule.cube_id)?.name || "";
+    const wholeCube = cubeName ? `${cubeName}::*.*` : "*.*";
+    const targets: [string, string][] = (rule.targets || []).filter((t: any) => Array.isArray(t) && t.length === 2);
+    if (!targets.length) return wholeCube;
+    let allWild = true;
+    const parts = targets.map(([dim, item]) => {
+      if (item === "*") return `${dim}.*`;
+      allWild = false;
+      return ["THIS", "PREV", "NEXT", "FIRST", "LAST"].includes(String(item).toUpperCase()) ? `${dim}[${item}]` : `${dim}.${item}`;
+    });
+    if (allWild) return wholeCube;
+    const lhs = parts.length === 1 ? parts[0] : `[${parts.join(", ")}]`;
+    return (rule.is_anchored ? "$" : "") + lhs;
+  }
+
+  /** Qt `_on_rule_edited`: split at the first "=", "$" marks an anchored rule, resolve the LHS, update_rule.
+   *  Unchanged text sends nothing. */
   private async commitRuleEdit(rule: RuleDTO, text: string) {
     this.editingRuleId = null;
-    const eqIdx = text.indexOf("=");
-    if (eqIdx < 0) return;
-    const lhs = text.slice(0, eqIdx).trim();
-    const rhs = text.slice(eqIdx + 1).trim();
+    const m = text.trim().match(/^=?\s*(.*?)\s*=\s*(.+)$/);
+    if (!m || text.trim() === this.ruleToText(rule)) { this.refresh(document.querySelector(".rule-panel") as HTMLElement); return; }
+    let lhs = m[1].trim();
+    const rhs = m[2].trim();
     const anchored = lhs.startsWith("$");
-    const cleanLhs = anchored ? lhs.slice(1) : lhs;
+    if (anchored) lhs = lhs.slice(1).trim();
     try {
-      const resolved = await this.store.api.ruleTargetResolve(rule.cube_id, cleanLhs);
-      await this.store.api.updateRule(rule.id, resolved?.targets || [], rhs, anchored);
-      this.store.markDirty();
-      await this.store.refreshRules();
-    } catch (e: any) { await alertDialog("Rule Edit Failed", e?.message || String(e)); }
+      const resolved = await this.store.api.ruleTargetResolve(rule.cube_id, lhs);
+      if (resolved?.error || !resolved?.targets?.length) throw new Error(resolved?.error || `Cannot resolve rule target "${lhs}"`);
+      await this.store.api.updateRule(rule.id, resolved.targets, rhs, anchored);
+    } catch (e: any) {
+      await alertDialog("Rule error", e?.message || String(e));
+      this.refresh(document.querySelector(".rule-panel") as HTMLElement);
+      return;
+    }
+    await this.store.afterRuleChange();
+  }
+
+  private async deleteRule(rule: RuleDTO) {
+    if (!(await confirmDialog("Delete Rule", `Delete rule "${this.ruleToText(rule)}"?`, "Delete", true))) return;
+    try { await this.store.api.deleteRule(rule.id); }
+    catch (e: any) { await alertDialog("Delete rule failed", e?.message || String(e)); await this.store.refreshRules(); return; }
+    await this.store.afterRuleChange("all");
   }
 
   private showRuleContextMenu(e: MouseEvent, rule: RuleDTO) {
@@ -160,7 +197,7 @@ export class RulePanel {
       menu.appendChild(item);
     };
     addItem("Edit…", () => { this.editingRuleId = rule.id; this.refresh(document.querySelector(".rule-panel") as HTMLElement); });
-    addItem("Delete", async () => { if (await confirmDialog("Delete Rule", "Delete this rule?", "Delete", true)) this.store.api.deleteRule(rule.id).then(() => { this.store.markDirty(); this.store.refreshRules(); }); });
+    addItem("Delete", () => this.deleteRule(rule));
     addItem("Copy Rule", () => { try { navigator.clipboard.writeText(this.ruleToText(rule)); } catch {} });
     menu.style.left = e.clientX + "px";
     menu.style.top = e.clientY + "px";
@@ -176,7 +213,10 @@ export class RulePanel {
     if (fromIdx < 0 || toIdx < 0) return;
     order.splice(fromIdx, 1);
     order.splice(toIdx, 0, draggedId);
-    try { await this.store.api.setRuleOrder(order); this.store.markDirty(); await this.store.refreshRules(); } catch (e: any) { console.error("reorder", e); }
+    // Order is precedence: a reorder can change values, so recalc like any other rule change
+    try { await this.store.api.setRuleOrder(order); }
+    catch (e: any) { await alertDialog("Reorder rules failed", e?.message || String(e)); await this.store.refreshRules(); return; }
+    await this.store.afterRuleChange("all");
   }
 
   // ---- Calculation Flow tab ----
