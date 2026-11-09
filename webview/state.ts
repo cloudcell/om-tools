@@ -463,11 +463,22 @@ export class Store {
     } catch (e: any) { await alertDialog("Paste failed", e?.message || String(e)); }
   }
 
-  async undo() {
-    try { await this.api.undo(); this.markDirty(); await this.refreshModel(); await this.refreshUndoState(); if (this.state.activeView) await this.loadView(this.state.activeView.viewId); await this.refreshRules(); } catch (e: any) { await alertDialog("Undo failed", e?.message || String(e)); }
-  }
-  async redo() {
-    try { await this.api.redo(); this.markDirty(); await this.refreshModel(); await this.refreshUndoState(); if (this.state.activeView) await this.loadView(this.state.activeView.viewId); await this.refreshRules(); } catch (e: any) { await alertDialog("Redo failed", e?.message || String(e)); }
+  async undo() { await this.stepHistory("undo"); }
+  async redo() { await this.stepHistory("redo"); }
+
+  /** Undo / redo one step, then reload what it may have touched. As in Qt (`_on_undo`), nothing is reloaded and the
+   *  "unsaved" flag stays as it was when the runtime reports `changed: false` — e.g. another client on the same
+   *  runtime already undid the step, so our `canUndo` is stale (undo_test.js, section 7). */
+  private async stepHistory(kind: "undo" | "redo") {
+    try {
+      const r: any = await (kind === "undo" ? this.api.undo() : this.api.redo());
+      if (r?.changed === false) { await this.refreshUndoState(); return; }
+      this.markDirty();
+      await this.refreshModel();
+      await this.refreshUndoState();
+      if (this.state.activeView) await this.loadView(this.state.activeView.viewId);
+      await this.refreshRules();
+    } catch (e: any) { await alertDialog(kind === "undo" ? "Undo failed" : "Redo failed", e?.message || String(e)); }
   }
 
   async recalc(scope = "all") {
