@@ -170,20 +170,31 @@ export class RulePanel {
   }
 
   // ---- Calculation Flow tab ----
-  private calcFlowDepth = 3;
+  // Mirrors lib_gui/calculation_flow_panel.py (list mode). The engine
+  // (trace_calculation_flow) returns a breadth-first list of nodes: each has
+  // depth, source, expression, precedents/precedent_targets and
+  // dependents/dependent_targets.
+  private calcFlowDepth = 2;
+  /** Last trace. Store notifies on every change (selection stats, status, …);
+   *  re-query only when the cell, depth, rules or cell data change, or on Refresh. */
+  private calcFlowCache: CalcFlowCache | null = null;
 
   private renderCalcFlow(content: HTMLElement) {
+    const panel = content.parentElement as HTMLElement;
     const v = this.store.state.activeView;
     const header = el("div", { class: "calc-flow-header" }, ["Calculation Flow"]);
     content.appendChild(header);
 
     const controls = el("div", { class: "perf-section" });
     controls.appendChild(el("label", {}, ["Depth: "]));
-    const depthInput = el("input", { type: "number", value: String(this.calcFlowDepth), min: "1", max: "20", style: { width: "40px" } }) as HTMLInputElement;
-    depthInput.addEventListener("change", () => { this.calcFlowDepth = parseInt(depthInput.value) || 3; this.refresh(content.parentElement as HTMLElement); });
+    const depthInput = el("input", { type: "number", value: String(this.calcFlowDepth), min: "1", max: "10", style: { width: "40px" } }) as HTMLInputElement;
+    depthInput.addEventListener("change", () => {
+      this.calcFlowDepth = Math.min(10, Math.max(1, parseInt(depthInput.value) || 2));
+      this.refresh(panel);
+    });
     controls.appendChild(depthInput);
     const refreshBtn = el("button", { class: "tb-btn" }, ["Refresh"]);
-    refreshBtn.addEventListener("click", () => this.refresh(content.parentElement as HTMLElement));
+    refreshBtn.addEventListener("click", () => { this.calcFlowCache = null; this.refresh(panel); });
     controls.appendChild(refreshBtn);
     content.appendChild(controls);
 
@@ -195,44 +206,83 @@ export class RulePanel {
     if (!cell?.addr) { content.appendChild(el("div", { class: "muted", style: { padding: "12px" } }, ["No cell address available."])); return; }
 
     const list = el("div", { class: "calc-flow-list" });
-    list.appendChild(el("div", { class: "grid-loading" }, ["Loading…"]));
     content.appendChild(list);
 
-    this.store.api.diagnosticsCalculationFlow(v.cubeId, cell.addr, this.calcFlowDepth).then((flow) => {
-      clear(list);
-      if (!flow) { list.appendChild(el("div", { class: "muted" }, ["No flow information available."])); return; }
-      const precedents = flow.precedents || flow.upstream || [];
-      const dependents = flow.dependents || flow.downstream || [];
-      if (precedents.length) {
-        list.appendChild(el("div", { class: "calc-flow-header" }, ["Upstream (precedents)"]));
-        for (const p of precedents) list.appendChild(this.flowEntry(p, "upstream"));
-      }
-      if (dependents.length) {
-        list.appendChild(el("div", { class: "calc-flow-header" }, ["Downstream (dependents)"]));
-        for (const d of dependents) list.appendChild(this.flowEntry(d, "downstream"));
-      }
-      if (!precedents.length && !dependents.length) list.appendChild(el("div", { class: "muted" }, ["No flow information available."]));
-    }).catch((e) => { clear(list); list.appendChild(el("div", { class: "muted" }, [`Trace unavailable: ${e?.message || e}`])); });
+    const key = `${v.cubeId}|${cell.addr.join("|")}|${this.calcFlowDepth}`;
+    const rules = this.store.state.rules;
+    const cached = this.calcFlowCache;
+    if (cached && cached.key === key && cached.rules === rules && cached.cells === v.cells) {
+      if (cached.error !== undefined) list.appendChild(el("div", { class: "muted" }, [`Trace unavailable: ${cached.error}`]));
+      else if (cached.flow) this.renderFlowList(list, header, cached.flow);
+      else list.appendChild(el("div", { class: "grid-loading" }, ["Loading…"]));
+      return;
+    }
+
+    const entry: CalcFlowCache = { key, rules, cells: v.cells };
+    this.calcFlowCache = entry;
+    list.appendChild(el("div", { class: "grid-loading" }, ["Loading…"]));
+    this.store.api.diagnosticsCalculationFlow(v.cubeId, cell.addr, this.calcFlowDepth)
+      .then((flow) => { entry.flow = Array.isArray(flow) ? flow : []; })
+      .catch((e) => { entry.error = String(e?.message || e); })
+      .then(() => { if (this.calcFlowCache === entry && this.activeTab === "calcflow") this.refresh(panel); });
   }
 
-  private flowEntry(node: any, dir: string): HTMLElement {
-    const label = node.addr_label || node.label || node.addr?.join("|") || "?";
-    const source = node.source || "";
-    const expr = node.expression ? ` = ${node.expression}` : "";
-    const entry = el("div", { class: `calc-flow-entry cf-${dir}` }, [
-      el("span", { class: `cf-depth-${node.depth || 0}` }, [`${dir === "upstream" ? "↳" : "↰"} ${label} [${source}]${expr}`]),
-    ]);
-    if (node.cube_id && node.addr) entry.addEventListener("click", () => this.navigateToCell(node.cube_id, node.addr));
-    return entry;
+  private renderFlowList(list: HTMLElement, header: HTMLElement, flow: FlowNode[]) {
+    if (!flow.length) { list.appendChild(el("div", { class: "muted" }, ["No flow information available."])); return; }
+
+    const root = flow.find((n) => (n.depth || 0) === 0) || flow[0];
+    if (root?.dependents_truncated) {
+      header.appendChild(el("span", { class: "cf-warning" }, [` — WARNING: TRUNCATED TO ${root.dependents_limit ?? "?"}`]));
+    }
+
+    const cellIndex = this.currentViewCellIndex();
+    for (const node of flow) {
+      const pad = 8 + 16 * (node.depth || 0);
+      const head = this.flowLine(`• ${node.addr_label || "?"}${node.source ? `  [${node.source}]` : ""}`,
+        "cf-node" + ((node.depth || 0) === 0 ? " cf-root" : ""), pad, node.cube_id, node.addr, cellIndex);
+      list.appendChild(head);
+      if (node.expression) list.appendChild(this.flowLine(`= ${node.expression}`, "cf-expr", pad + 16));
+
+      const section = (title: string, labels: string[] | undefined, targets: FlowTarget[] | undefined, dir: string, bullet: string) => {
+        if (!labels?.length) return;
+        list.appendChild(this.flowLine(title, `cf-section cf-${dir}`, pad + 16));
+        labels.forEach((label, i) => {
+          const t = targets?.[i];
+          list.appendChild(this.flowLine(`${bullet} ${label}`, `cf-${dir}`, pad + 32, t?.cube_id, t?.addr, cellIndex));
+        });
+      };
+      section("Upstream (precedents)", node.precedents, node.precedent_targets, "upstream", "↳");
+      section("Downstream (dependents)", node.dependents, node.dependent_targets, "downstream", "↰");
+    }
   }
 
+  /** One list line. Clickable (selects the cell) when the address is on the current grid page. */
+  private flowLine(text: string, cls: string, pad: number, cubeId?: string, addr?: string[], cellIndex?: Map<string, number>): HTMLElement {
+    const line = el("div", { class: `calc-flow-entry ${cls}`, style: { paddingLeft: `${pad}px` } }, [text]);
+    const v = this.store.state.activeView;
+    if (cubeId && addr && cellIndex && v && cubeId === v.cubeId && cellIndex.has(addr.join("|"))) {
+      line.classList.add("link");
+      line.title = "Select this cell";
+      line.addEventListener("click", () => this.navigateToCell(cubeId, addr));
+    }
+    return line;
+  }
+
+  /** addr ("a|b|c") → flat index into activeView.cells.cells. */
+  private currentViewCellIndex(): Map<string, number> {
+    const idx = new Map<string, number>();
+    const cells = this.store.state.activeView?.cells?.cells || [];
+    cells.forEach((c, i) => { if (c?.addr) idx.set(c.addr.join("|"), i); });
+    return idx;
+  }
+
+  /** Select the cell in the active view. Cells of other cubes or other page selections are not navigable yet. */
   private navigateToCell(cubeId: string, addr: string[]) {
-    // Find a view for this cube and navigate to the cell
-    const view = this.store.state.views.find((v) => {
-      const vDetail = this.store.state.activeView;
-      return vDetail?.cubeId === cubeId;
-    });
-    if (view) this.store.loadView(view.id);
+    const v = this.store.state.activeView;
+    if (!v || v.cubeId !== cubeId || !v.colKeys.length) return;
+    const i = this.currentViewCellIndex().get(addr.join("|"));
+    if (i === undefined) return;
+    this.store.setSelectionFull(Math.floor(i / v.colKeys.length), i % v.colKeys.length, "cell", new Set<string>());
   }
 
   // ---- Circular References tab ----
@@ -301,5 +351,17 @@ export class RulePanel {
 }
 
 const tabNames = [["rules", "Rules"], ["calcflow", "Calculation Flow"], ["circrefs", "Circular References"]];
-/** Diagnostics tabs are outside the MVP preview: shown greyed out, not clickable. */
-const disabledTabs = new Set(["calcflow", "circrefs"]);
+/** Tabs outside the MVP preview: shown greyed out, not clickable. */
+const disabledTabs = new Set(["circrefs"]);
+
+/** Target of a precedent/dependent link; unresolved references have only a label. */
+interface FlowTarget { label: string; cube_id?: string; addr?: string[] }
+/** One node of `diagnostics_calculation_flow` (lib_openm/_engine_core.py: trace_calculation_flow). */
+interface FlowNode {
+  cube_id: string; cube_name?: string; addr: string[]; addr_label: string;
+  depth: number; source: string; expression: string | null;
+  precedents?: string[]; precedent_targets?: FlowTarget[];
+  dependents?: string[]; dependent_targets?: FlowTarget[];
+  dependents_truncated?: boolean; dependents_limit?: number | null;
+}
+interface CalcFlowCache { key: string; rules: unknown; cells: unknown; flow?: FlowNode[]; error?: string }

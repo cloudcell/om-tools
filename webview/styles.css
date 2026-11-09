@@ -559,12 +559,17 @@ body {
 
 /* ---- Calculation flow ---- */
 .calc-flow-list { flex: 1; overflow: auto; font-size: 12px; padding: 4px; }
-.calc-flow-entry { padding: 2px 8px; cursor: pointer; white-space: nowrap; }
-.calc-flow-entry:hover { background: #f0f4fa; }
-.calc-flow-entry .cf-depth-0 { font-weight: 600; }
-.calc-flow-entry .cf-upstream { color: #008000; }
-.calc-flow-entry .cf-downstream { color: #0066cc; }
+/* Colours as in lib_gui/calculation_flow_panel.py */
+.calc-flow-entry { padding: 1px 8px; white-space: nowrap; }
+.calc-flow-entry.link { cursor: pointer; }
+.calc-flow-entry.link:hover { background: #f0f4fa; text-decoration: underline; }
+.calc-flow-entry.cf-root { font-weight: 600; }
+.calc-flow-entry.cf-expr { color: #4d5b73; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.calc-flow-entry.cf-section { font-style: italic; }
+.calc-flow-entry.cf-upstream { color: #2166b5; }
+.calc-flow-entry.cf-downstream { color: #6d4cc2; }
 .calc-flow-header { padding: 4px 8px; font-weight: 600; font-size: 11px; color: #666; }
+.calc-flow-header .cf-warning { color: #d32f2f; }
 
 /* ---- Circular refs ---- */
 .circ-refs-summary { padding: 6px 10px; font-size: 12px; background: #fff8e0; border-bottom: 1px solid #e0c060; }
