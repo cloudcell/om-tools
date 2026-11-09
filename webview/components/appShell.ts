@@ -11,6 +11,7 @@ import { FormatToolbox } from "./formatToolbox";
 import { PerformanceWatch } from "./performanceWatch";
 import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog } from "./dialogs";
 import { Timeline } from "./timeline";
+import { ModelActions } from "./modelActions";
 import { Splitter } from "./splitter";
 
 /** `icon` is inline SVG markup; a `checked` item shows a check mark in the icon column instead. */
@@ -52,10 +53,11 @@ const NOT_IN_MVP: Pick<MenuItem, "disabled" | "title"> = { disabled: true, title
  *  center view workspace with rule bar; right docks (Performance, Timeline);
  *  bottom rule panel; status bar. Mirrors lib_gui/app.py MainWindow. */
 export class AppShell {
-  constructor(private store: Store) {}
+  constructor(private store: Store) { this.actions = new ModelActions(store); }
   private perf = new PerformanceWatch(this.store);
   private matrixGrid = new MultilevelGrid(this.store);
   private ruleBarInput: HTMLInputElement | null = null;
+  private actions: ModelActions;
 
   render(): HTMLElement {
     const app = el("div", { id: "app" });
@@ -335,21 +337,21 @@ export class AppShell {
 
   private modelMenuItems(): MenuItem[] {
     return [
-      { icon: ICONS.dim, label: "New Dimension…", fn: () => this.createDimension() },
-      { icon: msym("add"), label: "Create Dimension Item…", fn: () => this.createDimensionItem() },
-      { icon: msym("delete"), label: "Delete Dimension…", fn: () => this.deleteDimension() },
+      { icon: ICONS.dim, label: "New Dimension…", fn: () => this.actions.newDimension() },
+      { icon: msym("add"), label: "Create Dimension Item…", fn: () => this.actions.newDimensionItem() },
+      { icon: msym("delete"), label: "Delete Dimension…", fn: () => this.actions.deleteDimension() },
       { sep: true },
       { icon: msym("table_rows"), label: "Add Group to Row Dim…", fn: () => this.addGroupToAxis("row"), ...NOT_IN_MVP },
       { icon: msym("view_column"), label: "Add Group to Col Dim…", fn: () => this.addGroupToAxis("col"), ...NOT_IN_MVP },
       { sep: true },
-      { icon: ICONS.cube, label: "New Cube…", fn: () => this.createCube() },
-      { icon: msym("delete"), label: "Delete Cube…", fn: () => this.deleteCube() },
+      { icon: ICONS.cube, label: "New Cube…", fn: () => this.actions.newCube() },
+      { icon: msym("delete"), label: "Delete Cube…", fn: () => this.actions.deleteCube() },
       { sep: true },
-      { icon: msym("link"), label: "Attach Dimension to Cube…", fn: () => this.attachDimension() },
+      { icon: msym("link"), label: "Attach Dimension to Cube…", fn: () => this.actions.attachDimension("row"), disabled: !this.store.state.activeView },
       { sep: true },
       { icon: msym("pivot_table_chart"), label: "Edit View Axes…", fn: () => this.editViewAxes() },
       { sep: true },
-      { icon: ICONS.view, label: "New View…", fn: () => this.createView() },
+      { icon: ICONS.view, label: "New View…", fn: () => this.actions.newView() },
     ];
   }
 
@@ -565,43 +567,6 @@ export class AppShell {
     return path;
   }
 
-  private async createDimension() {
-    const name = await inputDialog("Create Dimension", "", "Dimension name");
-    if (!name || !name.trim()) return;
-    const isSeq = await confirmDialog("Dimension Type", "Sequential (ordered) dimension?", "Sequential", false);
-    const type = isSeq ? "seq" : "set";
-    try { await this.store.api.createDimension(name.trim(), type); this.store.markDirty(); this.store.refreshModel(); }
-    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
-  }
-
-  private async createDimensionItem() {
-    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
-    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available."); return; }
-    const dimName = await pickDialog("Dimension", dims.map((d) => d.name));
-    if (!dimName) return;
-    const dim = dims.find((d) => d.name === dimName.trim());
-    if (!dim) { await alertDialog("Not Found", "Dimension not found."); return; }
-    const name = await inputDialog("Create Item", "", "Item name");
-    if (!name || !name.trim()) return;
-    try {
-      await this.store.api.createDimensionItem(dim.id, name.trim());
-      this.store.markDirty(); this.store.invalidateDimCache(dim.id); this.store.refreshModel();
-      if (this.store.state.activeView) this.store.loadView(this.store.state.activeView.viewId);
-    } catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
-  }
-
-  private async deleteDimension() {
-    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
-    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available."); return; }
-    const dimName = await pickDialog("Delete Dimension", dims.map((d) => d.name));
-    if (!dimName) return;
-    const dim = dims.find((d) => d.name === dimName.trim());
-    if (!dim) { await alertDialog("Not Found", "Dimension not found."); return; }
-    if (!(await confirmDialog("Delete Dimension", `Delete dimension "${dim.name}"? This will detach it from all cubes.`, "Delete", true))) return;
-    try { await this.store.api.deleteDimension(dim.id); this.store.markDirty(); this.store.invalidateDimCache(dim.id); this.store.refreshModel(); }
-    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
-  }
-
   private async addGroupToAxis(axis: "row" | "col") {
     const v = this.store.state.activeView;
     if (!v) { await alertDialog("No Active View", "Open a view first."); return; }
@@ -629,49 +594,6 @@ export class AppShell {
     } catch (e: any) { await alertDialog("Create Group Failed", e?.message || String(e)); }
   }
 
-  private async createCube() {
-    const name = await inputDialog("Create Cube", "", "Cube name");
-    if (!name || !name.trim()) return;
-    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
-    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available to attach."); return; }
-    const dimNames = dims.map((d) => d.name);
-    // Multi-select via comma-separated input
-    const selected = await inputDialog("Attach Dimensions", dimNames.join(", "), "Comma-separated dimension names");
-    if (!selected) return;
-    const ids = selected.split(",").map((s) => s.trim()).map((n) => dims.find((d) => d.name === n)?.id).filter(Boolean) as string[];
-    if (!ids.length) { await alertDialog("No Valid Dimensions", "No valid dimensions selected."); return; }
-    try { await this.store.api.createCube(name.trim(), ids); this.store.markDirty(); this.store.refreshModel(); }
-    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
-  }
-
-  private async deleteCube() {
-    const cubes = this.store.visibleCubes();
-    if (!cubes.length) { await alertDialog("No Cubes", "No cubes available."); return; }
-    const cubeName = await pickDialog("Delete Cube", cubes.map((c) => c.name));
-    if (!cubeName) return;
-    const cube = cubes.find((c) => c.name === cubeName.trim());
-    if (!cube) { await alertDialog("Not Found", "Cube not found."); return; }
-    if (!(await confirmDialog("Delete Cube", `Delete cube "${cube.name}"? This will also delete all views for this cube.`, "Delete", true))) return;
-    try { await this.store.api.deleteCube(cube.id); this.store.markDirty(); this.store.refreshModel(); }
-    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
-  }
-
-  private async attachDimension() {
-    const cubes = this.store.visibleCubes();
-    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
-    if (!cubes.length || !dims.length) { await alertDialog("Missing Data", "Need at least one cube and one dimension."); return; }
-    const cubeName = await pickDialog("Cube", cubes.map((c) => c.name));
-    if (!cubeName) return;
-    const cube = cubes.find((c) => c.name === cubeName.trim());
-    if (!cube) return;
-    const dimName = await pickDialog("Dimension to Attach", dims.map((d) => d.name));
-    if (!dimName) return;
-    const dim = dims.find((d) => d.name === dimName.trim());
-    if (!dim) return;
-    try { await this.store.api.attachDimensionToCube(cube.id, dim.id); this.store.markDirty(); this.store.refreshModel(); }
-    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
-  }
-
   private async editViewAxes() {
     const v = this.store.state.activeView;
     if (!v) { await alertDialog("No Active View", "Open a view first."); return; }
@@ -692,26 +614,6 @@ export class AppShell {
     const colDim = dims.find((d) => d.name === colName.trim());
     if (!colDim) return;
     try { await this.store.api.setViewAxes(v.viewId, rowDim.id, colDim.id); this.store.markDirty(); this.store.loadView(v.viewId); }
-    catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
-  }
-
-  private async createView() {
-    const cubes = this.store.visibleCubes();
-    if (!cubes.length) { await alertDialog("No Cubes", "No cubes available."); return; }
-    const cubeName = await pickDialog("Cube", cubes.map((c) => c.name));
-    if (!cubeName) return;
-    const cube = cubes.find((c) => c.name === cubeName.trim());
-    if (!cube) return;
-    const name = await inputDialog("View Name", "", "View name");
-    if (!name || !name.trim()) return;
-    const dims = this.store.visibleDims().filter((d) => d.name !== "@");
-    if (!dims.length) { await alertDialog("No Dimensions", "No dimensions available."); return; }
-    const dimNames = dims.map((d) => d.name);
-    const rowName = await inputDialog("Row Dimensions", dimNames.join(", "), "Comma-separated dimension names");
-    const colName = await inputDialog("Column Dimensions", dimNames.join(", "), "Comma-separated dimension names");
-    const rowDims = rowName?.split(",").map((s) => dims.find((d) => d.name === s.trim())?.id).filter(Boolean) as string[] || [];
-    const colDims = colName?.split(",").map((s) => dims.find((d) => d.name === s.trim())?.id).filter(Boolean) as string[] || [];
-    try { await this.store.api.createView(name.trim(), cube.id, rowDims, colDims); this.store.markDirty(); this.store.refreshModel(); }
     catch (e: any) { await alertDialog("Failed", e?.message || String(e)); }
   }
 

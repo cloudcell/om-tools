@@ -77,7 +77,9 @@ export class OmApi {
 
   // ---- commands ----
   createDimension(name: string, dimType = "set") { return this.t.request("command", { command_id: "create_dimension", params: { name, dim_type: dimType } }); }
-  createDimensionItem(dimId: string, name: string) { return this.t.request("command", { command_id: "create_dimension_item", params: { dim_id: dimId, name } }); }
+  createDimensionItem(dimId: string, name: string, position: "append" | "prepend" = "append") { return this.t.request("command", { command_id: "create_dimension_item", params: { dim_id: dimId, name, position } }); }
+  /** Qt Delete Dimension warning: hard-number cells and rules that go with the dimension. */
+  dimensionDeletionImpact(dimId: string, itemIds: string[]): Promise<{ total_data_cells: number; anchored_rules: number; rules: number }> { return this.t.request("query", { query_id: "dimension_deletion_impact", params: { dim_id: dimId, item_ids: itemIds } }); }
   createCube(name: string, dimensionIds: string[]) { return this.t.request("command", { command_id: "create_cube", params: { name, dimension_ids: dimensionIds } }); }
   createView(name: string, cubeId: string, rowDims: string[], colDims: string[], pageDims?: string[]) {
     const params: Record<string, any> = { name, cube_id: cubeId, row_dims: rowDims, col_dims: colDims };

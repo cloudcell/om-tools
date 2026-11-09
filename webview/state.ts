@@ -162,6 +162,36 @@ export class Store {
       this.api.workspaceSummary(),
     ]);
     this.set({ dimensions: dims.dimensions, cubes: cubes.cubes, views: views.views, workspaceSummary: ws });
+    this.syncTabsWithViews();
+  }
+
+  /** Tabs follow the runtime's views: a deleted view (Delete View, Delete Cube) loses its tab, a renamed one
+   *  its old name. When the active view is gone the first remaining tab opens, or none. */
+  private syncTabsWithViews() {
+    const byId = new Map(this.state.views.map((v) => [v.id, v.name]));
+    const kept = this.state.openTabs.filter((t) => byId.has(t.viewId));
+    let changed = kept.length !== this.state.openTabs.length;
+    for (const t of kept) { const n = byId.get(t.viewId)!; if (t.viewName !== n) { t.viewName = n; changed = true; } }
+    if (!changed) return;
+    this.state.openTabs = kept;
+    if (this.state.activeTab && !byId.has(this.state.activeTab)) {
+      const next = kept[0];
+      this.state.activeTab = next?.viewId ?? null;
+      if (next) { this.loadView(next.viewId); return; }
+      this.state.activeView = null;
+    }
+    this.notify();
+  }
+
+  /** Qt `_finalize_structure_change`: after creating or deleting dimensions, items, cubes, views —
+   *  model browser, rules and the active view are reloaded; `focus` opens a new view (New Cube, New View). */
+  async afterStructureChange(focus?: { viewId: string; viewName: string }) {
+    this.markDirty();
+    this.invalidateDimCache();
+    try { await this.refreshModel(); await this.refreshRules(); }
+    catch (e: any) { await alertDialog("Refresh failed", e?.message || String(e)); return; }
+    if (focus) await this.openView(focus.viewId, focus.viewName);
+    else if (this.state.activeView && this.state.views.some((v) => v.id === this.state.activeView!.viewId)) await this.loadView(this.state.activeView.viewId);
   }
 
   async refreshUndoState() {

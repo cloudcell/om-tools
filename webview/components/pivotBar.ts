@@ -1,6 +1,6 @@
 import { Store } from "../state";
 import { el, clear } from "../dom";
-import { inputDialog, alertDialog, pickDialog } from "./dialogs";
+import { ModelActions } from "./modelActions";
 
 /** PivotBar — 3-zone pivot-table layout with draggable dimension chips.
  *  Mirrors lib_gui/pivot_bar.py + lib_gui/_view_tab.py:
@@ -13,7 +13,8 @@ import { inputDialog, alertDialog, pickDialog } from "./dialogs";
 type Zone = "row" | "col" | "page";
 
 export class PivotBar {
-  constructor(private store: Store) {}
+  private actions: ModelActions;
+  constructor(private store: Store) { this.actions = new ModelActions(store); }
 
   /** Render the full pivot canvas (3 zones + grid slot). Returns the container
    *  and a ref to the grid mount point so MatrixGrid can fill it. */
@@ -56,7 +57,7 @@ export class PivotBar {
       zoneEl.appendChild(this.makeChip(dimIds[i], zone, i));
     }
     // + button
-    const plus = el("button", { class: "dim-chip-plus", title: "Add dimension" }, ["+"]);
+    const plus = el("button", { class: "dim-chip-plus", title: `Add a dimension to the ${zone === "row" ? "rows" : zone === "col" ? "columns" : "page"}`, "aria-label": "Add dimension" }, ["+"]);
     plus.addEventListener("click", () => this.addDimPrompt(zone));
     zoneEl.appendChild(plus);
     // placeholder for empty page zone
@@ -164,18 +165,9 @@ export class PivotBar {
     setTimeout(() => document.addEventListener("click", close), 0);
   }
 
-  private async addDimPrompt(zone: Zone) {
-    const v = this.store.state.activeView;
-    if (!v) return;
-    const cubeDims = this.store.state.dimensions.filter((d) => d.name !== "@");
-    const assigned = new Set([...v.rowDimIds, ...v.colDimIds, ...v.pageDimIds]);
-    const available = cubeDims.filter((d) => !assigned.has(d.id) && !this.store.isSystem(d.name));
-    if (!available.length) { await alertDialog("No Dimensions", "No unassigned dimensions available to add."); return; }
-    const names = available.map((d) => d.name);
-    const pick = await pickDialog(`Add dimension to ${zone} axis`, names);
-    if (!pick) return;
-    const dim = available.find((d) => d.name === pick.trim());
-    if (!dim) { await alertDialog("Not Found", `Dimension "${pick}" not found or already assigned.`); return; }
-    this.store.moveDimension(dim.id, zone, v[`${zone}DimIds` as "rowDimIds" | "colDimIds" | "pageDimIds"].length);
+  /** Qt pivot "+" → `_on_attach_dimension_to_cube(axis)`: attach a dimension (existing or new) to the
+   *  view's cube and put it on this zone's axis. Every cube dimension is already on some axis. */
+  private addDimPrompt(zone: Zone) {
+    return this.actions.attachDimension(zone);
   }
 }

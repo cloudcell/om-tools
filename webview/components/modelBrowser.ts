@@ -1,11 +1,13 @@
 import { Store } from "../state";
 import { el, clear } from "../dom";
-import { inputDialog, confirmDialog, alertDialog, pickDialog } from "./dialogs";
+import { inputDialog, alertDialog } from "./dialogs";
+import { ModelActions } from "./modelActions";
 
 /** ModelBrowser — left dock with tree: Dimensions, Cubes, Views.
  *  Mirrors lib_gui/model_browser.py with context menus and drag-to-view. */
 export class ModelBrowser {
-  constructor(private store: Store) {}
+  private actions: ModelActions;
+  constructor(private store: Store) { this.actions = new ModelActions(store); }
 
   render(): HTMLElement {
     const panel = el("div", { class: "dock" });
@@ -78,90 +80,46 @@ export class ModelBrowser {
   }
 
   // ---- Context menus ----
+  // Create / delete go through ModelActions (same dialogs as the Model menu); rename stays here.
+  private async rename(title: string, current: string, run: (n: string) => Promise<unknown>) {
+    const n = await inputDialog(title, current, "New name");
+    if (!n || !n.trim() || n.trim() === current) return;
+    try { await run(n.trim()); } catch (e: any) { await alertDialog(title, e?.message || String(e)); return; }
+    await this.store.afterStructureChange();
+  }
+
   private dimRootMenu() {
-    this.popup([
-      { label: "New Dimension…", fn: async () => {
-        const name = await inputDialog("New Dimension", "", "Dimension name");
-        if (!name || !name.trim()) return;
-        const isSeq = await confirmDialog("Dimension Type", "Sequential (ordered) dimension?", "Sequential", false);
-        const type = isSeq ? "seq" : "set";
-        this.store.api.createDimension(name.trim(), type).then(() => { this.store.markDirty(); this.store.refreshModel(); });
-      }},
-    ]);
+    this.popup([{ label: "New Dimension…", fn: () => this.actions.newDimension() }]);
   }
 
   private dimMenu(dim: any) {
     this.popup([
-      { label: `Add item to '${dim.name}'…`, fn: async () => {
-        const name = await inputDialog("Add Item", "", "Item name");
-        if (name && name.trim()) this.store.api.createDimensionItem(dim.id, name.trim()).then(() => { this.store.markDirty(); this.store.invalidateDimCache(dim.id); this.store.refreshModel(); if (this.store.state.activeView) this.store.loadView(this.store.state.activeView.viewId); });
-      }},
-      { label: `Rename dimension '${dim.name}'…`, fn: async () => {
-        const newName = await inputDialog("Rename Dimension", dim.name, "New name");
-        if (newName && newName.trim()) this.store.api.renameDimension(dim.id, newName.trim()).then(() => { this.store.markDirty(); this.store.invalidateDimCache(dim.id); this.store.refreshModel(); if (this.store.state.activeView) this.store.loadView(this.store.state.activeView.viewId); });
-      }},
-      { label: `Delete dimension '${dim.name}'…`, fn: async () => {
-        if (await confirmDialog("Delete Dimension", `Delete dimension "${dim.name}"?`, "Delete", true)) this.store.api.deleteDimension(dim.id).then(() => { this.store.markDirty(); this.store.invalidateDimCache(dim.id); this.store.refreshModel(); });
-      }},
+      { label: `Add item to '${dim.name}'…`, fn: () => this.actions.newDimensionItem(dim.id) },
+      { label: `Rename dimension '${dim.name}'…`, fn: () => this.rename("Rename Dimension", dim.name, (n) => this.store.api.renameDimension(dim.id, n)) },
+      { label: `Delete dimension '${dim.name}'…`, fn: () => this.actions.deleteDimension(dim.id) },
     ]);
   }
 
   private cubeRootMenu() {
-    this.popup([
-      { label: "New Cube…", fn: async () => {
-        const name = await inputDialog("New Cube", "", "Cube name");
-        if (!name || !name.trim()) return;
-        const dims = this.store.visibleDims().filter((d) => d.name !== "@");
-        const ids = dims.map((d) => d.id);
-        this.store.api.createCube(name.trim(), ids).then(() => { this.store.markDirty(); this.store.refreshModel(); });
-      }},
-    ]);
+    this.popup([{ label: "New Cube…", fn: () => this.actions.newCube() }]);
   }
 
   private cubeMenu(cube: any) {
     this.popup([
-      { label: `Rename cube '${cube.name}'…`, fn: async () => {
-        const newName = await inputDialog("Rename Cube", cube.name, "New name");
-        if (newName && newName.trim()) this.store.api.renameCube(cube.id, newName.trim()).then(() => { this.store.markDirty(); this.store.refreshModel(); });
-      }},
-      { label: `Delete cube '${cube.name}'…`, fn: async () => {
-        if (await confirmDialog("Delete Cube", `Delete cube "${cube.name}"?`, "Delete", true)) this.store.api.deleteCube(cube.id).then(() => { this.store.markDirty(); this.store.refreshModel(); });
-      }},
+      { label: `New view of '${cube.name}'…`, fn: () => this.actions.newView(cube.id) },
+      { label: `Rename cube '${cube.name}'…`, fn: () => this.rename("Rename Cube", cube.name, (n) => this.store.api.renameCube(cube.id, n)) },
+      { label: `Delete cube '${cube.name}'…`, fn: () => this.actions.deleteCube(cube.id) },
     ]);
   }
 
   private viewRootMenu() {
-    this.popup([
-      { label: "New View…", fn: async () => {
-        const cubes = this.store.visibleCubes();
-        if (!cubes.length) { await alertDialog("No Cubes", "No cubes available."); return; }
-        const cubeName = await pickDialog("Cube", cubes.map((c) => c.name));
-        if (!cubeName) return;
-        const cube = cubes.find((c) => c.name === cubeName.trim());
-        if (!cube) return;
-        const name = await inputDialog("View Name", "", "View name");
-        if (!name || !name.trim()) return;
-        const dims = this.store.visibleDims().filter((d) => d.name !== "@");
-        const dimNames = dims.map((d) => d.name);
-        const rowName = await inputDialog("Row Dimensions", dimNames.join(", "), "Comma-separated dimension names");
-        const colName = await inputDialog("Column Dimensions", dimNames.join(", "), "Comma-separated dimension names");
-        const rowDims = rowName?.split(",").map((s) => dims.find((d) => d.name === s.trim())?.id).filter(Boolean) as string[] || [];
-        const colDims = colName?.split(",").map((s) => dims.find((d) => d.name === s.trim())?.id).filter(Boolean) as string[] || [];
-        this.store.api.createView(name.trim(), cube.id, rowDims, colDims).then(() => { this.store.markDirty(); this.store.refreshModel(); });
-      }},
-    ]);
+    this.popup([{ label: "New View…", fn: () => this.actions.newView() }]);
   }
 
   private viewMenu(view: any) {
     this.popup([
-      { label: `Rename view '${view.name}'…`, fn: async () => {
-        const newName = await inputDialog("Rename View", view.name, "New name");
-        if (newName && newName.trim()) this.store.api.renameView(view.id, newName.trim()).then(() => { this.store.markDirty(); this.store.refreshModel(); });
-      }},
-      { label: `Delete view '${view.name}'…`, fn: async () => {
-        if (this.store.state.views.length <= 1) { await alertDialog("Cannot Delete", "Cannot delete the last view."); return; }
-        if (await confirmDialog("Delete View", `Delete view "${view.name}"?`, "Delete", true)) this.store.api.deleteView(view.id).then(() => { this.store.markDirty(); this.store.refreshModel(); });
-      }},
+      { label: `Rename view '${view.name}'…`, fn: () => this.rename("Rename View", view.name, (n) => this.store.api.renameView(view.id, n)) },
+      { label: `Delete view '${view.name}'…`, fn: () => this.actions.deleteView(view.id) },
     ]);
   }
 
