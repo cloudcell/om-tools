@@ -72,29 +72,30 @@ Or in `settings.json`:
 "omCore.omCorePath": "path/to/om-core"
 ```
 
-## Quick start: the coffee shop model
+## Quick start: a five-year financial model
 
-A three-month coffee shop model: cups sold, price, revenue, rent and profit. Revenue and profit
-are calculated by rules, so changing the price changes the profit.
+The om-core folder you cloned in step 2 comes with example models in its `examples` folder.
+This one is a five-year model of a fictional company (NZ Gadgets & Widgets), with views
+for drivers, profit and loss, balance sheet, cash flow and valuation. The statements are
+calculated by rules from the drivers, so changing a driver changes the results.
 
-1. Download the example file
-   ([`examples/coffee.json`](https://github.com/cloudcell/om-tools/blob/main/examples/coffee.json)),
-   for instance:
-
-   ```powershell
-   Invoke-WebRequest https://raw.githubusercontent.com/cloudcell/om-tools/main/examples/coffee.json -OutFile coffee.json
-   ```
-
-2. Click the **OM Core** icon in the activity bar → **Open GUI** (or `Ctrl+Shift+P` →
+1. Click the **OM Core** icon in the activity bar → **Open GUI** (or `Ctrl+Shift+P` →
    `OM Core: Open GUI`). The extension connects to the engine, or starts it for you.
-3. **File → Open…** and choose `coffee.json`.
-4. In the **Model Browser** on the left, open **Views → ShopView**. You get a grid with
-   Cups, Price, Revenue, Rent and Profit in rows and Jan, Feb, Mar in columns.
-   Profit for January is **700**.
-5. Double-click **Price** for **Jan**, type `4`, press **Enter**. Revenue becomes 1600 and
-   Profit becomes **1100**.
+2. **File → Open…** and choose
+   `examples/DEMO-03--CALC-FLOW-20260623-0057-5Y-ONLY.json` inside the om-core folder.
+3. In the **Model Browser** on the left, open **Views → Drivers**. These are the assumptions
+   by year: prices, volumes, cost percentages and so on. **PriceGadgets** is **120** in every year.
+4. Open **Views → PnL**. For 2028, **RevenueGadgets** is **624000** and **NetIncome** is **158112**.
+5. Go back to **Drivers**, double-click **PriceGadgets** for **2028**, type `130`, press **Enter**.
+   In **PnL**, 2028 **RevenueGadgets** becomes **676000** and **NetIncome** becomes **164851.2**.
+   The other years do not change, because each year has its own price.
 6. `Ctrl+Z` undoes the change, `Ctrl+Y` (or `Ctrl+Shift+Z`) redoes it.
-7. **File → Save…** to save the model as a `.json` file. **File → Open…** loads it again.
+7. Select a cell, for example **NetIncome** in **PnL**, and open the **Calculation Flow** tab in
+   the bottom panel to see which cells it is calculated from.
+8. **File → Save…** to save the model as a `.json` file. **File → Open…** loads it again.
+
+The other files in `examples` open the same way. Some of them use features this preview
+does not support yet, for example formatting.
 
 ## Commands
 
