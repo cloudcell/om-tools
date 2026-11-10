@@ -53,6 +53,12 @@
   --engine-off: #999999;
   --ok: #2bb24c;
   --warn: #e0a800;
+  /* Left column, tree, splitters (T-039 D3). */
+  --hover-bg: #e8eaf0;
+  --tree-twisty: #555555;
+  --tree-icon: #333333;
+  --text-label: #666666;
+  --grip: #8a8a8a;
 }
 
 /* Dark theme (T-039, variant B · Graphite). Overrides only the colour variables above; the light theme is the
@@ -99,6 +105,11 @@
   --engine-off: #737c8e;
   --ok: #4cd28a;
   --warn: #f2b632;
+  --hover-bg: #2b303a;
+  --tree-twisty: #9aa3b6;
+  --tree-icon: #c4cbda;
+  --text-label: #9aa3b6;
+  --grip: #7d8699;
 }
 
 * { box-sizing: border-box; }
@@ -260,19 +271,19 @@ body {
   background: var(--header-bg);
   border-right: 1px solid var(--border);
 }
-.splitter-x.collapsed:hover, .splitter-x.collapsed.dragging { background: #e8eaf0; }
+.splitter-x.collapsed:hover, .splitter-x.collapsed.dragging { background: var(--hover-bg); }
 .splitter-x.collapsed:focus-visible { background: var(--header-bg); outline: 2px solid var(--accent); outline-offset: -2px; }
 .splitter-x.collapsed::after {
   content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 15px;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, #8a8a8a 1.2px, transparent 1.5px) 0 0 / 3px 5px repeat-y;
+  background: radial-gradient(circle, var(--grip) 1.2px, transparent 1.5px) 0 0 / 3px 5px repeat-y;
 }
 /* Collapsed bottom panel: only its tab row, no active tab; the empty part of the row drags like the splitter */
 .rule-panel.collapsed { height: auto; max-height: none; }
 .rule-panel.collapsed .lower-content { display: none; }
 .rule-panel.collapsed .lower-tabs { border-bottom: none; cursor: row-resize; }
 .rule-panel.collapsed .lower-tab.active { background: transparent; border-color: transparent; font-weight: normal; color: var(--text-muted); }
-.rule-panel.collapsed .lower-tab.active:hover { background: #e8eaf0; }
+.rule-panel.collapsed .lower-tab.active:hover { background: var(--hover-bg); }
 /* While dragging: one cursor everywhere, no text selection */
 body.splitter-dragging-x, body.splitter-dragging-x * { cursor: col-resize !important; user-select: none !important; }
 body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !important; user-select: none !important; }
@@ -310,10 +321,10 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   cursor: default;
   white-space: nowrap;
 }
-.tree-row:hover { background: #e8eaf0; }
+.tree-row:hover { background: var(--hover-bg); }
 .tree-row.selected { background: var(--selection); color: #fff; }
-.tree-twisty { width: 12px; text-align: center; color: #555; font-size: 10px; cursor: pointer; flex-shrink: 0; }
-.tree-icon { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: #333; flex-shrink: 0; }
+.tree-twisty { width: 12px; text-align: center; color: var(--tree-twisty); font-size: 10px; cursor: pointer; flex-shrink: 0; }
+.tree-icon { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: var(--tree-icon); flex-shrink: 0; }
 .tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .tree-children { margin-left: 14px; }
 
@@ -742,7 +753,7 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 /* ---- Info toolbox ---- */
 .info-section { padding: 6px 10px; font-size: 12px; }
 .info-row { display: flex; padding: 2px 0; }
-.info-row .info-label { min-width: 80px; color: #666; font-weight: 600; }
+.info-row .info-label { min-width: 80px; color: var(--text-label); font-weight: 600; }
 .info-row .info-value { flex: 1; word-break: break-all; }
 
 /* ---- Status bar ---- */
