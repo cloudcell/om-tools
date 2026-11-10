@@ -59,6 +59,21 @@
   --tree-icon: #333333;
   --text-label: #666666;
   --grip: #8a8a8a;
+  /* Grid (T-039 D4). The multilevel grid takes these through COLORS in multilevelGrid.ts as var(...) strings. */
+  --ml-line: #d0d0d0;
+  --ml-header-bg: #f2f4f8;
+  --ml-header-fg: #202020;
+  --ml-cell-bg: #ffffff;
+  --ml-cell-fg: #000000;
+  --ml-sel-bg: rgba(42, 118, 210, 0.55);
+  --ml-sel-fg: #ffffff;
+  --ml-hard-bg: #ffff99;
+  --ml-hard-tri: #ff0000;
+  --ml-current: rgb(80, 80, 80);
+  --ml-error: #cc0000;
+  --ml-shade: rgba(0, 0, 0, 0.10);
+  --hover-soft: #f0f4fa;
+  --dirty: #c04000;
 }
 
 /* Dark theme (T-039, variant B · Graphite). Overrides only the colour variables above; the light theme is the
@@ -110,6 +125,20 @@
   --tree-icon: #c4cbda;
   --text-label: #9aa3b6;
   --grip: #7d8699;
+  --ml-line: #343a46;
+  --ml-header-bg: #242831;
+  --ml-header-fg: #e6e9f0;
+  --ml-cell-bg: #1b1e25;
+  --ml-cell-fg: #e6e9f0;
+  --ml-sel-bg: rgba(42, 118, 210, 0.55);
+  --ml-sel-fg: #ffffff;
+  --ml-hard-bg: #4a4320;
+  --ml-hard-tri: #ff5a5a;
+  --ml-current: #e6e9f0;
+  --ml-error: #ff6b6b;
+  --ml-shade: rgba(255, 255, 255, 0.08);
+  --hover-soft: #232836;
+  --dirty: #ff8a50;
 }
 
 * { box-sizing: border-box; }
@@ -535,7 +564,7 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   font-family: var(--font-mono);
   font-size: 12px;
   border: 2px solid var(--accent);
-  background: #fff;
+  background: var(--ml-cell-bg);
   padding: 0 2px;
   box-sizing: border-box;
   outline: none;
@@ -761,32 +790,32 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .statusbar .sb-sep { color: var(--border-strong); }
 
 /* ---- Dirty marker ---- */
-.dirty-marker { color: #c04000; font-weight: 700; }
+.dirty-marker { color: var(--dirty); font-weight: 700; }
 
 /* ---- Multilevel grid ---- */
-.ml-grid-scroll { font-family: var(--font-sans); background: #fff; }
+.ml-grid-scroll { font-family: var(--font-sans); background: var(--ml-cell-bg); }
 .ml-grid-scroll.resize-hover, .ml-grid-scroll.resize-hover *,
 .ml-grid-scroll.resizing, .ml-grid-scroll.resizing * { cursor: col-resize !important; }
 body.ml-resizing, body.ml-resizing * { cursor: col-resize !important; }
 .ml-grid-canvas { position: relative; }
 .ml-corner { font-size: 11px; font-weight: 600; box-sizing: border-box; }
-.ml-corner:hover { background: #e8eaf0; }
+.ml-corner:hover { background: var(--hover-bg); }
 .ml-band { position: absolute; box-sizing: border-box; }
 .ml-band.shaded {
-  background-image: linear-gradient(-45deg, transparent calc(50% - 0.5px), rgba(0,0,0,0.10) calc(50% - 0.5px), rgba(0,0,0,0.10) calc(50% + 0.5px), transparent calc(50% + 0.5px));
+  background-image: linear-gradient(-45deg, transparent calc(50% - 0.5px), var(--ml-shade) calc(50% - 0.5px), var(--ml-shade) calc(50% + 0.5px), transparent calc(50% + 0.5px));
   background-size: 7px 7px;
 }
-.ml-band:hover { background-color: #e8eaf0 !important; }
+.ml-band:hover { background-color: var(--hover-bg) !important; }
 .ml-collapse-toggle { user-select: none; }
 .ml-collapse-toggle:hover { color: var(--accent); }
 .ml-leaf-header { position: absolute; box-sizing: border-box; }
-.ml-leaf-header:hover { background-color: #e8eaf0 !important; }
-.ml-leaf-header.selected { background-color: rgba(42, 118, 210, 0.55) !important; color: #fff !important; }
+.ml-leaf-header:hover { background-color: var(--hover-bg) !important; }
+.ml-leaf-header.selected { background-color: var(--ml-sel-bg) !important; color: var(--ml-sel-fg) !important; }
 .ml-cell { position: absolute; box-sizing: border-box; }
-.ml-cell:hover { background-color: #f0f4fa !important; }
-.ml-cell.selected { background-color: rgba(42, 118, 210, 0.55) !important; color: #fff !important; }
-.ml-cell.hardnumber { background-color: #ffff99 !important; }
-.ml-cell.error { color: #c00 !important; }
+.ml-cell:hover { background-color: var(--hover-soft) !important; }
+.ml-cell.selected { background-color: var(--ml-sel-bg) !important; color: var(--ml-sel-fg) !important; }
+.ml-cell.hardnumber { background-color: var(--ml-hard-bg) !important; }
+.ml-cell.error { color: var(--ml-error) !important; }
 .ml-cell.text { justify-content: flex-start !important; }
 
 /* ---- Matrix grid ---- */
