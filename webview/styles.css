@@ -41,6 +41,39 @@
   --tabbar-height: 30px;
 }
 
+/* Dark theme (T-039, variant B · Graphite). Overrides only the colour variables above; the light theme is the
+   plain :root. Hard-coded colours further down are moved onto variables step by step (D2–D7), until then
+   they stay light. `color-scheme` makes scrollbars, <select>, <input> and the colour picker dark too. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --status-bar-bg: #1b1e25;
+  --status-bar-text: #e6e9f0;
+  --engine-indicator-bg: #242831;
+  --focus-indicator: #e6e9f0;
+  --truncation-warning: #ff6b6b;
+  --dock-bg: #181b21;
+  --panel-bg: #1b1e25;
+  --border: #2d323d;
+  --border-strong: #3a404c;
+  --header-bg: #242831;
+  --header-bg-2: #2b303a;
+  --menubar-bg: #1b1e25;
+  --menu-hover: #2b303a;
+  --menu-item-hover: #2b303a;
+  --row-alt: #1f232a;
+  --selection: #283056;
+  --selection-border: #8ea2ff;
+  --text: #e6e9f0;
+  --text-muted: #9aa3b6;
+  --accent: #8ea2ff;
+  --grid-line: #2d323d;
+  --grid-header: #242831;
+  --grid-header-border: #3a404c;
+  --error: #ff6b6b;
+  --rule: #b69cff;
+  --override: #4cd28a;
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
 body {
@@ -88,6 +121,14 @@ body {
 .menubar .engine-dot.connected { background: #2bb24c; }
 .menubar .engine-dot.connecting { background: #e0a800; }
 .menubar .engine-dot.error { background: var(--error); }
+
+/* Light / dark switch, right end of the menu bar (T-039) */
+.menubar .theme-switch { display: flex; gap: 2px; margin-left: 8px; padding: 2px; border-radius: 6px; background: var(--header-bg); }
+.menubar .theme-btn { width: 24px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--text-muted); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.menubar .theme-btn svg { width: 16px; height: 16px; display: block; }
+.menubar .theme-btn:hover { color: var(--text); }
+.menubar .theme-btn[aria-pressed="true"] { background: var(--panel-bg); color: var(--accent); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
+.menubar .theme-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ---- Toolbar ---- */
 .toolbar {

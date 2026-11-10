@@ -1,5 +1,6 @@
 import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText, DEFAULT_LAYOUT } from "../state";
-import type { UiLayout } from "../../shared/messages";
+import type { UiLayout, UiTheme } from "../../shared/messages";
+import { applyTheme, currentTheme } from "../theme";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, type MaterialIcon } from "../menuIcons";
 import { ModelBrowser } from "./modelBrowser";
@@ -77,7 +78,7 @@ export class AppShell {
     // Saved panel sizes first: RulePanel's first render already checks whether it is collapsed.
     const layout = this.store.state.layout;
     Object.assign(layout, sanitizeLayout(this.store.api.loadUiState()?.layout));
-    const saveLayout = () => this.store.api.saveUiState({ layout: { ...layout } });
+    const saveLayout = () => this.store.api.updateUiState({ layout: { ...layout } });
 
     const left = el("div", { class: "left-docks" });
     left.append(docks.browser, docks.info, docks.format);
@@ -243,7 +244,32 @@ export class AppShell {
       txt.textContent = s.connected ? `engine: ${s.endpoint || "auto"}` : s.statusMessage;
     });
     mb.appendChild(indicator);
+    mb.appendChild(this.buildThemeSwitch());
     return mb;
+  }
+
+  /** Light / dark switch at the right end of the menu bar (T-039). The choice is saved with the panel sizes. */
+  private buildThemeSwitch(): HTMLElement {
+    const options: { theme: UiTheme; title: string; icon: MaterialIcon }[] = [
+      { theme: "light", title: "Light theme", icon: "light_mode" },
+      { theme: "dark", title: "Dark theme", icon: "dark_mode" },
+    ];
+    const group = el("div", { class: "theme-switch", role: "group", "aria-label": "Theme" });
+    const buttons = options.map((o) => el("button", {
+      class: "theme-btn", type: "button", title: o.title, "aria-label": o.title, html: msym(o.icon),
+      onclick: () => {
+        applyTheme(o.theme);
+        sync();
+        this.store.api.updateUiState({ theme: o.theme });
+      },
+    }) as HTMLButtonElement);
+    const sync = () => {
+      const cur = currentTheme();
+      buttons.forEach((b, i) => b.setAttribute("aria-pressed", String(options[i].theme === cur)));
+    };
+    group.append(...buttons);
+    sync();
+    return group;
   }
 
   /** Builds a dropdown (or nested submenu) list; submenus open on hover via CSS. */
