@@ -799,7 +799,8 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 body.ml-resizing, body.ml-resizing * { cursor: col-resize !important; }
 .ml-grid-canvas { position: relative; }
 .ml-corner { font-size: 11px; font-weight: 600; box-sizing: border-box; }
-.ml-corner:hover { background: var(--hover-bg); }
+/* !important: the corner's own inline background would otherwise always win and the hover would never show. */
+.ml-corner:hover { background: var(--hover-bg) !important; }
 .ml-band { position: absolute; box-sizing: border-box; }
 .ml-band.shaded {
   background-image: linear-gradient(-45deg, transparent calc(50% - 0.5px), var(--ml-shade) calc(50% - 0.5px), var(--ml-shade) calc(50% + 0.5px), transparent calc(50% + 0.5px));
@@ -813,8 +814,10 @@ body.ml-resizing, body.ml-resizing * { cursor: col-resize !important; }
 .ml-leaf-header.selected { background-color: var(--ml-sel-bg) !important; color: var(--ml-sel-fg) !important; }
 .ml-cell { position: absolute; box-sizing: border-box; }
 .ml-cell:hover { background-color: var(--hover-soft) !important; }
-.ml-cell.selected { background-color: var(--ml-sel-bg) !important; color: var(--ml-sel-fg) !important; }
+/* hardnumber before selected, both !important with equal specificity: the later one wins. Selected must come last,
+   otherwise a selected override cell is yellow with white text (1.1:1, unreadable). The red corner still marks it. */
 .ml-cell.hardnumber { background-color: var(--ml-hard-bg) !important; }
+.ml-cell.selected { background-color: var(--ml-sel-bg) !important; color: var(--ml-sel-fg) !important; }
 .ml-cell.error { color: var(--ml-error) !important; }
 .ml-cell.text { justify-content: flex-start !important; }
 
