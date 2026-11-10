@@ -1,8 +1,24 @@
+# Only dist/extension.js, dist/webview.{js,css}, dist/index.html, media/, README, LICENSE, CHANGELOG go into the VSIX.
 .vscode/**
+.devin/**
+.idea/**
+.gitattributes
+.gitignore
+AGENTS.md
+*.sh
 src/**
 webview/**
+bridge/**
+shared/**
+docs/**
+scripts/**
 node_modules/**
 tsconfig.json
+test-harness.ts
 **/*.map
 **/*.ts
-scripts/**
+**/*.vsix
+dist/bridge.js
+dist/test-harness.js
+dist/_selftest.js
+examples/**

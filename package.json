@@ -1,10 +1,14 @@
 {
-  "name": "om-core",
+  "name": "om-tools",
   "displayName": "OM Core",
   "description": "Multidimensional modeling engine GUI for OM Core — connects to the om-core runtime.",
   "version": "0.1.0",
   "publisher": "om-core",
   "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudcell/om-tools.git"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -127,6 +131,7 @@
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.80.0",
     "@types/ws": "^8.5.0",
+    "@vscode/vsce": "^4.1.0",
     "esbuild": "^0.20.0",
     "simple-git-hooks": "^2.11.1",
     "typescript": "^5.4.0",
