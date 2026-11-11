@@ -10,7 +10,7 @@ let overlay: HTMLElement | null = null;
 function ensureOverlay(): HTMLElement {
   if (overlay && document.body.contains(overlay)) return overlay;
   overlay = el("div", { class: "dlg-overlay", style: {
-    position: "fixed", inset: "0", background: "rgba(0,0,0,0.3)",
+    position: "fixed", inset: "0", background: "var(--dlg-overlay)",
     zIndex: "100000", display: "flex", alignItems: "center", justifyContent: "center",
   } }) as HTMLElement;
   document.body.appendChild(overlay);
@@ -28,29 +28,29 @@ export function inputDialog(title: string, defaultValue = "", placeholder = ""):
     clear(ov);
 
     const dlg = el("div", { class: "dlg", style: {
-      background: "#fff", borderRadius: "10px", padding: "20px",
-      minWidth: "320px", maxWidth: "400px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "20px",
+      minWidth: "320px", maxWidth: "400px", boxShadow: "var(--dlg-shadow)",
       fontFamily: "-apple-system, system-ui, sans-serif",
     } }) as HTMLElement;
 
-    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "12px", color: "#202020" } }, [title]);
+    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "12px", color: "var(--dlg-title)" } }, [title]);
     dlg.appendChild(label);
 
     const input = document.createElement("input") as HTMLInputElement;
     input.type = "text";
     input.value = defaultValue;
     input.placeholder = placeholder;
-    input.style.cssText = "width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 16px;";
+    input.style.cssText = "width: 100%; box-sizing: border-box; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 16px;";
     dlg.appendChild(input);
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
     const cancelBtn = el("button", { style: {
-      padding: "6px 16px", border: "1px solid #d0d0d0", borderRadius: "6px",
-      background: "#f2f4f8", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+      padding: "6px 16px", border: "1px solid var(--dlg-border)", borderRadius: "6px",
+      background: "var(--dlg-btn-bg)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
     } }, ["Cancel"]) as HTMLButtonElement;
     const okBtn = el("button", { style: {
       padding: "6px 16px", border: "none", borderRadius: "6px",
-      background: "#2a76d2", color: "#fff", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
+      background: "var(--dlg-primary)", color: "var(--on-accent)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
     } }, ["OK"]) as HTMLButtonElement;
     btnRow.appendChild(cancelBtn);
     btnRow.appendChild(okBtn);
@@ -78,25 +78,25 @@ export function confirmDialog(title: string, message: string, confirmLabel = "Co
     clear(ov);
 
     const dlg = el("div", { class: "dlg", style: {
-      background: "#fff", borderRadius: "10px", padding: "20px",
-      minWidth: "320px", maxWidth: "400px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "20px",
+      minWidth: "320px", maxWidth: "400px", boxShadow: "var(--dlg-shadow)",
       fontFamily: "-apple-system, system-ui, sans-serif",
     } }) as HTMLElement;
 
-    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#202020" } }, [title]);
+    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "var(--dlg-title)" } }, [title]);
     dlg.appendChild(label);
 
-    const msg = el("div", { style: { fontSize: "13px", color: "#404040", marginBottom: "16px", lineHeight: "1.4", whiteSpace: "pre-line" } }, [message]);
+    const msg = el("div", { style: { fontSize: "13px", color: "var(--dlg-text)", marginBottom: "16px", lineHeight: "1.4", whiteSpace: "pre-line" } }, [message]);
     dlg.appendChild(msg);
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
     const cancelBtn = el("button", { style: {
-      padding: "6px 16px", border: "1px solid #d0d0d0", borderRadius: "6px",
-      background: "#f2f4f8", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+      padding: "6px 16px", border: "1px solid var(--dlg-border)", borderRadius: "6px",
+      background: "var(--dlg-btn-bg)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
     } }, ["Cancel"]) as HTMLButtonElement;
     const okBtn = el("button", { style: {
       padding: "6px 16px", border: "none", borderRadius: "6px",
-      background: destructive ? "#c00" : "#2a76d2", color: "#fff",
+      background: destructive ? "var(--dlg-danger)" : "var(--dlg-primary)", color: "var(--on-accent)",
       fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
     } }, [confirmLabel]) as HTMLButtonElement;
     btnRow.appendChild(cancelBtn);
@@ -132,12 +132,12 @@ export function choiceDialog(title: string, message: string, choices: DialogChoi
     clear(ov);
 
     const dlg = el("div", { class: "dlg", style: {
-      background: "#fff", borderRadius: "10px", padding: "20px",
-      minWidth: "360px", maxWidth: "440px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "20px",
+      minWidth: "360px", maxWidth: "440px", boxShadow: "var(--dlg-shadow)",
       fontFamily: "-apple-system, system-ui, sans-serif",
     } }) as HTMLElement;
-    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#202020" } }, [title]));
-    dlg.appendChild(el("div", { style: { fontSize: "13px", color: "#404040", marginBottom: "16px", lineHeight: "1.4", whiteSpace: "pre-line" } }, [message]));
+    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "var(--dlg-title)" } }, [title]));
+    dlg.appendChild(el("div", { style: { fontSize: "13px", color: "var(--dlg-text)", marginBottom: "16px", lineHeight: "1.4", whiteSpace: "pre-line" } }, [message]));
 
     const done = (val: string | null) => { closeOverlay(); resolve(val); };
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
@@ -146,9 +146,9 @@ export function choiceDialog(title: string, message: string, choices: DialogChoi
       const kind = c.kind || "normal";
       const btn = el("button", { "data-value": c.value, style: {
         padding: "6px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
-        border: kind === "primary" ? "none" : "1px solid #d0d0d0",
-        background: kind === "primary" ? "#2a76d2" : "#f2f4f8",
-        color: kind === "primary" ? "#fff" : kind === "destructive" ? "#c00" : "#202020",
+        border: kind === "primary" ? "none" : "1px solid var(--dlg-border)",
+        background: kind === "primary" ? "var(--dlg-primary)" : "var(--dlg-btn-bg)",
+        color: kind === "primary" ? "var(--on-accent)" : kind === "destructive" ? "var(--dlg-danger)" : "var(--dlg-title)",
         fontWeight: kind === "primary" ? "500" : "400",
         marginRight: kind === "destructive" ? "auto" : "0",
       } }, [c.label]) as HTMLButtonElement;
@@ -172,21 +172,21 @@ export function alertDialog(title: string, message: string): Promise<void> {
     clear(ov);
 
     const dlg = el("div", { class: "dlg", style: {
-      background: "#fff", borderRadius: "10px", padding: "20px",
-      minWidth: "320px", maxWidth: "400px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "20px",
+      minWidth: "320px", maxWidth: "400px", boxShadow: "var(--dlg-shadow)",
       fontFamily: "-apple-system, system-ui, sans-serif",
     } }) as HTMLElement;
 
-    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#202020" } }, [title]);
+    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "var(--dlg-title)" } }, [title]);
     dlg.appendChild(label);
 
-    const msg = el("div", { style: { fontSize: "13px", color: "#404040", marginBottom: "16px", lineHeight: "1.4", whiteSpace: "pre-line" } }, [message]);
+    const msg = el("div", { style: { fontSize: "13px", color: "var(--dlg-text)", marginBottom: "16px", lineHeight: "1.4", whiteSpace: "pre-line" } }, [message]);
     dlg.appendChild(msg);
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
     const okBtn = el("button", { style: {
       padding: "6px 16px", border: "none", borderRadius: "6px",
-      background: "#2a76d2", color: "#fff", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
+      background: "var(--dlg-primary)", color: "var(--on-accent)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
     } }, ["OK"]) as HTMLButtonElement;
     btnRow.appendChild(okBtn);
     dlg.appendChild(btnRow);
@@ -210,16 +210,16 @@ export function pickDialog(title: string, options: string[], defaultIndex = 0): 
     clear(ov);
 
     const dlg = el("div", { class: "dlg", style: {
-      background: "#fff", borderRadius: "10px", padding: "20px",
-      minWidth: "320px", maxWidth: "400px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "20px",
+      minWidth: "320px", maxWidth: "400px", boxShadow: "var(--dlg-shadow)",
       fontFamily: "-apple-system, system-ui, sans-serif",
     } }) as HTMLElement;
 
-    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "12px", color: "#202020" } }, [title]);
+    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "12px", color: "var(--dlg-title)" } }, [title]);
     dlg.appendChild(label);
 
     const select = document.createElement("select") as HTMLSelectElement;
-    select.style.cssText = "width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 16px;";
+    select.style.cssText = "width: 100%; box-sizing: border-box; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 16px;";
     options.forEach((opt, i) => {
       const o = document.createElement("option");
       o.value = opt; o.textContent = opt;
@@ -230,12 +230,12 @@ export function pickDialog(title: string, options: string[], defaultIndex = 0): 
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
     const cancelBtn = el("button", { style: {
-      padding: "6px 16px", border: "1px solid #d0d0d0", borderRadius: "6px",
-      background: "#f2f4f8", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+      padding: "6px 16px", border: "1px solid var(--dlg-border)", borderRadius: "6px",
+      background: "var(--dlg-btn-bg)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
     } }, ["Cancel"]) as HTMLButtonElement;
     const okBtn = el("button", { style: {
       padding: "6px 16px", border: "none", borderRadius: "6px",
-      background: "#2a76d2", color: "#fff", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
+      background: "var(--dlg-primary)", color: "var(--on-accent)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
     } }, ["OK"]) as HTMLButtonElement;
     btnRow.appendChild(cancelBtn);
     btnRow.appendChild(okBtn);
@@ -273,21 +273,21 @@ export function formDialog(title: string, fields: FormField[], opts: { okLabel?:
     const ov = ensureOverlay();
     clear(ov);
     const dlg = el("div", { class: "dlg dlg-form", role: "dialog", "aria-label": title, style: {
-      background: "#fff", borderRadius: "10px", padding: "20px",
-      minWidth: "360px", maxWidth: "440px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "20px",
+      minWidth: "360px", maxWidth: "440px", boxShadow: "var(--dlg-shadow)",
       fontFamily: "-apple-system, system-ui, sans-serif",
     } }) as HTMLElement;
-    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "12px", color: "#202020" } }, [title]));
+    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "12px", color: "var(--dlg-title)" } }, [title]));
 
     const values: FormValues = {};
-    const ctl = "width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 13px; font-family: inherit;";
+    const ctl = "width: 100%; box-sizing: border-box; padding: 6px 10px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit;";
     const rows: { f: FormField; row: HTMLElement; sync?: () => void }[] = [];
     const refresh = () => {
       for (const r of rows) { r.sync?.(); r.row.style.display = !r.f.visibleIf || r.f.visibleIf(values) ? "" : "none"; }
     };
     for (const f of fields) {
       const row = el("div", { class: "dlg-row", "data-key": f.key, style: { marginBottom: "10px" } }) as HTMLElement;
-      const lab = el("div", { style: { fontSize: "12px", color: "#505050", marginBottom: "4px" } }, [f.label]);
+      const lab = el("div", { style: { fontSize: "12px", color: "var(--dlg-label)", marginBottom: "4px" } }, [f.label]);
       let sync: (() => void) | undefined;
       if (f.kind === "text") {
         row.appendChild(lab);
@@ -319,7 +319,7 @@ export function formDialog(title: string, fields: FormField[], opts: { okLabel?:
         row.appendChild(select);
       } else if (f.kind === "checks") {
         row.appendChild(lab);
-        const box = el("div", { style: { border: "1px solid #d0d0d0", borderRadius: "6px", padding: "4px 8px", maxHeight: "160px", overflowY: "auto" } }) as HTMLElement;
+        const box = el("div", { style: { border: "1px solid var(--dlg-border)", borderRadius: "6px", padding: "4px 8px", maxHeight: "160px", overflowY: "auto" } }) as HTMLElement;
         values[f.key] = f.options.map((o) => o.value).filter((v) => (f.values || []).includes(v));
         for (const o of f.options) {
           const cb = document.createElement("input");
@@ -343,17 +343,17 @@ export function formDialog(title: string, fields: FormField[], opts: { okLabel?:
       rows.push({ f, row, sync });
       dlg.appendChild(row);
     }
-    const err = el("div", { class: "dlg-error", role: "alert", style: { color: "#c00", fontSize: "12px", minHeight: "16px", marginBottom: "8px", whiteSpace: "pre-line" } }) as HTMLElement;
+    const err = el("div", { class: "dlg-error", role: "alert", style: { color: "var(--dlg-danger)", fontSize: "12px", minHeight: "16px", marginBottom: "8px", whiteSpace: "pre-line" } }) as HTMLElement;
     dlg.appendChild(err);
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
     const cancelBtn = el("button", { style: {
-      padding: "6px 16px", border: "1px solid #d0d0d0", borderRadius: "6px",
-      background: "#f2f4f8", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+      padding: "6px 16px", border: "1px solid var(--dlg-border)", borderRadius: "6px",
+      background: "var(--dlg-btn-bg)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
     } }, ["Cancel"]) as HTMLButtonElement;
     const okBtn = el("button", { style: {
       padding: "6px 16px", border: "none", borderRadius: "6px",
-      background: "#2a76d2", color: "#fff", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
+      background: "var(--dlg-primary)", color: "var(--on-accent)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
     } }, [opts.okLabel || "OK"]) as HTMLButtonElement;
     btnRow.appendChild(cancelBtn); btnRow.appendChild(okBtn);
     dlg.appendChild(btnRow);

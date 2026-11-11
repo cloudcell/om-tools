@@ -91,6 +91,36 @@
   --chip-accent: #4870a8;
   --drop-bg: #d0e4f8;
   --drop-border: #4870a8;
+  /* Bottom panel: rules, Calculation Flow, Circular References (T-039 D6). */
+  --hairline: #f0f0f0;
+  --rule-grip: #999999;
+  --filter-bg: #f0f2f8;
+  --btn-bg: #ffffff;
+  --on-accent: #ffffff;
+  --surface-soft: #f8f8f8;
+  --warn-bg: #fff8e0;
+  --warn-border: #e0c060;
+  --cf-expr: #4d5b73;
+  --cf-up: #2166b5;
+  --cf-down: #6d4cc2;
+  --cf-up-hi: #00b8d4;
+  --cf-down-hi: #d04aff;
+  --cf-graph-bg: #fafbfd;
+  --cf-node-bg: #f5f7fb;
+  --cf-node-fg: #1d2533;
+  --cf-node-border: #7a8599;
+  --cf-root-bg: #fff7da;
+  --cf-dim-bg: #e9ecf3;
+  /* Modal dialogs, built in dialogs.ts with inline styles that point at these (T-039 D7). */
+  --dlg-overlay: rgba(0, 0, 0, 0.3);
+  --dlg-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --dlg-title: #202020;
+  --dlg-text: #404040;
+  --dlg-label: #505050;
+  --dlg-border: #d0d0d0;
+  --dlg-btn-bg: #f2f4f8;
+  --dlg-primary: #2a76d2;
+  --dlg-danger: #cc0000;
 }
 
 /* Dark theme (T-039, variant B · Graphite). Overrides only the colour variables above; the light theme is the
@@ -172,6 +202,34 @@
   --chip-accent: #8ea2ff;
   --drop-bg: #243252;
   --drop-border: #8ea2ff;
+  --hairline: #262a33;
+  --rule-grip: #7d8699;
+  --filter-bg: #20242c;
+  --btn-bg: #242831;
+  --on-accent: #10131f;
+  --surface-soft: #20242c;
+  --warn-bg: #3a3320;
+  --warn-border: #7a6a2a;
+  --cf-expr: #aab3c5;
+  --cf-up: #6fa8ff;
+  --cf-down: #b69cff;
+  --cf-up-hi: #3de0f5;
+  --cf-down-hi: #e08cff;
+  --cf-graph-bg: #181b21;
+  --cf-node-bg: #242831;
+  --cf-node-fg: #e6e9f0;
+  --cf-node-border: #6b7487;
+  --cf-root-bg: #3a3320;
+  --cf-dim-bg: #2a2f3a;
+  --dlg-overlay: rgba(0, 0, 0, 0.55);
+  --dlg-shadow: 0 0 0 1px #3a404c, 0 8px 32px rgba(0, 0, 0, 0.6);
+  --dlg-title: #e6e9f0;
+  --dlg-text: #c4cbda;
+  --dlg-label: #aab3c5;
+  --dlg-border: #3a404c;
+  --dlg-btn-bg: #2b303a;
+  --dlg-primary: #8ea2ff;
+  --dlg-danger: #ff6b6b;
 }
 
 * { box-sizing: border-box; }
@@ -711,76 +769,76 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   align-items: center;
   gap: 6px;
   padding: 2px 8px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--hairline);
   cursor: pointer;
 }
-.rule-row:hover { background: #f0f4fa; }
+.rule-row:hover { background: var(--hover-soft); }
 .rule-row.selected { background: var(--selection); color: #fff; }
-.rule-row .rule-grip { color: #999; cursor: grab; }
+.rule-row .rule-grip { color: var(--rule-grip); cursor: grab; }
 .rule-row .rule-text { flex: 1; font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rule-row .rule-anchored { color: #c04000; font-size: 10px; }
+.rule-row .rule-anchored { color: var(--dirty); font-size: 10px; }
 .rule-row input.rule-edit { flex: 1; font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--accent); padding: 1px 4px; }
 
 /* ---- Channel filter pills ---- */
-.channel-filter { display: flex; gap: 4px; padding: 4px 8px; background: #f0f2f8; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-.channel-pill { padding: 2px 10px; border-radius: 10px; background: #fff; border: 1px solid var(--border); cursor: pointer; font-size: 11px; }
-.channel-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.channel-filter { display: flex; gap: 4px; padding: 4px 8px; background: var(--filter-bg); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.channel-pill { padding: 2px 10px; border-radius: 10px; background: var(--btn-bg); border: 1px solid var(--border); cursor: pointer; font-size: 11px; }
+.channel-pill.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 
 /* ---- Calculation flow ---- */
 .calc-flow-list { flex: 1; overflow: auto; font-size: 12px; padding: 4px; }
 /* Colours as in lib_gui/calculation_flow_panel.py */
 .calc-flow-entry { padding: 1px 8px; white-space: nowrap; }
 .calc-flow-entry.link { cursor: pointer; }
-.calc-flow-entry.link:hover { background: #e8eaf0; text-decoration: underline; }
+.calc-flow-entry.link:hover { background: var(--hover-bg); text-decoration: underline; }
 .calc-flow-entry.cf-root { font-weight: 600; }
-.calc-flow-entry.cf-expr { color: #4d5b73; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.calc-flow-entry.cf-expr { color: var(--cf-expr); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
 .calc-flow-entry.cf-section { font-style: italic; }
-.calc-flow-entry.cf-upstream { color: #2166b5; }
-.calc-flow-entry.cf-downstream { color: #6d4cc2; }
-.calc-flow-header { padding: 4px 8px; font-weight: 600; font-size: 11px; color: #666; }
-.calc-flow-header .cf-warning { color: #d32f2f; }
+.calc-flow-entry.cf-upstream { color: var(--cf-up); }
+.calc-flow-entry.cf-downstream { color: var(--cf-down); }
+.calc-flow-header { padding: 4px 8px; font-weight: 600; font-size: 11px; color: var(--text-label); }
+.calc-flow-header .cf-warning { color: var(--error); }
 /* Graph mode: cards and arrows as in Qt `_render_graph` */
-.cf-graph { position: relative; flex: 1; min-height: 120px; overflow: hidden; background: #fafbfd; border-top: 1px solid var(--border); cursor: grab; user-select: none; }
+.cf-graph { position: relative; flex: 1; min-height: 120px; overflow: hidden; background: var(--cf-graph-bg); border-top: 1px solid var(--border); cursor: grab; user-select: none; }
 .cf-graph.panning { cursor: grabbing; }
 .cf-graph-canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .cf-graph-edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .cf-graph-tools { position: absolute; right: 6px; top: 6px; display: flex; gap: 4px; z-index: 2; }
-.cf-graph-tools .tb-btn { font-size: 11px; padding: 1px 8px; background: #fff; border: 1px solid var(--border-strong); border-radius: 3px; cursor: pointer; }
-.cf-graph-tools .tb-btn:hover { background: #e8eaf0; }
+.cf-graph-tools .tb-btn { font-size: 11px; padding: 1px 8px; background: var(--btn-bg); border: 1px solid var(--border-strong); border-radius: 3px; cursor: pointer; }
+.cf-graph-tools .tb-btn:hover { background: var(--hover-bg); }
 .cf-gnode {
   position: absolute; box-sizing: border-box; padding: 6px 8px;
-  border: 1px solid #7a8599; border-radius: 8px; background: #f5f7fb;
-  font-size: 11px; color: #1d2533; cursor: default;
+  border: 1px solid var(--cf-node-border); border-radius: 8px; background: var(--cf-node-bg);
+  font-size: 11px; color: var(--cf-node-fg); cursor: default;
 }
 .cf-gnode.link { cursor: pointer; }
-.cf-gnode.link:hover:not(.root) { background: #e8eaf0; }
-.cf-gnode.root { background: #fff7da; }
+.cf-gnode.link:hover:not(.root) { background: var(--hover-bg); }
+.cf-gnode.root { background: var(--cf-root-bg); }
 .cf-gnode:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.cf-gnode.primary { box-shadow: 0 0 0 1.5px #7a8599; }
-.cf-graph.hovering .cf-gnode:not(.primary):not(.secondary) { opacity: 0.55; background: #e9ecf3; }
+.cf-gnode.primary { box-shadow: 0 0 0 1.5px var(--cf-node-border); }
+.cf-graph.hovering .cf-gnode:not(.primary):not(.secondary) { opacity: 0.55; background: var(--cf-dim-bg); }
 .cf-gnode-title { font-weight: 600; overflow-wrap: anywhere; }
 .cf-gnode-source { color: var(--text-muted); }
-.cf-gnode-expr { margin-top: 4px; color: #4d5b73; font-family: ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+.cf-gnode-expr { margin-top: 4px; color: var(--cf-expr); font-family: ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
 .cf-edge path { fill: none; stroke-width: 2; stroke-linecap: round; opacity: 0.75; }
-.cf-edge.up path { stroke: #2166b5; }
-.cf-edge.up polygon { fill: #2166b5; }
-.cf-edge.down path { stroke: #6d4cc2; }
-.cf-edge.down polygon { fill: #6d4cc2; }
+.cf-edge.up path { stroke: var(--cf-up); }
+.cf-edge.up polygon { fill: var(--cf-up); }
+.cf-edge.down path { stroke: var(--cf-down); }
+.cf-edge.down polygon { fill: var(--cf-down); }
 .cf-edge.secondary path { stroke-width: 2.5; opacity: 0.9; }
 .cf-edge.primary path { stroke-width: 3.4; opacity: 1; }
-.cf-edge.up.primary path { stroke: #00b8d4; }
-.cf-edge.up.primary polygon { fill: #00b8d4; }
-.cf-edge.down.primary path { stroke: #d04aff; }
-.cf-edge.down.primary polygon { fill: #d04aff; }
+.cf-edge.up.primary path { stroke: var(--cf-up-hi); }
+.cf-edge.up.primary polygon { fill: var(--cf-up-hi); }
+.cf-edge.down.primary path { stroke: var(--cf-down-hi); }
+.cf-edge.down.primary polygon { fill: var(--cf-down-hi); }
 .cf-graph.hovering .cf-edge:not(.primary):not(.secondary) { opacity: 0.3; }
 
 /* ---- Circular refs ---- */
-.circ-refs-summary { padding: 6px 10px; font-size: 12px; background: #fff8e0; border-bottom: 1px solid #e0c060; }
+.circ-refs-summary { padding: 6px 10px; font-size: 12px; background: var(--warn-bg); border-bottom: 1px solid var(--warn-border); }
 .circ-refs-cycle-picker { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }
 .circ-refs-nodes { flex: 1; overflow: auto; font-size: 12px; }
 .circ-refs-node { padding: 2px 12px; cursor: pointer; }
-.circ-refs-node:hover { background: #f0f4fa; }
-.circ-refs-path { padding: 4px 8px; font-family: var(--font-mono); font-size: 11px; background: #f8f8f8; border: 1px solid var(--border); margin: 4px; white-space: pre-wrap; max-height: 100px; overflow: auto; }
+.circ-refs-node:hover { background: var(--hover-soft); }
+.circ-refs-path { padding: 4px 8px; font-family: var(--font-mono); font-size: 11px; background: var(--surface-soft); border: 1px solid var(--border); margin: 4px; white-space: pre-wrap; max-height: 100px; overflow: auto; }
 
 /* ---- Performance watch ---- */
 .perf-section { padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
@@ -909,8 +967,8 @@ table.matrix td.cell.rule-marker::before { content: ""; }
   white-space: nowrap;
 }
 .format-section-item { padding: 3px 8px; }
-.lower-tab:hover, .format-section-item:hover { background: #e8eaf0; }
-.lower-tab.disabled { color: #aaa; cursor: default; }
+.lower-tab:hover, .format-section-item:hover { background: var(--hover-bg); }
+.lower-tab.disabled { color: var(--text-disabled); cursor: default; }
 .lower-tab.disabled:hover { background: transparent; }
 .lower-tab.active, .format-section-item.active {
   background: var(--panel-bg);
