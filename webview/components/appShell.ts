@@ -111,7 +111,9 @@ export class AppShell {
       if (changed) this.store.notify();
     };
     const leftMax = () => Math.max(LEFT_MIN, body.clientWidth * 0.5);
-    const bottomMax = () => Math.max(BOTTOM_MIN, center.clientHeight - GRID_MIN_HEIGHT);
+    // The splitter is now a 6px gap between two cards (T-039 stage 3), so its height comes off the room for the grid too.
+    let bottomSplitEl: HTMLElement | null = null;   // set below: the Splitter constructor already calls get() (and so bottomMax)
+    const bottomMax = (): number => Math.max(BOTTOM_MIN, center.clientHeight - GRID_MIN_HEIGHT - (bottomSplitEl ? bottomSplitEl.offsetHeight : 0));
     const leftSplit = new Splitter({
       axis: "x", grow: 1, min: LEFT_MIN, max: leftMax, defaultSize: DEFAULT_LAYOUT.leftDockWidth,
       collapsedSize: 8, label: "the left panel",
@@ -120,11 +122,12 @@ export class AppShell {
     });
     const bottomSplit = new Splitter({
       axis: "y", grow: -1, min: BOTTOM_MIN, max: bottomMax, defaultSize: DEFAULT_LAYOUT.rulePanelHeight,
-      collapsedSize: 24, label: "the bottom panel",
+      collapsedSize: 28, label: "the bottom panel",   // the collapsed panel is its 28px tab strip (--tabbar-height)
       get: () => ({ size: Math.min(layout.rulePanelHeight, bottomMax()), collapsed: layout.rulePanelCollapsed }),
       apply: applyBottom, commit: saveLayout,
     });
     applyLeft(layout.leftDockWidth, layout.leftCollapsed);
+    bottomSplitEl = bottomSplit.el;
     applyBottom(layout.rulePanelHeight, layout.rulePanelCollapsed);
     // Collapsed bottom panel = its tab row: a tab click opens the panel on that tab,
     // the empty part of the row works like the splitter (drag, or click to open).
