@@ -14,9 +14,17 @@ over its newline-delimited JSON envelope socket protocol.
 - `shared/messages.ts` — host<->webview message protocol.
 
 ## om-core runtime connection
-- Default endpoint: TCP `127.0.0.1:17391` (env `OPENM_TRANSPORT_HOST`/`OPENM_TRANSPORT_PORT`),
-  or Unix socket `OPENM_TRANSPORT_SOCKET` (default `/tmp/openm-<user>.sock`).
-- Start runtime: `cd <om-core root> && OPENM_TRANSPORT_HOST=127.0.0.1 OPENM_TRANSPORT_PORT=17391 uv run python -O main.py --runtime`
+- Endpoint resolution (`resolveEndpoint` in `src/extension.ts`), first match wins:
+  1. `omCore.runtimeEndpoint` setting
+  2. `OPENM_TRANSPORT_SOCKET`, or `OPENM_TRANSPORT_HOST`/`OPENM_TRANSPORT_PORT` env vars
+  3. Probe `/tmp/openm-<user>.sock` (POSIX) then `tcp://127.0.0.1:17391` — first live wins
+  4. Platform default for auto-start: unix socket `/tmp/openm-<user>.sock` on POSIX,
+     TCP `127.0.0.1:17391` on Windows (mirrors om-core's own defaults)
+- `omCore.omCorePath` resolution (`resolveOmCorePath`): setting > `OM_CORE_PATH` env >
+  workspace folder containing `main.py` + `lib_runtime/` + `lib_openm/` > one-time
+  folder picker persisted to the setting. Required only for auto-start.
+- Start runtime manually: `cd <om-core root> && uv run python -O main.py --runtime`
+  (binds `/tmp/openm-<user>.sock`), or set `OPENM_TRANSPORT_*` for TCP.
 - Protocol: newline-delimited JSON envelopes. Topics: `request.transport.ping`,
   `request.session.open`, `request.command`, `request.query`, `request.poll_events`.
 - Reply payload shape: `{status: "success"|"succeeded"|"error"|"failed", data, error}`.

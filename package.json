@@ -76,7 +76,7 @@
         "omCore.runtimeEndpoint": {
           "type": "string",
           "default": "",
-          "description": "Transport endpoint for the om-core runtime. Empty = auto-detect. Examples: 'tcp://127.0.0.1:17391', 'unix:///tmp/openm-<user>.sock'."
+          "description": "Transport endpoint for the om-core runtime. Empty = auto-detect: uses OPENM_TRANSPORT_SOCKET or OPENM_TRANSPORT_HOST/PORT env vars when set, probes /tmp/openm-<user>.sock then tcp://127.0.0.1:17391 for a live runtime, and falls back to the platform default (unix socket on Linux/macOS, TCP on Windows). Examples: 'tcp://127.0.0.1:17391', 'unix:///tmp/openm-<user>.sock'."
         },
         "omCore.autoStartRuntime": {
           "type": "boolean",
@@ -86,7 +86,7 @@
         "omCore.omCorePath": {
           "type": "string",
           "default": "",
-          "description": "Absolute path to the om-core project root (used to launch the runtime). Required for auto-start."
+          "description": "Absolute path to the om-core project root (used to launch the runtime). Empty = auto-detect: OM_CORE_PATH env var, a workspace folder that is an om-core checkout (contains main.py and lib_runtime/), or a one-time folder picker whose answer is saved here."
         },
         "omCore.showSystemElements": {
           "type": "boolean",

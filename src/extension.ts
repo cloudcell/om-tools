@@ -16,17 +16,59 @@ let statusBar: vscode.StatusBarItem | null = null;
 let extContext: vscode.ExtensionContext | null = null;
 const UI_STATE_KEY = "omCore.uiState";
 
-function defaultEndpoint(): TransportEndpoint {
-  const cfg = vscode.workspace.getConfiguration("omCore");
-  const ep = cfg.get<string>("runtimeEndpoint", "");
+const DEFAULT_TCP: TransportEndpoint = { kind: "tcp", host: "127.0.0.1", port: 17391 };
+let resolvedEndpoint: TransportEndpoint | null = null;
+
+function currentUsername(): string {
+  try { return os.userInfo().username; } catch { return process.env.USER || process.env.USERNAME || "user"; }
+}
+
+function defaultUnixSocketPath(): string {
+  return path.join(os.tmpdir(), `openm-${currentUsername()}.sock`);
+}
+
+/** om-core's own default when no endpoint is configured: unix socket on POSIX, TCP on Windows. */
+function platformDefaultEndpoint(): TransportEndpoint {
+  return os.platform() === "win32" ? DEFAULT_TCP : { kind: "unix", path: defaultUnixSocketPath() };
+}
+
+/** Endpoint pinned by explicit configuration only: omCore.runtimeEndpoint, then OPENM_TRANSPORT_* env. */
+function configuredEndpoint(): TransportEndpoint | null {
+  const ep = vscode.workspace.getConfiguration("omCore").get<string>("runtimeEndpoint", "");
   if (ep) {
     const r = parseEndpoint(ep);
     if (r.ok) return r.endpoint;
   }
-  if (os.platform() === "win32") {
-    return { kind: "tcp", host: "127.0.0.1", port: 17391 };
+  const sock = process.env.OPENM_TRANSPORT_SOCKET;
+  if (sock) return { kind: "unix", path: sock };
+  if (process.env.OPENM_TRANSPORT_HOST || process.env.OPENM_TRANSPORT_PORT) {
+    return {
+      kind: "tcp",
+      host: process.env.OPENM_TRANSPORT_HOST || "127.0.0.1",
+      port: Number(process.env.OPENM_TRANSPORT_PORT) || 17391,
+    };
   }
-  return { kind: "tcp", host: "127.0.0.1", port: 17391 };
+  return null;
+}
+
+/** Where to connect: explicit config/env first; otherwise probe the default unix socket and TCP
+ *  port and use whichever answers; if neither is live, the platform default (which auto-start
+ *  then binds). */
+async function resolveEndpoint(): Promise<TransportEndpoint> {
+  const configured = configuredEndpoint();
+  if (configured) return configured;
+  const candidates: TransportEndpoint[] = [];
+  if (os.platform() !== "win32") candidates.push({ kind: "unix", path: defaultUnixSocketPath() });
+  candidates.push(DEFAULT_TCP);
+  for (const c of candidates) {
+    if (await EngineProcess.probe(c)) return c;
+  }
+  return platformDefaultEndpoint();
+}
+
+/** Sync view of the endpoint for display only (status/config pushes); no probing. */
+function defaultEndpoint(): TransportEndpoint {
+  return resolvedEndpoint ?? configuredEndpoint() ?? platformDefaultEndpoint();
 }
 
 function getConfig(): AppConfig {
@@ -63,14 +105,68 @@ async function pickFile(p: PickFileParams): Promise<string | null> {
   return uris && uris.length ? uris[0].fsPath : null;
 }
 
+/** A directory counts as an om-core checkout when it has the runtime entry point and libs. */
+function looksLikeOmCore(dir: string): boolean {
+  try {
+    return fs.existsSync(path.join(dir, "main.py")) &&
+      fs.statSync(path.join(dir, "lib_runtime")).isDirectory() &&
+      fs.statSync(path.join(dir, "lib_openm")).isDirectory();
+  } catch { return false; }
+}
+
+/** Dedupes concurrent first-run prompts (auto-connect + command can both trigger one). */
+let omCorePathPrompt: Promise<string> | null = null;
+
+async function pickAndPersistOmCorePath(): Promise<string> {
+  try {
+    const pick = await vscode.window.showOpenDialog({
+      title: "Select the om-core project folder (the checkout containing main.py)",
+      openLabel: "Use as om-core path",
+      canSelectFiles: false,
+      canSelectFolders: true,
+      canSelectMany: false,
+    });
+    const dir = pick?.[0]?.fsPath;
+    if (!dir) throw new Error("om-core path is not set. Configure 'omCore.omCorePath' or set OM_CORE_PATH.");
+    if (!looksLikeOmCore(dir)) {
+      throw new Error(`${dir} does not look like an om-core checkout (expected main.py, lib_runtime/, lib_openm/).`);
+    }
+    await vscode.workspace.getConfiguration("omCore").update("omCorePath", dir, vscode.ConfigurationTarget.Global);
+    return dir;
+  } finally {
+    omCorePathPrompt = null;
+  }
+}
+
+/** Where the runtime lives, for auto-start: omCore.omCorePath > OM_CORE_PATH env > a workspace
+ *  folder that is an om-core checkout > one-time folder picker (persisted to global settings). */
+async function resolveOmCorePath(): Promise<string> {
+  const cfg = vscode.workspace.getConfiguration("omCore");
+  const fromSetting = cfg.get<string>("omCorePath", "").trim();
+  if (fromSetting && fs.existsSync(fromSetting)) return fromSetting;
+  if (fromSetting) vscode.window.showWarningMessage(`omCore.omCorePath does not exist: ${fromSetting} — trying auto-detect.`);
+
+  const fromEnv = (process.env.OM_CORE_PATH || process.env.OPENM_CORE_PATH || "").trim();
+  if (fromEnv && looksLikeOmCore(fromEnv)) return fromEnv;
+
+  for (const folder of vscode.workspace.workspaceFolders ?? []) {
+    if (looksLikeOmCore(folder.uri.fsPath)) return folder.uri.fsPath;
+  }
+
+  if (!omCorePathPrompt) omCorePathPrompt = pickAndPersistOmCorePath();
+  return omCorePathPrompt;
+}
+
 async function ensureRuntime(): Promise<TransportEndpoint> {
-  const ep = defaultEndpoint();
+  const ep = await resolveEndpoint();
+  resolvedEndpoint = ep;
   const running = await EngineProcess.probe(ep);
   if (!running) {
     const cfg = vscode.workspace.getConfiguration("omCore");
     if (cfg.get<boolean>("autoStartRuntime", true)) {
+      const omCorePath = await resolveOmCorePath();
       sendStatus("starting", `Launching om-core runtime at ${endpointToString(ep)}…`);
-      runtime = new EngineProcess({ omCorePath: cfg.get<string>("omCorePath", ""), endpoint: ep });
+      runtime = new EngineProcess({ omCorePath, endpoint: ep });
       await runtime.start();
       sendStatus("ready", `Runtime ready at ${endpointToString(ep)}`);
     } else {
@@ -173,8 +269,8 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         return { type: "response", id: req.id, ok: true, data: getConfig() };
       }
       case "startRuntime": {
-        await ensureRuntime();
-        return { type: "response", id: req.id, ok: true, data: { endpoint: endpointToString(defaultEndpoint()) } };
+        const ep = await ensureRuntime();
+        return { type: "response", id: req.id, ok: true, data: { endpoint: endpointToString(ep) } };
       }
       case "stopRuntime": {
         if (runtime) { await runtime.stop(); runtime = null; }
