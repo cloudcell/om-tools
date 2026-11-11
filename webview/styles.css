@@ -35,9 +35,11 @@
   --left-dock-width: 250px;
   --right-dock-width: 280px;
   --rule-panel-height: 200px;
-  --toolbar-height: 34px;
-  --menubar-height: 32px;
-  --statusbar-height: 24px;
+  /* Compact shell (T-039 stage 2): menus and toolbar share one 36px row. */
+  --menubar-height: 36px;
+  --statusbar-height: 22px;
+  --ctl-h: 28px;               /* toolbar buttons, menu items */
+  --field-h: 24px;             /* rule bar badge and field, toolbar select */
   --tabbar-height: 30px;
   /* Shell colours that used to be hard-coded (T-039 D2). The light values are the old literals. */
   --menubar-text: #1f1f1f;
@@ -121,6 +123,10 @@
   --dlg-btn-bg: #f2f4f8;
   --dlg-primary: #2a76d2;
   --dlg-danger: #cc0000;
+  /* Compact shell (T-039 stage 2). */
+  --seg-bg: #eceef3;
+  --name-badge-bg: #dbeaf5;
+  --name-badge-fg: #1f5f8b;
 }
 
 /* Dark theme (T-039, variant B · Graphite). Overrides only the colour variables above; the light theme is the
@@ -230,6 +236,9 @@
   --dlg-btn-bg: #2b303a;
   --dlg-primary: #8ea2ff;
   --dlg-danger: #ff6b6b;
+  --seg-bg: #242831;
+  --name-badge-bg: #283056;
+  --name-badge-fg: #8ea2ff;
 }
 
 * { box-sizing: border-box; }
@@ -249,17 +258,18 @@ body {
 .menubar {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 2px;
   background: var(--menubar-bg);
   border-bottom: 1px solid var(--border);
   padding: 0 6px;
   height: var(--menubar-height);
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--menubar-text);
 }
 .menubar .menu-item {
-  padding: 3px 8px;
+  flex: none;
+  padding: 4px 8px;
   cursor: default;
   border-radius: 4px;
   position: relative;
@@ -272,16 +282,20 @@ body {
 .menubar .spacer { flex: 1; }
 .menubar .engine-indicator {
   background: var(--engine-indicator-bg);
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 12px;
+  border-radius: 99px;
+  padding: 0 10px;
+  height: 22px;
+  font-size: 11px;
   color: var(--focus-indicator);
   display: flex;
   align-items: center;
   gap: 6px;
-  min-width: 160px;
+  flex: none;
+  max-width: 260px;
   justify-content: center;
 }
+.menubar .engine-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menubar .engine-dot { flex: none; }
 .menubar .engine-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--engine-off); }
 .menubar .engine-dot.connected { background: var(--ok); }
 .menubar .engine-dot.connecting { background: var(--warn); }
@@ -296,37 +310,46 @@ body {
 .menubar .theme-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ---- Toolbar ---- */
+/* Compact (T-039 stage 2): the toolbar is a child of .menubar, so it has no bar of its own: no height, background or
+   bottom border. It shrinks (and scrolls without a scrollbar) before it pushes the status and theme controls away. */
 .toolbar {
-  height: var(--toolbar-height);
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 8px;
-  background: var(--header-bg);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  gap: 2px;
+  margin-left: 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+  flex: 0 1 auto;
+  min-width: 0;
   overflow-x: auto;
+  scrollbar-width: none;
 }
+.toolbar::-webkit-scrollbar { display: none; }
 .toolbar .tb-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
+  flex: none;
+  min-width: var(--ctl-h);
+  height: var(--ctl-h);
+  padding: 0 5px;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 6px;
   background: transparent;
   cursor: default;
   font-size: 13px;
 }
-.toolbar .tb-btn svg { display: block; }
-.toolbar .tb-btn:hover { background: var(--selection); border-color: var(--border-strong); }
+.toolbar .tb-btn svg { display: block; width: 16px; height: 16px; }
+.toolbar .tb-btn:hover { background: var(--hover-bg); }
 .toolbar .tb-btn.active { background: var(--selection); border-color: var(--selection-border); }
-.toolbar .tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 3px; }
+.toolbar .tb-sep { flex: none; width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+.toolbar .tb-seg { flex: none; display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: var(--seg-bg); }
+.toolbar .tb-seg .tb-btn { min-width: 24px; height: 24px; padding: 0 4px; border-radius: 4px; }
 .toolbar .tb-label { font-size: 12px; color: var(--text-muted); margin-right: 2px; }
-.toolbar .tb-select { font-size: 12px; height: 24px; border: 1px solid var(--border-strong); border-radius: 3px; background: var(--input-bg); }
-.toolbar .tb-color { width: 22px; height: 22px; padding: 0; border: 1px solid var(--border-strong); border-radius: 3px; background: var(--input-bg); cursor: default; }
+.toolbar .tb-select { flex: none; font-size: 12px; height: var(--field-h); border: 1px solid var(--border-strong); border-radius: 6px; background: var(--input-bg); }
+.toolbar .tb-color { flex: none; width: var(--ctl-h); height: var(--ctl-h); padding: 4px; border: 0; border-radius: 6px; background: transparent; cursor: default; }
+.toolbar .tb-color::-webkit-color-swatch-wrapper { padding: 0; }
+.toolbar .tb-color::-webkit-color-swatch { border: 1px solid var(--border-strong); border-radius: 4px; }
 .toolbar .tb-btn:disabled, .toolbar .tb-color:disabled, .toolbar .tb-select:disabled { opacity: 0.4; cursor: default; }
 .toolbar .tb-btn:disabled:hover { background: transparent; border-color: transparent; }
 .toolbar .tb-label.disabled { opacity: 0.5; }
@@ -695,7 +718,7 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 /* ---- Menu bar: dropdown menus (the bar itself is defined at the top) ---- */
 .menubar .menu-dropdown {
   position: absolute;
-  top: calc(100% + 2px);
+  top: calc(100% + 4px);   /* the item is 28px in a 36px bar: this puts the menu right under the bar */
   left: 0;
   background: var(--popup-bg);
   border: none;
@@ -734,32 +757,47 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .menubar .menu-dropdown .ctx-sep { height: 1px; background: var(--sep); margin: 6px 0; }
 
 /* ---- Rule bar ---- */
+/* Compact (T-039 stage 2): a 24px cell badge and a 24px field with an `fx` marker; the bar is 32px high. */
 .rule-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
+  gap: 6px;
+  padding: 4px 6px;
   background: var(--header-bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   font-size: 12px;
 }
+.rule-bar .rule-field { position: relative; flex: 1; min-width: 0; display: flex; }
+.rule-bar .rule-fx {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--name-badge-fg);
+  pointer-events: none;
+}
 .rule-bar input {
   flex: 1;
+  min-width: 0;
+  height: var(--field-h);
   font-family: var(--font-mono);
   font-size: 12px;
   border: 1px solid var(--border);
-  padding: 2px 6px;
+  border-radius: 6px;
+  padding: 0 8px 0 30px;
   background: var(--input-bg);
 }
 .rule-bar .name-box {
-  min-width: 100px;
+  flex: none;
+  min-width: 90px;
+  height: var(--field-h);
+  display: flex;
+  align-items: center;
   font-weight: 600;
-  color: var(--namebox-text);
-  padding: 2px 6px;
-  background: var(--namebox-bg);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  color: var(--name-badge-fg);
+  padding: 0 10px;
+  background: var(--name-badge-bg);
+  border: 0;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 /* ---- Rule list ---- */
@@ -1023,9 +1061,9 @@ table.matrix td.cell.rule-marker::before { content: ""; }
   background: var(--status-bar-bg);
   color: var(--status-bar-text);
   border-top: 1px solid var(--border);
-  font-size: 12px;
-  padding: 0 8px;
-  gap: 16px;
+  font-size: 11px;
+  padding: 0 10px;
+  gap: 12px;
   flex-shrink: 0;
 }
 .statusbar .sb-focus { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--focus-indicator); }
