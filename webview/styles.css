@@ -35,10 +35,16 @@
   --left-dock-width: 250px;
   --right-dock-width: 280px;
   --rule-panel-height: 200px;
-  --toolbar-height: 34px;
-  --menubar-height: 32px;
-  --statusbar-height: 24px;
-  --tabbar-height: 30px;
+  /* Compact shell (T-039 stage 2): menus and toolbar share one 36px row. */
+  --menubar-height: 36px;
+  --statusbar-height: 22px;
+  --ctl-h: 28px;               /* toolbar buttons, menu items */
+  --field-h: 24px;             /* rule bar badge and field, toolbar select */
+  /* Cards (T-039 stage 3) */
+  --gap: 6px;                  /* between cards and around them */
+  --r-card: 10px;
+  --r-ctl: 6px;
+  --tabbar-height: 28px;
   /* Shell colours that used to be hard-coded (T-039 D2). The light values are the old literals. */
   --menubar-text: #1f1f1f;
   --popup-bg: #ffffff;
@@ -82,13 +88,13 @@
   --pv-side-bg: #f4f5f8;
   --pv-line: #c8ccd8;
   --pv-placeholder: #a0a8b8;
-  --chip-bg: #e4e8ef;
-  --chip-border: #b8c2d0;
-  --chip-fg: #1e2d40;
-  --chip-hover-bg: #d0d8e8;
-  --chip-hover-border: #7890b8;
-  --chip-grip: #6a7a90;
-  --chip-accent: #4870a8;
+  --chip-bg: #2a7ab0;
+  --chip-border: #2a7ab0;
+  --chip-fg: #ffffff;
+  --chip-hover-bg: #236b9b;
+  --chip-hover-border: #236b9b;
+  --chip-grip: #d6e6f2;
+  --chip-accent: #2a7ab0;
   --drop-bg: #d0e4f8;
   --drop-border: #4870a8;
   /* Bottom panel: rules, Calculation Flow, Circular References (T-039 D6). */
@@ -121,6 +127,11 @@
   --dlg-btn-bg: #f2f4f8;
   --dlg-primary: #2a76d2;
   --dlg-danger: #cc0000;
+  /* Compact shell (T-039 stage 2). */
+  --seg-bg: #eceef3;
+  --name-badge-bg: #dbeaf5;
+  --name-badge-fg: #1f5f8b;
+  --page-bg: #eef0f5;
 }
 
 /* Dark theme (T-039, variant B · Graphite). Overrides only the colour variables above; the light theme is the
@@ -193,12 +204,12 @@
   --pv-side-bg: #1d2027;
   --pv-line: #343a46;
   --pv-placeholder: #8a93a6;
-  --chip-bg: #2b303a;
-  --chip-border: #4a5262;
-  --chip-fg: #e6e9f0;
-  --chip-hover-bg: #343a47;
-  --chip-hover-border: #8ea2ff;
-  --chip-grip: #9aa3b6;
+  --chip-bg: #8ea2ff;
+  --chip-border: #8ea2ff;
+  --chip-fg: #10131f;
+  --chip-hover-bg: #a3b3ff;
+  --chip-hover-border: #a3b3ff;
+  --chip-grip: #2b3350;
   --chip-accent: #8ea2ff;
   --drop-bg: #243252;
   --drop-border: #8ea2ff;
@@ -230,6 +241,10 @@
   --dlg-btn-bg: #2b303a;
   --dlg-primary: #8ea2ff;
   --dlg-danger: #ff6b6b;
+  --seg-bg: #242831;
+  --name-badge-bg: #283056;
+  --name-badge-fg: #8ea2ff;
+  --page-bg: #13151a;
 }
 
 * { box-sizing: border-box; }
@@ -249,17 +264,18 @@ body {
 .menubar {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 2px;
   background: var(--menubar-bg);
   border-bottom: 1px solid var(--border);
   padding: 0 6px;
   height: var(--menubar-height);
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--menubar-text);
 }
 .menubar .menu-item {
-  padding: 3px 8px;
+  flex: none;
+  padding: 4px 8px;
   cursor: default;
   border-radius: 4px;
   position: relative;
@@ -272,16 +288,20 @@ body {
 .menubar .spacer { flex: 1; }
 .menubar .engine-indicator {
   background: var(--engine-indicator-bg);
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 12px;
+  border-radius: 99px;
+  padding: 0 10px;
+  height: 22px;
+  font-size: 11px;
   color: var(--focus-indicator);
   display: flex;
   align-items: center;
   gap: 6px;
-  min-width: 160px;
+  flex: none;
+  max-width: 260px;
   justify-content: center;
 }
+.menubar .engine-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menubar .engine-dot { flex: none; }
 .menubar .engine-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--engine-off); }
 .menubar .engine-dot.connected { background: var(--ok); }
 .menubar .engine-dot.connecting { background: var(--warn); }
@@ -296,55 +316,72 @@ body {
 .menubar .theme-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ---- Toolbar ---- */
+/* Compact (T-039 stage 2): the toolbar is a child of .menubar, so it has no bar of its own: no height, background or
+   bottom border. It shrinks (and scrolls without a scrollbar) before it pushes the status and theme controls away. */
 .toolbar {
-  height: var(--toolbar-height);
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 8px;
-  background: var(--header-bg);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  gap: 2px;
+  margin-left: 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+  flex: 0 1 auto;
+  min-width: 0;
   overflow-x: auto;
+  scrollbar-width: none;
 }
+.toolbar::-webkit-scrollbar { display: none; }
 .toolbar .tb-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
+  flex: none;
+  min-width: var(--ctl-h);
+  height: var(--ctl-h);
+  padding: 0 5px;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 6px;
   background: transparent;
   cursor: default;
   font-size: 13px;
 }
-.toolbar .tb-btn svg { display: block; }
-.toolbar .tb-btn:hover { background: var(--selection); border-color: var(--border-strong); }
+.toolbar .tb-btn svg { display: block; width: 16px; height: 16px; }
+.toolbar .tb-btn:hover { background: var(--hover-bg); }
 .toolbar .tb-btn.active { background: var(--selection); border-color: var(--selection-border); }
-.toolbar .tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 3px; }
+.toolbar .tb-sep { flex: none; width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+.toolbar .tb-seg { flex: none; display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: var(--seg-bg); }
+.toolbar .tb-seg .tb-btn { min-width: 24px; height: 24px; padding: 0 4px; border-radius: 4px; }
 .toolbar .tb-label { font-size: 12px; color: var(--text-muted); margin-right: 2px; }
-.toolbar .tb-select { font-size: 12px; height: 24px; border: 1px solid var(--border-strong); border-radius: 3px; background: var(--input-bg); }
-.toolbar .tb-color { width: 22px; height: 22px; padding: 0; border: 1px solid var(--border-strong); border-radius: 3px; background: var(--input-bg); cursor: default; }
+.toolbar .tb-select { flex: none; font-size: 12px; height: var(--field-h); border: 1px solid var(--border-strong); border-radius: 6px; background: var(--input-bg); }
+.toolbar .tb-color { flex: none; width: var(--ctl-h); height: var(--ctl-h); padding: 4px; border: 0; border-radius: 6px; background: transparent; cursor: default; }
+.toolbar .tb-color::-webkit-color-swatch-wrapper { padding: 0; }
+.toolbar .tb-color::-webkit-color-swatch { border: 1px solid var(--border-strong); border-radius: 4px; }
 .toolbar .tb-btn:disabled, .toolbar .tb-color:disabled, .toolbar .tb-select:disabled { opacity: 0.4; cursor: default; }
 .toolbar .tb-btn:disabled:hover { background: transparent; border-color: transparent; }
 .toolbar .tb-label.disabled { opacity: 0.5; }
 
 /* ---- Main body (docks + center) ---- */
+/* Cards on a page background (T-039 stage 3): every region is a rounded card, the 6px between them is the page.
+   The splitters (T-045) are those 6px gaps themselves. */
 .body {
   flex: 1;
   display: flex;
   min-height: 0;
+  padding: var(--gap);
+  background: var(--page-bg);
 }
 .left-docks {
   width: var(--left-dock-width);
   display: flex;
   flex-direction: column;
   max-width: 50%;          /* a saved width must not squeeze the grid in a smaller window (T-045) */
-  background: var(--dock-bg);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  overflow: hidden;
   min-width: 160px;
 }
+/* `.center` is the column (grid card + bottom panel) and, nested in it, the grid's own root: only the nested one is a card. */
 .center {
   flex: 1;
   display: flex;
@@ -353,12 +390,21 @@ body {
   min-height: 0;   /* nested .center (grid root) must shrink so the grid scrolls */
   background: var(--panel-bg);
 }
+.body > .center { background: transparent; }
+.center .center {
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
 .right-docks {
   width: var(--right-dock-width);
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--border);
-  background: var(--dock-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: var(--panel-bg);
+  margin-left: var(--gap);
   min-width: 160px;
 }
 
@@ -367,29 +413,24 @@ body {
 .left-docks[hidden], .right-docks[hidden], .dock[hidden] { display: none; }
 
 /* ---- Splitters (T-045): left column | grid, grid / bottom panel ----
-   A 5 px grab zone drawn as a 1 px line; negative margins lay it over the neighbours' edges. */
+   The splitter is the gap between two cards: 6px wide / high, invisible until hovered, then a 2px accent line. */
 .splitter { flex: 0 0 auto; position: relative; z-index: 20; outline: none; touch-action: none; }
 .splitter[hidden] { display: none; }
-.splitter-x {
-  width: 5px; margin: 0 -2px; cursor: col-resize;
-  background: linear-gradient(to right, transparent 2px, var(--border) 2px, var(--border) 3px, transparent 3px);
-}
-.splitter-y {
-  height: 5px; margin: -2px 0; cursor: row-resize;
-  background: linear-gradient(to bottom, transparent 2px, var(--border) 2px, var(--border) 3px, transparent 3px);
-}
+.splitter-x { width: var(--gap); margin: 0; cursor: col-resize; }
+.splitter-y { height: var(--gap); margin: 0; cursor: row-resize; }
 .splitter-x:hover, .splitter-x.dragging, .splitter-x:focus-visible {
-  background: linear-gradient(to right, transparent 1px, var(--accent) 1px, var(--accent) 4px, transparent 4px);
+  background: linear-gradient(to right, transparent calc(50% - 1px), var(--accent) calc(50% - 1px), var(--accent) calc(50% + 1px), transparent calc(50% + 1px));
 }
 .splitter-y:hover, .splitter-y.dragging, .splitter-y:focus-visible {
-  background: linear-gradient(to bottom, transparent 1px, var(--accent) 1px, var(--accent) 4px, transparent 4px);
+  background: linear-gradient(to bottom, transparent calc(50% - 1px), var(--accent) calc(50% - 1px), var(--accent) calc(50% + 1px), transparent calc(50% + 1px));
 }
 /* Collapsed left column: an 8 px strip with a three-dot grip */
 .left-docks.collapsed { display: none; }
 .splitter-x.collapsed {
-  width: 8px; margin: 0;
+  width: 8px; margin: 0 var(--gap) 0 0;
   background: var(--header-bg);
-  border-right: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: 4px;
 }
 .splitter-x.collapsed:hover, .splitter-x.collapsed.dragging { background: var(--hover-bg); }
 .splitter-x.collapsed:focus-visible { background: var(--header-bg); outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -402,7 +443,7 @@ body {
 .rule-panel.collapsed { height: auto; max-height: none; }
 .rule-panel.collapsed .lower-content { display: none; }
 .rule-panel.collapsed .lower-tabs { border-bottom: none; cursor: row-resize; }
-.rule-panel.collapsed .lower-tab.active { background: transparent; border-color: transparent; font-weight: normal; color: var(--text-muted); }
+.rule-panel.collapsed .lower-tab.active { background: transparent; border-bottom-color: transparent; font-weight: normal; color: var(--text-muted); }
 .rule-panel.collapsed .lower-tab.active:hover { background: var(--hover-bg); }
 /* While dragging: one cursor everywhere, no text selection */
 body.splitter-dragging-x, body.splitter-dragging-x * { cursor: col-resize !important; user-select: none !important; }
@@ -415,12 +456,15 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 }
 .dock:last-child { border-bottom: none; }
 .dock-header {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 4px 8px;
-  background: var(--header-bg);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  height: var(--ctl-h);
+  padding: 0 10px;
+  background: var(--panel-bg);
   border-bottom: 1px solid var(--border);
-  color: var(--focus-indicator);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -430,32 +474,41 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .dock.collapsed .dock-content { display: none; }
 
 /* ---- Model browser tree ---- */
-.tree { font-size: 13px; }
+.tree { font-size: 12px; }
 .tree-node { padding-left: 0; }
 .tree-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px;
-  border-radius: 2px;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
   cursor: default;
   white-space: nowrap;
 }
 .tree-row:hover { background: var(--hover-bg); }
 .tree-row.selected { background: var(--selection); color: #fff; }
+/* The view that is open in the active tab. */
+.tree-row.active { background: var(--name-badge-bg); color: var(--name-badge-fg); font-weight: 500; }
 .tree-twisty { width: 12px; text-align: center; color: var(--tree-twisty); font-size: 10px; cursor: pointer; flex-shrink: 0; }
-.tree-icon { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: var(--tree-icon); flex-shrink: 0; }
-.tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
-.tree-children { margin-left: 14px; }
+.tree-icon { display: none; width: 14px; height: 14px; align-items: center; justify-content: center; font-size: 10px; color: var(--tree-icon); flex-shrink: 0; }
+.tree-label { flex: 1; display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; }
+.tree-count { margin-left: auto; padding-left: 8px; font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.tree-row.active .tree-count { color: inherit; }
+/* Group rows (Dimensions / Cubes / Views): small caps label */
+.tree-node:has(> .tree-children) > .tree-row { margin-top: 6px; }
+.tree-node:has(> .tree-children) > .tree-row .tree-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.tree-children { margin-left: 6px; }
 
 /* ---- View workspace tabs ---- */
 .tabbar {
   height: var(--tabbar-height);
   display: flex;
-  align-items: flex-end;
-  background: var(--header-bg);
+  align-items: stretch;
+  gap: 14px;
+  background: var(--panel-bg);
   border-bottom: 1px solid var(--border);
-  padding: 0 4px;
+  padding: 0 10px;
   flex-shrink: 0;
   overflow-x: auto;
 }
@@ -463,17 +516,18 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
-  border: 1px solid transparent;
-  border-bottom: none;
-  border-radius: 3px 3px 0 0;
+  padding: 0 2px;
+  margin-bottom: -1px;          /* the underline sits on the strip's border */
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
   cursor: default;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
 }
-.tab:hover { background: var(--selection); }
-.tab.active { background: var(--panel-bg); color: var(--text); border-color: var(--border-strong); }
+.tab:hover { background: var(--hover-bg); color: var(--text); }
+.tab.active { background: transparent; color: var(--name-badge-fg); border-bottom-color: var(--accent); font-weight: 500; }
 .tab .tab-close { font-size: 14px; color: var(--text-muted); width: 14px; text-align: center; }
 .tab .tab-close:hover { color: var(--error); }
 
@@ -497,15 +551,15 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   grid-template-columns: 1fr auto;
   grid-template-rows: auto 1fr auto;
   min-height: 0;
-  background: var(--pv-bg);
-  padding: 6px;
+  background: var(--panel-bg);
+  padding: 0;
   gap: 0;
 }
 .pivot-canvas .pc-frame {
   grid-column: 1 / 3;
   grid-row: 1 / 4;
   background: var(--panel-bg);
-  border: 1px solid var(--pv-frame-border);
+  border: 0;
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-rows: auto 1fr auto;
@@ -534,7 +588,7 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 }
 .pc-pageright {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 2 / 4;      /* down to the bottom edge: no empty corner next to the Rows bar */
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -558,20 +612,28 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   flex-wrap: wrap;
 }
 
+/* Captions of the three zones (T-039 stage 3), drawn by CSS: the markup is unchanged. */
+.pc-topleft::before, .pc-pageright::before, .pc-bottom::before {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-right: 4px;
+}
+.pc-topleft::before { content: "Page"; }
+.pc-pageright::before { content: "Cols"; margin: 0 0 2px 2px; }
+.pc-bottom::before { content: "Rows"; }
+
 /* ---- Dimension chips ---- */
 .dim-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   background: var(--chip-bg);
   border: 1px solid var(--chip-border);
-  border-radius: 3px;
-  padding: 1px 7px;
-  font-size: 11px;
-  font-weight: 600;
+  border-radius: 99px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--chip-fg);
-  min-height: 20px;
-  max-height: 24px;
+  min-height: 22px;
+  max-height: 22px;
   cursor: grab;
   user-select: none;
   white-space: nowrap;
@@ -581,11 +643,11 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .dim-chip:active { cursor: grabbing; }
 .dim-chip.dragging { opacity: 0.4; }
 .dim-chip .chip-grip { color: var(--chip-grip); font-size: 12px; }
-.dim-chip .chip-seq { color: var(--chip-accent); }
-.dim-chip-page { padding-right: 14px; }
+.dim-chip .chip-seq { color: var(--chip-grip); }
+.dim-chip-page { padding-right: 22px; }
 .dim-chip-page .chip-arrow {
   position: absolute;
-  right: 4px;
+  right: 9px;
   top: 50%;
   transform: translateY(-50%);
   width: 0;
@@ -599,18 +661,19 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid var(--chip-border);
-  border-radius: 3px;
+  border: 1px dashed var(--chip-border);
+  border-radius: 99px;
   color: var(--chip-accent);
   font-size: 14px;
   font-weight: 700;
-  padding: 0 6px;
-  min-width: 20px;
-  min-height: 20px;
-  max-height: 24px;
+  padding: 0;
+  width: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  max-height: 22px;
   cursor: pointer;
 }
-.dim-chip-plus:hover { background: var(--chip-hover-bg); border-color: var(--chip-hover-border); }
+.dim-chip-plus:hover { background: var(--hover-bg); border-color: var(--chip-accent); }
 
 /* ---- Drop zones ---- */
 .drop-zone { transition: background 0.1s, border 0.1s; }
@@ -695,7 +758,7 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 /* ---- Menu bar: dropdown menus (the bar itself is defined at the top) ---- */
 .menubar .menu-dropdown {
   position: absolute;
-  top: calc(100% + 2px);
+  top: calc(100% + 4px);   /* the item is 28px in a 36px bar: this puts the menu right under the bar */
   left: 0;
   background: var(--popup-bg);
   border: none;
@@ -734,32 +797,47 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .menubar .menu-dropdown .ctx-sep { height: 1px; background: var(--sep); margin: 6px 0; }
 
 /* ---- Rule bar ---- */
+/* Compact (T-039 stage 2): a 24px cell badge and a 24px field with an `fx` marker; the bar is 32px high. */
 .rule-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
+  gap: 6px;
+  padding: 4px 6px;
   background: var(--header-bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   font-size: 12px;
 }
+.rule-bar .rule-field { position: relative; flex: 1; min-width: 0; display: flex; }
+.rule-bar .rule-fx {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--name-badge-fg);
+  pointer-events: none;
+}
 .rule-bar input {
   flex: 1;
+  min-width: 0;
+  height: var(--field-h);
   font-family: var(--font-mono);
   font-size: 12px;
   border: 1px solid var(--border);
-  padding: 2px 6px;
+  border-radius: 6px;
+  padding: 0 8px 0 30px;
   background: var(--input-bg);
 }
 .rule-bar .name-box {
-  min-width: 100px;
+  flex: none;
+  min-width: 90px;
+  height: var(--field-h);
+  display: flex;
+  align-items: center;
   font-weight: 600;
-  color: var(--namebox-text);
-  padding: 2px 6px;
-  background: var(--namebox-bg);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  color: var(--name-badge-fg);
+  padding: 0 10px;
+  background: var(--name-badge-bg);
+  border: 0;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 /* ---- Rule list ---- */
@@ -942,9 +1020,12 @@ table.matrix td.cell.rule-marker::before { content: ""; }
   height: var(--rule-panel-height);
   display: flex;
   flex-direction: column;
-  max-height: calc(100% - 120px);   /* the grid keeps 120 px (GRID_MIN_HEIGHT in appShell.ts) */
+  max-height: calc(100% - 120px - var(--gap));   /* the grid keeps 120 px (GRID_MIN_HEIGHT in appShell.ts) next to the 6px splitter */
   background: var(--panel-bg);
   flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  overflow: hidden;
 }
 /* Tab strips: bottom panel (Rules / Calculation Flow / Circular References)
    and Format dock sections (Background / Font / Alignment / Borders / Number). */
@@ -953,14 +1034,21 @@ table.matrix td.cell.rule-marker::before { content: ""; }
   flex-wrap: wrap;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
-  background: var(--header-bg);
+  background: var(--panel-bg);
+  padding: 0 10px;
+  align-items: stretch;
+  min-height: var(--tabbar-height);
 }
 .lower-tab, .format-section-item {
-  padding: 4px 12px;
-  margin-bottom: -1px;          /* active tab overlaps the strip's bottom border */
-  border: 1px solid transparent;
-  border-bottom: none;
-  font-size: 11px;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+  margin-right: 14px;
+  margin-bottom: -1px;          /* the underline of the active tab sits on the strip border */
+  border: 0;
+  border-radius: 6px 6px 0 0;
+  border-bottom: 2px solid transparent;
+  font-size: 12px;
   color: var(--text-muted);
   cursor: pointer;
   user-select: none;
@@ -971,10 +1059,10 @@ table.matrix td.cell.rule-marker::before { content: ""; }
 .lower-tab.disabled { color: var(--text-disabled); cursor: default; }
 .lower-tab.disabled:hover { background: transparent; }
 .lower-tab.active, .format-section-item.active {
-  background: var(--panel-bg);
-  color: var(--text);
-  border-color: var(--border-strong);
-  font-weight: 600;
+  background: transparent;
+  color: var(--name-badge-fg);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
 }
 .lower-content { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: auto; }
 .rule-header {
@@ -1023,9 +1111,9 @@ table.matrix td.cell.rule-marker::before { content: ""; }
   background: var(--status-bar-bg);
   color: var(--status-bar-text);
   border-top: 1px solid var(--border);
-  font-size: 12px;
-  padding: 0 8px;
-  gap: 16px;
+  font-size: 11px;
+  padding: 0 10px;
+  gap: 12px;
   flex-shrink: 0;
 }
 .statusbar .sb-focus { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--focus-indicator); }

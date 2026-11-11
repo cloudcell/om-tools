@@ -46,6 +46,8 @@ export class ModelBrowser {
     const viewChildren = (viewRoot as any)._children as HTMLElement;
     for (const view of this.store.visibleViews()) {
       const viewNode = this.makeTreeNode(view.name, "·", false, () => this.viewMenu(view));
+      // The view shown in the active tab gets a soft highlight (T-039 stage 3).
+      if (this.store.state.activeView?.viewId === view.id) viewNode.querySelector(".tree-row")?.classList.add("active");
       viewNode.addEventListener("click", () => this.store.openView(view.id, view.name));
       viewChildren.appendChild(viewNode);
     }
@@ -58,6 +60,9 @@ export class ModelBrowser {
     const toggle = expandable ? el("span", { class: "tree-twisty" }, ["▸"]) : el("span", { class: "tree-twisty" }, [""]);
     const iconEl = el("span", { class: "tree-icon" }, [icon]);
     const text = el("span", { class: "tree-label" }, [label]);
+    // "Month (3)" → the count is its own muted, right-aligned element; the label's textContent stays "Month (3)".
+    const counted = /^(.*\S) (\(\d+\))$/.exec(label);
+    if (counted) { clear(text); text.append(counted[1], " ", el("span", { class: "tree-count" }, [counted[2]])); }
     row.appendChild(toggle);
     row.appendChild(iconEl);
     row.appendChild(text);

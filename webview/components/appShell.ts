@@ -62,8 +62,11 @@ export class AppShell {
 
   render(): HTMLElement {
     const app = el("div", { id: "app" });
-    app.appendChild(this.menuBar());
-    app.appendChild(this.toolbar());
+    // One top row (T-039, stage 2): the toolbar sits inside the menu bar between the menus and the right-hand
+    // status / theme controls. Both keep their classes (`.menubar`, `.toolbar`).
+    const mb = this.menuBar();
+    mb.insertBefore(this.toolbar(), mb.querySelector(".spacer"));
+    app.appendChild(mb);
     app.appendChild(this.ruleBar());
     const body = el("div", { class: "body" });
 
@@ -108,7 +111,9 @@ export class AppShell {
       if (changed) this.store.notify();
     };
     const leftMax = () => Math.max(LEFT_MIN, body.clientWidth * 0.5);
-    const bottomMax = () => Math.max(BOTTOM_MIN, center.clientHeight - GRID_MIN_HEIGHT);
+    // The splitter is now a 6px gap between two cards (T-039 stage 3), so its height comes off the room for the grid too.
+    let bottomSplitEl: HTMLElement | null = null;   // set below: the Splitter constructor already calls get() (and so bottomMax)
+    const bottomMax = (): number => Math.max(BOTTOM_MIN, center.clientHeight - GRID_MIN_HEIGHT - (bottomSplitEl ? bottomSplitEl.offsetHeight : 0));
     const leftSplit = new Splitter({
       axis: "x", grow: 1, min: LEFT_MIN, max: leftMax, defaultSize: DEFAULT_LAYOUT.leftDockWidth,
       collapsedSize: 8, label: "the left panel",
@@ -117,11 +122,12 @@ export class AppShell {
     });
     const bottomSplit = new Splitter({
       axis: "y", grow: -1, min: BOTTOM_MIN, max: bottomMax, defaultSize: DEFAULT_LAYOUT.rulePanelHeight,
-      collapsedSize: 24, label: "the bottom panel",
+      collapsedSize: 28, label: "the bottom panel",   // the collapsed panel is its 28px tab strip (--tabbar-height)
       get: () => ({ size: Math.min(layout.rulePanelHeight, bottomMax()), collapsed: layout.rulePanelCollapsed }),
       apply: applyBottom, commit: saveLayout,
     });
     applyLeft(layout.leftDockWidth, layout.leftCollapsed);
+    bottomSplitEl = bottomSplit.el;
     applyBottom(layout.rulePanelHeight, layout.rulePanelCollapsed);
     // Collapsed bottom panel = its tab row: a tab click opens the panel on that tab,
     // the empty part of the row works like the splitter (drag, or click to open).
@@ -241,7 +247,10 @@ export class AppShell {
       const dot = indicator.querySelector(".engine-dot") as HTMLElement;
       const txt = indicator.querySelector(".engine-text") as HTMLElement;
       dot.className = "engine-dot " + (s.connected ? "connected" : s.statusMessage.includes("connect") ? "connecting" : s.statusMessage.includes("error") ? "error" : "");
-      txt.textContent = s.connected ? `engine: ${s.endpoint || "auto"}` : s.statusMessage;
+      // Compact: just "engine" while connected, the address is in the tooltip; other states show their message.
+      const full = s.connected ? `engine: ${s.endpoint || "auto"}` : s.statusMessage;
+      txt.textContent = s.connected ? "engine" : s.statusMessage;
+      indicator.title = full;
     });
     mb.appendChild(indicator);
     mb.appendChild(this.buildThemeSwitch());
@@ -463,30 +472,30 @@ export class AppShell {
 
     // Formatting is outside the MVP preview: controls stay visible but disabled (handlers kept for later).
     const off = (label: string) => ({ disabled: true, title: `${label} — ${NOT_IN_MVP_TITLE}` });
-    const offLabel = (text: string) => el("span", { class: "tb-label disabled" }, [text]);
+    // No text labels in the compact row ("Fill", "Font", "Format"): the title of each control names it.
 
-    // Format buttons
+    // Format buttons: one segmented block
+    const seg = el("div", { class: "tb-seg" });
     const boldBtn = el("button", { class: "tb-btn", ...off("Bold"), style: { fontWeight: "700" } }, ["B"]);
     boldBtn.addEventListener("click", () => this.store.api.formatBold("selection", true).catch(() => {}));
-    tb.appendChild(boldBtn);
+    seg.appendChild(boldBtn);
     const italicBtn = el("button", { class: "tb-btn", ...off("Italic"), style: { fontStyle: "italic" } }, ["I"]);
     italicBtn.addEventListener("click", () => this.store.api.formatItalic("selection", true).catch(() => {}));
-    tb.appendChild(italicBtn);
+    seg.appendChild(italicBtn);
     const underlineBtn = el("button", { class: "tb-btn", ...off("Underline"), style: { textDecoration: "underline" } }, ["U"]);
     underlineBtn.addEventListener("click", () => this.store.api.formatUnderline("selection", true).catch(() => {}));
-    tb.appendChild(underlineBtn);
+    seg.appendChild(underlineBtn);
+    tb.appendChild(seg);
     tb.appendChild(el("span", { class: "tb-sep" }));
 
     // Fill color
     const fillInput = el("input", { class: "tb-color", type: "color", value: "#ffffff", ...off("Fill color") }) as HTMLInputElement;
     fillInput.addEventListener("change", () => this.store.api.formatBgColor("selection", fillInput.value).catch(() => {}));
-    tb.appendChild(offLabel("Fill"));
     tb.appendChild(fillInput);
 
     // Font color
     const fontInput = el("input", { class: "tb-color", type: "color", value: "#000000", ...off("Font color") }) as HTMLInputElement;
     fontInput.addEventListener("change", () => this.store.api.formatColor("selection", fontInput.value).catch(() => {}));
-    tb.appendChild(offLabel("Font"));
     tb.appendChild(fontInput);
     tb.appendChild(el("span", { class: "tb-sep" }));
 
@@ -494,7 +503,6 @@ export class AppShell {
     const fmt = el("select", { class: "tb-select", ...off("Number format") }) as HTMLSelectElement;
     [["general", "General"], ["number", "Number"], ["currency", "Currency"], ["percent", "Percent"], ["scientific", "Scientific"]].forEach(([v, l]) => fmt.appendChild(el("option", { value: v }, [l])));
     fmt.addEventListener("change", () => this.store.api.formatNumberFormat("selection", fmt.value).catch(() => {}));
-    tb.appendChild(offLabel("Format"));
     tb.appendChild(fmt);
 
     return tb;
@@ -531,8 +539,10 @@ export class AppShell {
       }
     });
     input.addEventListener("blur", sync);
+    // `fx` marker inside the field (T-039 stage 2): the wrapper only positions it, the input is unchanged.
+    const field = el("div", { class: "rule-field" }, [el("span", { class: "rule-fx", "aria-hidden": "true" }, ["fx"]), input]);
     bar.appendChild(nameBox);
-    bar.appendChild(input);
+    bar.appendChild(field);
     this.store.subscribe(sync);
     return bar;
   }
