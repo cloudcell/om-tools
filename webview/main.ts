@@ -2,6 +2,7 @@ import { createTransport } from "./transport";
 import { OmApi } from "./api";
 import { Store } from "./state";
 import { AppShell } from "./components/appShell";
+import { applyTheme, sanitizeTheme } from "./theme";
 import "./styles.css";
 
 /** Webview entry point. Wires the transport (VSCode postMessage today,
@@ -11,6 +12,9 @@ async function main() {
   const transport = createTransport();
   const api = new OmApi(transport);
   const store = new Store(api);
+
+  // Saved colour theme goes on <html> before the first render, so nothing paints in the wrong colours.
+  applyTheme(sanitizeTheme(api.loadUiState()?.theme));
 
   // Render the shell first so the GUI is visible even while connecting.
   const shell = new AppShell(store);

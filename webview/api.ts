@@ -50,6 +50,9 @@ export class OmApi {
   /** Saved panel sizes etc. (T-045): synchronous, null when nothing is saved. */
   loadUiState(): UiState | null { return this.t.loadUiState(); }
   saveUiState(state: UiState): void { this.t.saveUiState(state); }
+  /** Saves only the given fields and keeps the rest (layout and theme are written by different code and
+   *  must not wipe each other: `saveUiState` replaces the whole state). */
+  updateUiState(patch: Partial<UiState>): void { this.t.saveUiState({ ...(this.t.loadUiState() || {}), ...patch }); }
 
   // ---- queries ----
   workspaceSummary(): Promise<WorkspaceSummary> { return this.t.request("query", { query_id: "workspace_summary" }); }

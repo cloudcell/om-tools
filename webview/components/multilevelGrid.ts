@@ -44,20 +44,24 @@ interface GridMetrics {
 
 const METRICS: GridMetrics = { rowHeaderW: 100, colHeaderH: 24, rowH: 22, colW: 90 };
 const COLORS = {
-  gridline: "#d0d0d0",
-  headerBg: "#f2f4f8",
-  headerFg: "#202020",
-  selBg: "rgba(42, 118, 210, 0.55)",
-  selFg: "#ffffff",
+  gridline: "var(--ml-line)",
+  headerBg: "var(--ml-header-bg)",
+  headerFg: "var(--ml-header-fg)",
+  selBg: "var(--ml-sel-bg)",
+  selFg: "var(--ml-sel-fg)",
   relatedBg: "#d8deeb",
   groupShade: "#d0d0d0",
-  hardnumberBg: "#ffff99",
-  hardnumberTri: "#ff0000",
+  hardnumberBg: "var(--ml-hard-bg)",
+  hardnumberTri: "var(--ml-hard-tri)",
   groupOutline: "rgb(25, 118, 210)",
-  currentCell: "rgb(80, 80, 80)",
+  currentCell: "var(--ml-current)",
   badgeBg: "rgb(220, 220, 220)",
   badgeBorder: "rgb(100, 100, 100)",
   badgeFg: "rgb(50, 50, 50)",
+  // Not part of the original palette: cell and text colours that used to be literals in the cell renderer (T-039 D4).
+  cellBg: "var(--ml-cell-bg)",
+  cellFg: "var(--ml-cell-fg)",
+  error: "var(--ml-error)",
 };
 
 /** MultilevelGrid — custom-painted multilevel grid with band computation,
@@ -917,7 +921,7 @@ export class MultilevelGrid {
       }
 
       if (col.is_aggregate) {
-        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "#666" } }, ["Σ"]);
+        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "var(--text-label)" } }, ["Σ"]);
         cell.style.position = "absolute";
         cell.appendChild(sigma);
       }
@@ -1114,7 +1118,7 @@ export class MultilevelGrid {
       }
 
       if (row.is_aggregate) {
-        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "#666" } }, ["Σ"]);
+        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "var(--text-label)" } }, ["Σ"]);
         cell.style.position = "absolute";
         cell.appendChild(sigma);
       }
@@ -1241,8 +1245,8 @@ export class MultilevelGrid {
           width: this.colW(c) + "px", height: METRICS.rowH + "px",
           borderRight: `1px solid ${COLORS.gridline}`, borderBottom: `1px solid ${COLORS.gridline}`,
           display: "flex", alignItems: "center", padding: "0 4px", fontSize: "11px",
-          background: isSel ? COLORS.selBg : (cell.explain?.source === "override" ? COLORS.hardnumberBg : "#fff"),
-          color: isSel ? COLORS.selFg : (kind === "error" ? "#c00" : "#000"),
+          background: isSel ? COLORS.selBg : (cell.explain?.source === "override" ? COLORS.hardnumberBg : COLORS.cellBg),
+          color: isSel ? COLORS.selFg : (kind === "error" ? COLORS.error : COLORS.cellFg),
           overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", cursor: "pointer",
           justifyContent: kind === "text" || kind === "error" ? "flex-start" : "flex-end",
         } }, [disp]) as HTMLElement;

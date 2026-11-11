@@ -66,9 +66,13 @@ export interface UiLayout {
   rulePanelCollapsed?: boolean;
 }
 
+/** Colour theme (T-039). Chosen by hand with the switch in the menu bar; dark when nothing is saved. */
+export type UiTheme = "light" | "dark";
+
 /** Everything the webview persists. `saveUiState` params: `{ state: UiState }`. */
 export interface UiState {
   layout?: UiLayout;
+  theme?: UiTheme;
 }
 
 /** Name of the `<meta>` tag through which the VS Code host hands the saved UiState to a new webview
