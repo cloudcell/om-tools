@@ -1,0 +1,14 @@
+# OM Tools code ownership. Owners must have GitHub write permission.
+# Advisory until a protected-branch rule requires code-owner review.
+# Do not require owner approval unless a second independent reviewer has access:
+# PR authors cannot approve their own pull requests.
+* @cloudcell
+
+# Security-sensitive paths.
+/.github/ @cloudcell
+/bridge/ @cloudcell
+/src/ @cloudcell
+/scripts/ @cloudcell
+/legal/ @cloudcell
+/package.json @cloudcell
+/package-lock.json @cloudcell
