@@ -1,7 +1,16 @@
 import { ChildProcess, spawn } from "child_process";
 import * as fs from "fs";
-import * as net from "net";
-import { TransportEndpoint } from "./engineClient";
+import { EngineClient, TransportEndpoint } from "./engineClient";
+import { checkUnixEndpointPath } from "./runtimePolicy";
+
+/** Runtime output kept for error messages: the newest part only (T-049, DEV-07). */
+export const LOG_LIMIT_CHARS = 256 * 1024;
+
+/** Appends `chunk` to a log buffer, keeping only the newest LOG_LIMIT_CHARS characters. */
+export function appendLog(buf: string, chunk: string): string {
+  const all = buf + chunk;
+  return all.length > LOG_LIMIT_CHARS ? all.slice(-LOG_LIMIT_CHARS) : all;
+}
 
 export interface RuntimeOptions {
   omCorePath: string;
@@ -43,18 +52,21 @@ export class EngineProcess {
       OPENM_TRANSPORT_PORT: String(this.endpoint.port || 17391),
     };
     if (this.endpoint.kind === "unix") {
+      // Never delete anything here (it used to unlink whatever sat at the configured path). A leftover socket is
+      // removed by om-core itself when it binds, after checking that nobody listens on it; anything else is refused.
+      const bad = checkUnixEndpointPath(this.endpoint.path);
+      if (bad) throw new Error(`Not starting the runtime: ${bad}.`);
       env.OPENM_TRANSPORT_SOCKET = this.endpoint.path || "";
       delete env.OPENM_TRANSPORT_HOST;
       delete env.OPENM_TRANSPORT_PORT;
-      try { if (this.endpoint.path && fs.existsSync(this.endpoint.path)) fs.unlinkSync(this.endpoint.path); } catch {}
     }
     this.proc = spawn("uv", ["run", "python", "-O", "main.py", "--runtime"], {
       cwd: this.omCorePath,
       env,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    this.proc.stdout?.on("data", (d) => { this.stdoutBuf += d.toString(); });
-    this.proc.stderr?.on("data", (d) => { this.stderrBuf += d.toString(); });
+    this.proc.stdout?.on("data", (d) => { this.stdoutBuf = appendLog(this.stdoutBuf, d.toString()); });
+    this.proc.stderr?.on("data", (d) => { this.stderrBuf = appendLog(this.stderrBuf, d.toString()); });
     this.proc.on("exit", () => { this.proc = null; });
 
     await this.waitForReady(20000);
@@ -66,40 +78,17 @@ export class EngineProcess {
       if (this.proc === null) {
         throw new Error(`runtime exited prematurely. stderr: ${this.stderrBuf.slice(-2000)}`);
       }
-      if (await this.isPortOpen()) return;
+      if (await EngineClient.handshake(this.endpoint, 1500)) return;   // a real om-core answers; a squatter on the port does not
       await new Promise((r) => setTimeout(r, 300));
     }
     throw new Error(`runtime did not become ready within ${timeoutMs}ms. stderr: ${this.stderrBuf.slice(-2000)}`);
   }
 
-  private isPortOpen(): Promise<boolean> {
-    return new Promise((resolve) => {
-      if (this.endpoint.kind === "unix") {
-        const sock = net.createConnection(this.endpoint.path!);
-        sock.once("connect", () => { sock.destroy(); resolve(true); });
-        sock.once("error", () => { sock.destroy(); resolve(false); });
-      } else {
-        const sock = net.createConnection({ host: this.endpoint.host!, port: this.endpoint.port! });
-        sock.once("connect", () => { sock.destroy(); resolve(true); });
-        sock.once("error", () => { sock.destroy(); resolve(false); });
-      }
-    });
-  }
-
-  /** Probe whether an endpoint already has a runtime listening (without launching). */
+  /** Is a real om-core runtime listening on this endpoint (without launching anything)? It must answer the protocol's
+   *  ping: an open port is not enough, as any other program can listen on 17391 (T-049, DEV-10). */
   static async probe(endpoint: TransportEndpoint): Promise<boolean> {
-    return new Promise((resolve) => {
-      if (endpoint.kind === "unix") {
-        if (!endpoint.path || !fs.existsSync(endpoint.path)) return resolve(false);
-        const sock = net.createConnection(endpoint.path);
-        sock.once("connect", () => { sock.destroy(); resolve(true); });
-        sock.once("error", () => { sock.destroy(); resolve(false); });
-      } else {
-        const sock = net.createConnection({ host: endpoint.host!, port: endpoint.port! });
-        sock.once("connect", () => { sock.destroy(); resolve(true); });
-        sock.once("error", () => { sock.destroy(); resolve(false); });
-      }
-    });
+    if (endpoint.kind === "unix" && (!endpoint.path || !fs.existsSync(endpoint.path))) return false;
+    return EngineClient.handshake(endpoint, 2000);
   }
 
   async stop(): Promise<void> {

@@ -12,6 +12,17 @@
   "engines": {
     "vscode": "^1.80.0"
   },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "In Restricted Mode OM Tools does not start the om-core runtime and ignores workspace settings for the runtime path and endpoint. You can still connect to a runtime that is already running.",
+      "restrictedConfigurations": [
+        "omCore.omCorePath",
+        "omCore.runtimeEndpoint",
+        "omCore.autoStartRuntime"
+      ]
+    }
+  },
   "categories": [
     "Other",
     "Data Science",
@@ -132,12 +143,15 @@
     "@types/vscode": "^1.80.0",
     "@types/ws": "^8.5.0",
     "@vscode/vsce": "^4.1.0",
-    "esbuild": "^0.20.0",
+    "esbuild": "^0.28.2",
     "simple-git-hooks": "^2.11.1",
     "typescript": "^5.4.0",
     "ws": "^8.16.0"
   },
   "simple-git-hooks": {
     "pre-commit": "node scripts/check-sensitive.js --staged"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
   }
 }

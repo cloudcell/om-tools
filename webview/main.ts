@@ -56,5 +56,11 @@ async function main() {
 
 main().catch((e) => {
   const app = document.getElementById("app");
-  if (app) app.innerHTML = `<div style="padding:24px;color:#d32f2f;font-family:system-ui">OM Core GUI failed to start: ${String(e?.message || e)}</div>`;
+  if (app) {
+    // textContent, not innerHTML: the message can carry text from the runtime or the model (T-049, DEV-08).
+    const box = document.createElement("div");
+    box.style.cssText = "padding:24px;color:#d32f2f;font-family:system-ui";
+    box.textContent = `OM Core GUI failed to start: ${String(e?.message || e)}`;
+    app.replaceChildren(box);
+  }
 });

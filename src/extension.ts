@@ -2,9 +2,12 @@ import * as vscode from "vscode";
 import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString, topicMatches } from "./engineClient";
 import { EngineProcess } from "./engineProcess";
 import { HostRequest, HostToWebview, AppConfig, PickFileParams, UiState, UI_STATE_META } from "../shared/messages";
+import { autoStartBlockedReason, isRemoteEndpoint } from "./runtimePolicy";
+import { sanitizeUiState } from "./uiState";
 import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
+import * as crypto from "crypto";
 
 let panel: vscode.WebviewPanel | null = null;
 let client: EngineClient | null = null;
@@ -32,30 +35,37 @@ function platformDefaultEndpoint(): TransportEndpoint {
   return os.platform() === "win32" ? DEFAULT_TCP : { kind: "unix", path: defaultUnixSocketPath() };
 }
 
-/** Endpoint pinned by explicit configuration only: omCore.runtimeEndpoint, then OPENM_TRANSPORT_* env. */
-function configuredEndpoint(): TransportEndpoint | null {
-  const ep = vscode.workspace.getConfiguration("omCore").get<string>("runtimeEndpoint", "");
+/** Endpoint pinned by explicit configuration only: omCore.runtimeEndpoint, then OPENM_TRANSPORT_* env.
+ *  A value that is set but invalid is an error: silently falling back to another runtime (the default port, or a
+ *  socket some other program owns) would connect to something the user did not ask for (T-049, DEV-10). */
+function configuredEndpointStrict(): TransportEndpoint | null {
+  const ep = vscode.workspace.getConfiguration("omCore").get<string>("runtimeEndpoint", "").trim();
   if (ep) {
     const r = parseEndpoint(ep);
-    if (r.ok) return r.endpoint;
+    if (!r.ok) throw new Error(`Setting omCore.runtimeEndpoint is not valid (${r.error}): "${ep}". Use unix:///path/to.sock or tcp://host:port, or clear it.`);
+    return r.endpoint;
   }
   const sock = process.env.OPENM_TRANSPORT_SOCKET;
   if (sock) return { kind: "unix", path: sock };
   if (process.env.OPENM_TRANSPORT_HOST || process.env.OPENM_TRANSPORT_PORT) {
-    return {
-      kind: "tcp",
-      host: process.env.OPENM_TRANSPORT_HOST || "127.0.0.1",
-      port: Number(process.env.OPENM_TRANSPORT_PORT) || 17391,
-    };
+    const portText = process.env.OPENM_TRANSPORT_PORT;
+    const port = portText ? Number(portText) : 17391;
+    if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`OPENM_TRANSPORT_PORT is not a valid port: "${portText}".`);
+    return { kind: "tcp", host: process.env.OPENM_TRANSPORT_HOST || "127.0.0.1", port };
   }
   return null;
+}
+
+/** Same, for display only (status and config pushes): never throws. */
+function configuredEndpoint(): TransportEndpoint | null {
+  try { return configuredEndpointStrict(); } catch { return null; }
 }
 
 /** Where to connect: explicit config/env first; otherwise probe the default unix socket and TCP
  *  port and use whichever answers; if neither is live, the platform default (which auto-start
  *  then binds). */
 async function resolveEndpoint(): Promise<TransportEndpoint> {
-  const configured = configuredEndpoint();
+  const configured = configuredEndpointStrict();
   if (configured) return configured;
   const candidates: TransportEndpoint[] = [];
   if (os.platform() !== "win32") candidates.push({ kind: "unix", path: defaultUnixSocketPath() });
@@ -138,8 +148,24 @@ async function pickAndPersistOmCorePath(): Promise<string> {
   }
 }
 
+const APPROVED_CORE_KEY = "omCore.approvedCorePaths";
+
+/** A workspace folder that merely looks like om-core is not a place the user chose to run code from: ask once per
+ *  folder (modal), remember the answer in globalState (T-049, DEV-10). Settings and OM_CORE_PATH are the user's own choice. */
+async function approveWorkspaceCore(dir: string): Promise<boolean> {
+  const approved = extContext?.globalState.get<string[]>(APPROVED_CORE_KEY, []) ?? [];
+  if (approved.includes(dir)) return true;
+  const run = "Run om-core from this folder";
+  const pick = await vscode.window.showWarningMessage(
+    `OM Tools found an om-core checkout in this workspace:\n${dir}\n\nStarting the runtime runs main.py from it on your computer. Continue only if you trust this folder.`,
+    { modal: true }, run);
+  if (pick !== run) return false;
+  await extContext?.globalState.update(APPROVED_CORE_KEY, [...approved, dir]);
+  return true;
+}
+
 /** Where the runtime lives, for auto-start: omCore.omCorePath > OM_CORE_PATH env > a workspace
- *  folder that is an om-core checkout > one-time folder picker (persisted to global settings). */
+ *  folder that is an om-core checkout (after the user approves it) > one-time folder picker (persisted to global settings). */
 async function resolveOmCorePath(): Promise<string> {
   const cfg = vscode.workspace.getConfiguration("omCore");
   const fromSetting = cfg.get<string>("omCorePath", "").trim();
@@ -150,20 +176,33 @@ async function resolveOmCorePath(): Promise<string> {
   if (fromEnv && looksLikeOmCore(fromEnv)) return fromEnv;
 
   for (const folder of vscode.workspace.workspaceFolders ?? []) {
-    if (looksLikeOmCore(folder.uri.fsPath)) return folder.uri.fsPath;
+    const dir = folder.uri.fsPath;
+    if (!looksLikeOmCore(dir)) continue;
+    if (await approveWorkspaceCore(dir)) return dir;
+    throw new Error(`Not starting the runtime from ${dir}. To use another om-core, set 'omCore.omCorePath' or start the runtime yourself.`);
   }
 
   if (!omCorePathPrompt) omCorePathPrompt = pickAndPersistOmCorePath();
   return omCorePathPrompt;
 }
 
+/** Remote endpoints already warned about in this session. */
+const warnedRemote = new Set<string>();
+
 async function ensureRuntime(): Promise<TransportEndpoint> {
   const ep = await resolveEndpoint();
   resolvedEndpoint = ep;
+  if (isRemoteEndpoint(ep) && !warnedRemote.has(endpointToString(ep))) {
+    warnedRemote.add(endpointToString(ep));
+    vscode.window.showWarningMessage(`OM Tools talks to the runtime at ${endpointToString(ep)} without encryption or authentication. Use this only on a network you trust, or through an SSH tunnel.`);
+  }
   const running = await EngineProcess.probe(ep);
   if (!running) {
     const cfg = vscode.workspace.getConfiguration("omCore");
     if (cfg.get<boolean>("autoStartRuntime", true)) {
+      // Starting the runtime executes code (uv run python main.py): not in Restricted Mode (Workspace Trust).
+      const blocked = autoStartBlockedReason(vscode.workspace.isTrusted);
+      if (blocked) throw new Error(blocked);
       const omCorePath = await resolveOmCorePath();
       sendStatus("starting", `Launching om-core runtime at ${endpointToString(ep)}…`);
       runtime = new EngineProcess({ omCorePath, endpoint: ep });
@@ -181,8 +220,9 @@ async function connect(): Promise<void> {
   const ep = await ensureRuntime();
   if (client) { try { client.close(); } catch {} }
   client = new EngineClient(ep);
+  const thisClient = client;
   client.on("disconnect", () => {
-    sendStatus("disconnected", "Runtime connection lost");
+    sendStatus("disconnected", thisClient.lastError ? `Runtime connection closed: ${thisClient.lastError}` : "Runtime connection lost");
     currentSessionId = null;
   });
   client.on("event", (env) => {
@@ -288,8 +328,9 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
       }
       case "saveUiState": {
         // Panel sizes (T-045): kept across VS Code restarts, handed to the next webview in getHtml().
-        const state = req.params?.state;
-        if (extContext && state && typeof state === "object") await extContext.globalState.update(UI_STATE_KEY, state);
+        // The webview is the less trusted side: keep only known fields with sane values (T-049, DEV-16).
+        const state = sanitizeUiState(req.params?.state);
+        if (extContext && state) await extContext.globalState.update(UI_STATE_KEY, state);
         return { type: "response", id: req.id, ok: true };
       }
       case "pickFile": {
@@ -334,6 +375,8 @@ async function openGui(context: vscode.ExtensionContext) {
   if (panel) { panel.reveal(vscode.ViewColumn.One); return; }
   panel = vscode.window.createWebviewPanel("omCoreGui", "OM Core", vscode.ViewColumn.One, {
     enableScripts: true,
+    // Only the bundle may be loaded from disk, not the whole extension folder or the workspace (default roots).
+    localResourceRoots: [vscode.Uri.file(context.asAbsolutePath("dist")), vscode.Uri.file(context.asAbsolutePath("media"))],
     // Keep the page alive while another editor tab is in front. Without it VS Code destroys the hidden webview
     // and rebuilds it on return, which drops the open view tabs and the grid state (issue #6).
     retainContextWhenHidden: true,
@@ -369,7 +412,7 @@ function getHtml(context: vscode.ExtensionContext, webview: vscode.Webview): str
   const nonce = getNonce();
   // Saved panel sizes, read by the webview before its first render (VsCodeTransport.loadUiState).
   // encodeURIComponent leaves no quotes or angle brackets, so it is safe inside the attribute.
-  const uiState = context.globalState.get<UiState>(UI_STATE_KEY);
+  const uiState = sanitizeUiState(context.globalState.get<UiState>(UI_STATE_KEY));
   const uiStateMeta = uiState ? `<meta name="${UI_STATE_META}" content="${encodeURIComponent(JSON.stringify(uiState))}" />\n` : "";
   return `<!DOCTYPE html>
 <html lang="en">
@@ -387,11 +430,9 @@ ${uiStateMeta}<title>OM Core</title>
 </html>`;
 }
 
+/** CSP script nonce: 144 random bits from the OS generator (18 bytes: base64 without padding). */
 function getNonce(): string {
-  let text = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
-  return text;
+  return crypto.randomBytes(18).toString("base64");
 }
 
 export function deactivate() {
