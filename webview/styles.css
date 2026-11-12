@@ -761,6 +761,12 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   min-width: 160px;
   padding: 2px 0;
 }
+/* Tooltip (attachTooltip in dom.ts): the theme's popup colours, not the host window's like a native title. */
+.om-tooltip {
+  position: fixed; z-index: 4000; max-width: 460px; padding: 6px 9px;
+  background: var(--popup-bg); color: var(--text); border: 1px solid var(--border-strong); border-radius: 4px;
+  box-shadow: var(--popup-shadow); font-size: 12px; line-height: 1.45; white-space: pre-wrap; pointer-events: none;
+}
 .ctx-item {
   padding: 4px 16px;
   cursor: pointer;

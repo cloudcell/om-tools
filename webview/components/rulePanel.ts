@@ -1,5 +1,5 @@
 import { Store } from "../state";
-import { el, clear, NOT_IN_MVP_TITLE } from "../dom";
+import { el, clear, attachTooltip, NOT_IN_MVP_TITLE } from "../dom";
 import { RuleDTO } from "../api";
 import { confirmDialog, alertDialog } from "./dialogs";
 import { materialIconSvg } from "../menuIcons";
@@ -108,9 +108,10 @@ export class RulePanel {
       const short = ch.id.replace("@.", "");
       const pill = el("button", {
         class: "channel-pill" + (on ? " active" : "") + (n === 0 ? " empty" : ""), type: "button",
-        title: `${short}: ${n} rule${n === 1 ? "" : "s"}`, "aria-label": `${short}: ${n} rules`, "aria-pressed": on ? "true" : "false",
+        "aria-label": `${short}: ${n} rules`, "aria-pressed": on ? "true" : "false",
         html: materialIconSvg(ch.icon, 14),
       }) as HTMLButtonElement;
+      attachTooltip(pill, `${short}: ${n} rule${n === 1 ? "" : "s"}`);   // themed, not the native title tooltip
       pill.appendChild(el("span", { class: "pill-count" }, [n < 100 ? String(n) : "99+"]));
       pill.disabled = this.editingRuleId !== null;
       pill.addEventListener("click", (e) => { this.selectedChannels = toggleChannel(this.selectedChannels, ch.id, e.ctrlKey || e.metaKey); this.refresh(panel); });
@@ -140,7 +141,8 @@ export class RulePanel {
     }
 
     // Two lines as in Qt: the rule, then its precedence status; the tooltip has mask, specificity and the precedence rules.
-    const row = el("div", { class: "rule-row", title: info.tooltip });
+    const row = el("div", { class: "rule-row" });
+    attachTooltip(row, info.tooltip);   // themed tooltip: a native title is dark inside a dark VS Code even in the light theme
     const grip = el("span", { class: "rule-grip", draggable: "true" }, ["⣿"]);
     grip.addEventListener("dragstart", (e) => { e.dataTransfer!.setData("text/rule-id", rule.id); e.dataTransfer!.effectAllowed = "move"; });
     row.appendChild(grip);

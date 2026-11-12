@@ -38,3 +38,67 @@ export const ICONS = {
   item: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="12" r="2"/></svg>`,
   twisty: `<svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M8 5l8 7-8 7z"/></svg>`,
 };
+
+// ---- Themed tooltip ----
+// A native `title` tooltip is drawn by the browser in the colours of the host window, not of the plugin: a light
+// plugin theme inside a dark VS Code showed a dark tooltip. This one takes its colours from the theme variables.
+let tipEl: HTMLElement | null = null;
+let tipTarget: HTMLElement | null = null;
+let tipTimer: number | undefined;
+
+function hideTip() {
+  clearTimeout(tipTimer);
+  tipTimer = undefined;
+  tipEl?.remove();
+  tipEl = null;
+  tipTarget = null;
+  document.removeEventListener("mousemove", tipWatch, true);
+  document.removeEventListener("mousedown", hideTip, true);
+  document.removeEventListener("wheel", hideTip, true);
+  document.removeEventListener("scroll", hideTip, true);
+  document.removeEventListener("keydown", hideTip, true);
+  window.removeEventListener("blur", hideTip);
+}
+
+/** While a tooltip is up: hide it as soon as the pointer is no longer over its element (or the element is gone —
+ *  a re-render replaces rows without a mouseleave). */
+function tipWatch(e: MouseEvent) {
+  if (!tipTarget || !tipTarget.isConnected || !tipTarget.contains(e.target as Node)) hideTip();
+}
+
+function showTip(target: HTMLElement, x: number, y: number) {
+  tipTimer = undefined;
+  const text = target.dataset.tooltip;
+  if (!text || !target.isConnected) return;
+  hideTip();
+  const tip = el("div", { class: "om-tooltip", role: "tooltip" }, [text]);
+  document.body.appendChild(tip);
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  const left = Math.max(4, Math.min(x + 14, window.innerWidth - w - 8));
+  let top = y + 18;
+  if (top + h > window.innerHeight - 8) top = Math.max(4, y - h - 10);   // no room below: above the pointer
+  tip.style.left = left + "px";
+  tip.style.top = top + "px";
+  tipEl = tip;
+  tipTarget = target;
+  document.addEventListener("mousemove", tipWatch, true);
+  document.addEventListener("mousedown", hideTip, true);
+  document.addEventListener("wheel", hideTip, true);
+  document.addEventListener("scroll", hideTip, true);
+  document.addEventListener("keydown", hideTip, true);
+  window.addEventListener("blur", hideTip);
+}
+
+/** Shows `text` (line breaks kept) in a themed tooltip after the pointer rests on `target` for `delayMs`.
+ *  The text is kept in `data-tooltip`; do not also set `title`, or the native tooltip appears too. */
+export function attachTooltip(target: HTMLElement, text: string, delayMs = 500) {
+  target.dataset.tooltip = text;
+  let x = 0, y = 0;
+  target.addEventListener("mouseenter", (e) => {
+    x = e.clientX; y = e.clientY;
+    clearTimeout(tipTimer);
+    tipTimer = window.setTimeout(() => showTip(target, x, y), delayMs);
+  });
+  target.addEventListener("mousemove", (e) => { x = e.clientX; y = e.clientY; });
+  target.addEventListener("mouseleave", () => { if (tipTarget === target || tipTimer !== undefined) hideTip(); });
+}
