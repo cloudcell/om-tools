@@ -19,7 +19,7 @@ The following packages appear in the checked-in package lock; several are develo
 | Package | Locked version | License |
 | --- | --- | --- |
 | `ws` | 8.21.3 | MIT |
-| `esbuild` | 0.20.2 | MIT |
+| `esbuild` | 0.28.2 | MIT |
 | `typescript` | 5.9.3 | Apache-2.0 |
 | `simple-git-hooks` | 2.11.1 | MIT |
 | `@types/node` | 20.19.43 | MIT |

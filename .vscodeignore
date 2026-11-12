@@ -1,4 +1,6 @@
-# Only dist/extension.js, dist/webview.{js,css}, dist/index.html, media/, README, LICENSE, CHANGELOG go into the VSIX.
+# Only dist/extension.js, dist/webview.{js,css}, dist/index.html, media/, README, LICENSE, NOTICE, legal/THIRD-PARTY-NOTICES.md
+# and CHANGELOG go into the VSIX. Repository governance (CI, contributor and security documents) stays out; the licence
+# notices of the bundled third-party material (e.g. Material Symbols, Apache-2.0) must ship with the extension.
 .vscode/**
 .devin/**
 .idea/**
@@ -22,3 +24,9 @@ dist/bridge.js
 dist/test-harness.js
 dist/_selftest.js
 examples/**
+.github/**
+CONTRIBUTING.md
+CONTRIBUTORS.md
+SECURITY.md
+legal/**
+!legal/THIRD-PARTY-NOTICES.md
