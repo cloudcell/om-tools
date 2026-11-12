@@ -151,7 +151,21 @@ export class Store {
 
   invalidateDimCache(dimId?: string) {
     if (dimId) this.dimCache.delete(dimId);
-    else this.dimCache.clear();
+    else { this.dimCache.clear(); this.cubeCache.clear(); }
+  }
+
+  /** `dimension_ids` of a cube in cube order (the `@` channel included), once `ensureCubeDetail` has run. */
+  cubeDimensionIds(cubeId: string): string[] | null {
+    const ids = this.cubeCache.get(cubeId)?.dimension_ids;
+    return Array.isArray(ids) ? ids : null;
+  }
+  /** Loads `cube_detail` once per cube; a failure is cached too (as `{}`), so callers do not retry in a loop.
+   *  Dropped with the dimension cache on structure changes and when another workspace is loaded. */
+  async ensureCubeDetail(cubeId: string) {
+    if (this.cubeCache.has(cubeId)) return;
+    let detail: any = null;
+    try { detail = await this.api.cubeDetail(cubeId); } catch { /* fall through: cached as empty */ }
+    this.cubeCache.set(cubeId, detail || {});
   }
 
   async refreshModel() {

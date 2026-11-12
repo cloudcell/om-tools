@@ -2,6 +2,8 @@ import { Store } from "../state";
 import { el, clear, NOT_IN_MVP_TITLE } from "../dom";
 import { RuleDTO } from "../api";
 import { confirmDialog, alertDialog } from "./dialogs";
+import { materialIconSvg } from "../menuIcons";
+import { RULE_CHANNELS, computeRuleInfos, toggleChannel, type RuleInfo } from "../ruleInfo";
 
 /** RulePanel — bottom panel with 3 tabs: Rules, Calculation Flow, Circular References.
  *  Mirrors lib_gui/rule_panel.py + lib_gui/calculation_flow_panel.py + lib_gui/circular_refs_panel.py. */
@@ -11,7 +13,10 @@ export class RulePanel {
   onExpand?: () => void;
   private activeTab = "rules";
   private activeCubeId: string | null = null;
-  private channelFilter = "all";
+  /** Channel pills in use (Qt `ChannelFilterBar.selected_channels`); empty = all channels. */
+  private selectedChannels = new Set<string>();
+  /** Cubes whose `cube_detail` is being loaded (the mask and the `@` slot need the dimension order). */
+  private loadingCubes = new Set<string>();
   private editingRuleId: string | null = null;
 
   render(): HTMLElement {
@@ -70,34 +75,57 @@ export class RulePanel {
       .map((r, i) => ({ r, i })).sort((a, b) => pos(a.r.id) - pos(b.r.id) || a.i - b.i).map((x) => x.r);
     const cubeName = v ? this.store.state.cubes.find((c) => c.id === v.cubeId)?.name : "";
 
-    // header (Qt: "Rules: <cube>" — the list is the cube's rules, not the view's)
+    // Mask, specificity and precedence need the dimension order of the cube: load it once, then redraw.
+    const dimIds = this.activeCubeId ? this.store.cubeDimensionIds(this.activeCubeId) : null;
+    const panel = content.parentElement as HTMLElement;
+    if (this.activeCubeId && !this.store.cubeCache.has(this.activeCubeId) && !this.loadingCubes.has(this.activeCubeId)) {
+      const cubeId = this.activeCubeId;
+      this.loadingCubes.add(cubeId);
+      this.store.ensureCubeDetail(cubeId).then(() => {
+        this.loadingCubes.delete(cubeId);
+        if (panel.isConnected && this.activeCubeId === cubeId) this.refresh(panel);
+      });
+    }
+    const infos = computeRuleInfos(rules, { dimIds, hasCube: !!this.activeCubeId, dimName: (id) => (id === "@" ? "@" : this.store.dimName(id)) });
+    const counts = new Map<string, number>();
+    for (const info of infos) counts.set(info.channel, (counts.get(info.channel) || 0) + 1);
+
+    // header (Qt: "Rules: <cube>" — the list is the cube's rules, not the view's; the middle label names the filter)
+    const filterLabel = this.selectedChannels.size ? [...this.selectedChannels].sort().join(", ") : "all channels";
     const header = el("div", { class: "rule-header" }, [
       el("span", { class: "rule-title" }, ["Rules" + (cubeName ? `: ${cubeName}` : "")]),
+      el("span", { class: "rule-filter" }, [filterLabel]),
       el("span", { class: "rule-count" }, [`${rules.length} total`]),
     ]);
     content.appendChild(header);
 
-    // channel filter pills
-    const channels = ["all", ...new Set(rules.map((r) => r.cube_id))];
-    const filterBar = el("div", { class: "channel-filter" });
-    for (const ch of channels) {
-      const name = ch === "all" ? "all" : this.store.state.cubes.find((c) => c.id === ch)?.name || ch.slice(0, 8);
-      const pill = el("div", { class: "channel-pill" + (this.channelFilter === ch ? " active" : "") }, [name]);
-      pill.addEventListener("click", () => { this.channelFilter = ch; this.refresh(content.parentElement as HTMLElement); });
+    // Channel pills (Qt `ChannelFilterBar`): a filter on the `@` system dimension, not on cubes (issue #3).
+    // Click selects one channel (click again clears), Ctrl/Cmd+click adds or removes; none selected = all rules.
+    // Qt disables the bar while a rule is edited.
+    const filterBar = el("div", { class: "channel-filter", role: "group", "aria-label": "Filter rules by channel" });
+    for (const ch of RULE_CHANNELS) {
+      const n = counts.get(ch.id) || 0, on = this.selectedChannels.has(ch.id);
+      const short = ch.id.replace("@.", "");
+      const pill = el("button", {
+        class: "channel-pill" + (on ? " active" : "") + (n === 0 ? " empty" : ""), type: "button",
+        title: `${short}: ${n} rule${n === 1 ? "" : "s"}`, "aria-label": `${short}: ${n} rules`, "aria-pressed": on ? "true" : "false",
+        html: materialIconSvg(ch.icon, 14),
+      }) as HTMLButtonElement;
+      pill.appendChild(el("span", { class: "pill-count" }, [n < 100 ? String(n) : "99+"]));
+      pill.disabled = this.editingRuleId !== null;
+      pill.addEventListener("click", (e) => { this.selectedChannels = toggleChannel(this.selectedChannels, ch.id, e.ctrlKey || e.metaKey); this.refresh(panel); });
       filterBar.appendChild(pill);
     }
     content.appendChild(filterBar);
 
-    const filtered = this.channelFilter === "all" ? rules : rules.filter((r) => r.cube_id === this.channelFilter);
+    const shown = rules.map((rule, i) => ({ rule, info: infos[i] })).filter((x) => !this.selectedChannels.size || this.selectedChannels.has(x.info.channel));
     const list = el("div", { class: "rule-list" });
-    for (const rule of filtered) {
-      list.appendChild(this.renderRuleRow(rule));
-    }
-    if (!filtered.length) list.appendChild(el("div", { class: "muted", style: { padding: "8px" } }, ["No rules. Use the rule bar above to create one."]));
+    for (const x of shown) list.appendChild(this.renderRuleRow(x.rule, x.info));
+    if (!shown.length) list.appendChild(el("div", { class: "muted", style: { padding: "8px" } }, [rules.length ? "No rules in the selected channels." : "No rules. Use the rule bar above to create one."]));
     content.appendChild(list);
   }
 
-  private renderRuleRow(rule: RuleDTO): HTMLElement {
+  private renderRuleRow(rule: RuleDTO, info: RuleInfo): HTMLElement {
     if (this.editingRuleId === rule.id) {
       const row = el("div", { class: "rule-row selected" });
       const input = el("input", { class: "rule-edit", type: "text", value: this.ruleToText(rule) }) as HTMLInputElement;
@@ -111,15 +139,20 @@ export class RulePanel {
       return row;
     }
 
-    const row = el("div", { class: "rule-row" });
+    // Two lines as in Qt: the rule, then its precedence status; the tooltip has mask, specificity and the precedence rules.
+    const row = el("div", { class: "rule-row", title: info.tooltip });
     const grip = el("span", { class: "rule-grip", draggable: "true" }, ["⣿"]);
     grip.addEventListener("dragstart", (e) => { e.dataTransfer!.setData("text/rule-id", rule.id); e.dataTransfer!.effectAllowed = "move"; });
     row.appendChild(grip);
 
-    const text = el("span", { class: "rule-text" }, [this.ruleToText(rule)]);
-    row.appendChild(text);
+    row.appendChild(el("span", { class: "rule-num" }, [`${info.number}.`]));
 
-    if (rule.is_anchored) row.appendChild(el("span", { class: "rule-anchored" }, ["⚓"]));
+    const body = el("div", { class: "rule-body" });
+    const line = el("div", { class: "rule-line" }, [el("span", { class: "rule-text" }, [this.ruleToText(rule)])]);
+    if (rule.is_anchored) line.appendChild(el("span", { class: "rule-anchored" }, ["⚓"]));
+    body.appendChild(line);
+    body.appendChild(el("div", { class: "rule-status" }, [info.status]));
+    row.appendChild(body);
 
     row.addEventListener("click", () => { /* select */ });
     row.addEventListener("contextmenu", (e) => { e.preventDefault(); this.showRuleContextMenu(e, rule); });
