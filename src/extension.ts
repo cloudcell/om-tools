@@ -4,6 +4,8 @@ import { EngineProcess } from "./engineProcess";
 import { HostRequest, HostToWebview, AppConfig, PickFileParams, UiState, UI_STATE_META } from "../shared/messages";
 import { autoStartBlockedReason, isRemoteEndpoint } from "./runtimePolicy";
 import { sanitizeUiState } from "./uiState";
+import { StatusSnapshot, describeOmCorePath, findUv, hasVenv, looksLikeOmCore, readGitCommit } from "./engineStatus";
+import { StatusPanel } from "./statusPanel";
 import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
@@ -15,6 +17,9 @@ let runtime: EngineProcess | null = null;
 let currentSessionId: string | null = null;
 let statusEmitter: ((s: { status: string; message?: string }) => void) | null = null;
 let statusBar: vscode.StatusBarItem | null = null;
+/** Side panel with the engine state (T-062), and the last status reported to it. */
+let statusPanel: StatusPanel | null = null;
+let lastStatus: { status: string; message?: string } | null = null;
 /** For globalState (saved panel sizes, T-045). Set in activate(). */
 let extContext: vscode.ExtensionContext | null = null;
 const UI_STATE_KEY = "omCore.uiState";
@@ -67,13 +72,28 @@ function configuredEndpoint(): TransportEndpoint | null {
 async function resolveEndpoint(): Promise<TransportEndpoint> {
   const configured = configuredEndpointStrict();
   if (configured) return configured;
-  const candidates: TransportEndpoint[] = [];
-  if (os.platform() !== "win32") candidates.push({ kind: "unix", path: defaultUnixSocketPath() });
-  candidates.push(DEFAULT_TCP);
-  for (const c of candidates) {
+  for (const c of autoDetectCandidates()) {
     if (await EngineProcess.probe(c)) return c;
   }
   return platformDefaultEndpoint();
+}
+
+/** Where auto-detect looks for a live runtime, in order. */
+function autoDetectCandidates(): TransportEndpoint[] {
+  const candidates: TransportEndpoint[] = [];
+  if (os.platform() !== "win32") candidates.push({ kind: "unix", path: defaultUnixSocketPath() });
+  candidates.push(DEFAULT_TCP);
+  return candidates;
+}
+
+/** Same choice as resolveEndpoint, plus whether a runtime answers there (each endpoint probed once). For the side panel. */
+async function findRuntime(): Promise<{ endpoint: TransportEndpoint; running: boolean }> {
+  const configured = configuredEndpointStrict();
+  if (configured) return { endpoint: configured, running: await EngineProcess.probe(configured) };
+  for (const c of autoDetectCandidates()) {
+    if (await EngineProcess.probe(c)) return { endpoint: c, running: true };
+  }
+  return { endpoint: platformDefaultEndpoint(), running: false };
 }
 
 /** Sync view of the endpoint for display only (status/config pushes); no probing. */
@@ -113,15 +133,6 @@ async function pickFile(p: PickFileParams): Promise<string | null> {
     defaultUri: current ? vscode.Uri.file(path.dirname(current)) : defaultDirUri(), filters,
   });
   return uris && uris.length ? uris[0].fsPath : null;
-}
-
-/** A directory counts as an om-core checkout when it has the runtime entry point and libs. */
-function looksLikeOmCore(dir: string): boolean {
-  try {
-    return fs.existsSync(path.join(dir, "main.py")) &&
-      fs.statSync(path.join(dir, "lib_runtime")).isDirectory() &&
-      fs.statSync(path.join(dir, "lib_openm")).isDirectory();
-  } catch { return false; }
 }
 
 /** Dedupes concurrent first-run prompts (auto-connect + command can both trigger one). */
@@ -165,7 +176,8 @@ async function approveWorkspaceCore(dir: string): Promise<boolean> {
 }
 
 /** Where the runtime lives, for auto-start: omCore.omCorePath > OM_CORE_PATH env > a workspace
- *  folder that is an om-core checkout (after the user approves it) > one-time folder picker (persisted to global settings). */
+ *  folder that is an om-core checkout (after the user approves it) > one-time folder picker (persisted to global settings).
+ *  The side panel shows the same choice without asking anything: describeOmCorePath in engineStatus.ts. Keep the two in step. */
 async function resolveOmCorePath(): Promise<string> {
   const cfg = vscode.workspace.getConfiguration("omCore");
   const fromSetting = cfg.get<string>("omCorePath", "").trim();
@@ -206,7 +218,13 @@ async function ensureRuntime(): Promise<TransportEndpoint> {
       const omCorePath = await resolveOmCorePath();
       sendStatus("starting", `Launching om-core runtime at ${endpointToString(ep)}…`);
       runtime = new EngineProcess({ omCorePath, endpoint: ep });
-      await runtime.start();
+      try {
+        await runtime.start();
+      } catch (e: any) {
+        // Otherwise the last status stays "starting" and the side panel keeps showing "Starting…".
+        sendStatus("error", `Failed to start runtime: ${e?.message || e}`);
+        throw e;
+      }
       sendStatus("ready", `Runtime ready at ${endpointToString(ep)}`);
     } else {
       throw new Error(`No runtime detected at ${endpointToString(ep)} and auto-start is disabled.`);
@@ -239,6 +257,55 @@ function sendStatus(status: string, message?: string) {
   if (statusEmitter) statusEmitter({ status, message });
   postToWebview({ type: "status", status: status as any, message });
   updateStatusBar(status, message);
+  lastStatus = { status, message };
+  void statusPanel?.refresh();
+}
+
+/** Where omCore.omCorePath comes from, for display. */
+function omCorePathScope(cfg: vscode.WorkspaceConfiguration, value: string): string | null {
+  if (!value) return null;
+  const i = typeof cfg.inspect === "function" ? cfg.inspect<string>("omCorePath") : undefined;
+  if (!i) return null;
+  if (value === i.workspaceFolderValue) return "Folder settings";
+  if (value === i.workspaceValue) return "Workspace settings";
+  if (value === i.globalValue) return "User settings";
+  return null;
+}
+
+/** Everything the side panel shows. Only looks: no dialogs, no warnings, nothing started. */
+async function statusSnapshot(): Promise<StatusSnapshot> {
+  const cfg = vscode.workspace.getConfiguration("omCore");
+  const setting = cfg.get<string>("omCorePath", "") || "";
+  const corePath = describeOmCorePath({
+    setting,
+    settingScope: omCorePathScope(cfg, setting.trim()),
+    env: process.env.OM_CORE_PATH || process.env.OPENM_CORE_PATH || "",
+    workspaceFolders: (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath),
+    approvedFolders: extContext?.globalState.get<string[]>(APPROVED_CORE_KEY, []) ?? [],
+  });
+  const usable = corePath.path && corePath.missingParts.length === 0 ? corePath.path : null;
+
+  let endpoint: string | null = null, endpointError: string | null = null, running = false, startedByUs = false;
+  try {
+    const r = await findRuntime();
+    endpoint = endpointToString(r.endpoint);
+    running = r.running;
+    startedByUs = running && !!runtime?.isRunning && endpointToString(runtime.endpoint) === endpoint;
+  } catch (e: any) {
+    endpointError = String(e?.message || e);
+  }
+
+  return {
+    trusted: vscode.workspace.isTrusted,
+    autoStart: cfg.get<boolean>("autoStartRuntime", true),
+    runtime: { endpoint, endpointError, running, startedByUs },
+    gui: { open: !!panel, connected: !!client?.isConnected, session: currentSessionId },
+    lastStatus,
+    corePath,
+    venv: usable ? hasVenv(usable) : null,
+    commit: usable ? readGitCommit(usable) : null,
+    uv: findUv(),
+  };
 }
 
 function updateStatusBar(status: string, message?: string) {
@@ -355,19 +422,35 @@ export function activate(context: vscode.ExtensionContext) {
   statusBar.show();
   context.subscriptions.push(statusBar);
 
+  statusPanel = new StatusPanel("omCore.launchPad", statusSnapshot);
+  const refreshPanel = () => { void statusPanel?.refresh(); };
+
   context.subscriptions.push(
+    statusPanel,
     vscode.commands.registerCommand("omCore.openGui", () => openGui(context)),
     vscode.commands.registerCommand("omCore.startRuntime", async () => {
       try { await ensureRuntime(); vscode.window.showInformationMessage("OM Core runtime started."); } catch (e: any) { vscode.window.showErrorMessage(`Failed to start runtime: ${e?.message || e}`); }
+      refreshPanel();
     }),
     vscode.commands.registerCommand("omCore.stopRuntime", async () => {
+      // Only a runtime this extension started can be stopped; another one (Qt GUI, a terminal) is only disconnected from.
+      // `runtime` stays set after a failed start (to stop a process that did not get ready in time), so ask whether it runs.
+      const ours = !!runtime?.isRunning;
       if (runtime) { await runtime.stop(); runtime = null; }
-      if (client) { client.close(); client = null; }
-      vscode.window.showInformationMessage("OM Core runtime stopped.");
+      if (client) { client.close(); client = null; currentSessionId = null; }
+      sendStatus("disconnected", ours ? "Runtime stopped" : "Disconnected");
+      vscode.window.showInformationMessage(ours
+        ? "OM Core runtime stopped."
+        : "OM Tools did not start the running om-core runtime, so it was not stopped; the GUI is disconnected from it.");
     }),
     vscode.commands.registerCommand("omCore.reconnect", async () => {
       try { await connect(); vscode.window.showInformationMessage("OM Core reconnected."); } catch (e: any) { vscode.window.showErrorMessage(`Reconnect failed: ${e?.message || e}`); }
+      refreshPanel();
     }),
+    vscode.commands.registerCommand("omCore.refreshStatus", () => statusPanel?.refresh()),
+    vscode.workspace.onDidChangeConfiguration((e) => { if (e.affectsConfiguration("omCore")) refreshPanel(); }),
+    vscode.workspace.onDidGrantWorkspaceTrust(refreshPanel),
+    vscode.workspace.onDidChangeWorkspaceFolders(refreshPanel),
   );
 }
 
@@ -394,6 +477,9 @@ async function openGui(context: vscode.ExtensionContext) {
     panel = null;
     statusEmitter = null;
     if (client) { try { client.close(); } catch {} client = null; }
+    currentSessionId = null;
+    lastStatus = null;
+    void statusPanel?.refresh();
     // leave runtime running so other clients (TUI) can still use it
   });
 

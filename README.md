@@ -105,6 +105,11 @@ does not support yet, for example formatting.
 | `OM Core: Start Runtime` | Starts the engine without opening the GUI. |
 | `OM Core: Stop Runtime` | Stops the engine that the extension started. |
 | `OM Core: Reconnect to Runtime` | Reconnects the GUI if it shows `disconnected`. |
+| `OM Core: Refresh Status` | Re-checks the state shown in the OM Core side panel (it also updates by itself). |
+
+The **OM Core** side panel shows what the engine needs: whether the runtime is running, whether the GUI
+is connected, the om-core folder in use and where that setting comes from, whether `uv sync` has been run,
+and where `uv` is. Hover over a row for details.
 
 ## Settings
 

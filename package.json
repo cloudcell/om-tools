@@ -38,7 +38,7 @@
         "command": "omCore.openGui",
         "title": "OM Core: Open GUI",
         "category": "OM Core",
-        "icon": "media/icon.svg"
+        "icon": "$(play)"
       },
       {
         "command": "omCore.startRuntime",
@@ -54,6 +54,12 @@
         "command": "omCore.reconnect",
         "title": "OM Core: Reconnect to Runtime",
         "category": "OM Core"
+      },
+      {
+        "command": "omCore.refreshStatus",
+        "title": "OM Core: Refresh Status",
+        "category": "OM Core",
+        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {
@@ -107,6 +113,33 @@
       }
     },
     "menus": {
+      "view/title": [
+        {
+          "command": "omCore.openGui",
+          "when": "view == omCore.launchPad",
+          "group": "navigation@1"
+        },
+        {
+          "command": "omCore.refreshStatus",
+          "when": "view == omCore.launchPad",
+          "group": "navigation@2"
+        },
+        {
+          "command": "omCore.startRuntime",
+          "when": "view == omCore.launchPad",
+          "group": "1_runtime@1"
+        },
+        {
+          "command": "omCore.stopRuntime",
+          "when": "view == omCore.launchPad",
+          "group": "1_runtime@2"
+        },
+        {
+          "command": "omCore.reconnect",
+          "when": "view == omCore.launchPad",
+          "group": "1_runtime@3"
+        }
+      ],
       "commandPalette": [
         {
           "command": "omCore.openGui"
@@ -119,6 +152,9 @@
         },
         {
           "command": "omCore.reconnect"
+        },
+        {
+          "command": "omCore.refreshStatus"
         }
       ]
     }
