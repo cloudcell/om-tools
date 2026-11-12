@@ -1264,6 +1264,12 @@ export class MultilevelGrid {
         cellEl.title = this.cellTitle(cell);
         cellEl.addEventListener("mousedown", (e) => {
           e.preventDefault();
+          if (e.button !== 0) {
+            // Right click inside the selection keeps it, so Copy in the context menu copies the whole range
+            // (issue #8; as in Excel and the Qt grid). Outside it, select just that cell. Never start a drag-select.
+            if (e.button === 2 && !this.isCellSelected(r, c)) this.selectCell(r, c, false, false);
+            return;
+          }
           if (!e.shiftKey) {
             // Start drag-select (native mousePressEvent → mouseMoveEvent rubberband)
             this.cellDragActive = true;

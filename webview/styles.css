@@ -132,6 +132,13 @@
   --name-badge-bg: #dbeaf5;
   --name-badge-fg: #1f5f8b;
   --page-bg: #eef0f5;
+  /* Scrollbars follow the plugin theme, not the VS Code theme (issue #5). VS Code injects its own
+     ::-webkit-scrollbar rules coloured by the VS Code theme; a non-auto `scrollbar-color` (inherited) takes
+     precedence over them in Chromium 121+, and over the default scrollbars in the browser. */
+  color-scheme: light;
+  --scrollbar-thumb: var(--border-strong);
+  --scrollbar-track: transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* Dark theme (T-039, variant B · Graphite). Overrides only the colour variables above; the light theme is the
@@ -249,6 +256,11 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
+/* Fallback for VS Code builds on Chromium < 121, which ignore `scrollbar-color` (see :root) and would keep
+   VS Code's injected scrollbar colours. Newer Chromium skips these rules because `scrollbar-color` is set. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 5px; border: 2px solid transparent; background-clip: padding-box; }
 body {
   font-family: var(--font-family);
   font-size: var(--font-size);
@@ -495,6 +507,10 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .tree-label { flex: 1; display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; }
 .tree-count { margin-left: auto; padding-left: 8px; font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .tree-row.active .tree-count { color: inherit; }
+/* Link mark of a sequential dimension (issue #2): Model Browser row and pivot chip. */
+.seq-link { display: inline-flex; align-items: center; margin-left: 4px; }
+.tree-label .seq-link { color: var(--text-muted); }
+.tree-row.active .seq-link { color: inherit; }
 /* Group rows (Dimensions / Cubes / Views): small caps label */
 .tree-node:has(> .tree-children) > .tree-row { margin-top: 6px; }
 .tree-node:has(> .tree-children) > .tree-row .tree-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
@@ -511,6 +527,9 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   padding: 0 10px;
   flex-shrink: 0;
   overflow-x: auto;
+  /* The tab's -1px bottom margin overflows the strip by one pixel; without this VS Code drew a vertical
+     scrollbar at the right end of the tab strip (issue #5). */
+  overflow-y: hidden;
 }
 .tab {
   display: flex;

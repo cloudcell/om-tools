@@ -163,6 +163,10 @@ export class Store {
     ]);
     this.set({ dimensions: dims.dimensions, cubes: cubes.cubes, views: views.views, workspaceSummary: ws });
     this.syncTabsWithViews();
+    // dimension_list has no dim_type, so the Model Browser knew "sequential" only for dimensions of an opened view.
+    // Fetch the missing details once (the cache lives until the next model load), then redraw (issue #2).
+    const missing = dims.dimensions.some((d) => !this.dimCache.has(d.id));
+    if (missing) this.ensureDimCache(dims.dimensions.map((d) => d.id)).then(() => this.notify()).catch(() => {});
   }
 
   /** Tabs follow the runtime's views: a deleted view (Delete View, Delete Cube) loses its tab, a renamed one

@@ -1,5 +1,6 @@
 import { Store } from "../state";
 import { el, clear } from "../dom";
+import { seqLinkIcon } from "../menuIcons";
 import { inputDialog, alertDialog } from "./dialogs";
 import { ModelActions } from "./modelActions";
 
@@ -7,6 +8,8 @@ import { ModelActions } from "./modelActions";
  *  Mirrors lib_gui/model_browser.py with context menus and drag-to-view. */
 export class ModelBrowser {
   private actions: ModelActions;
+  /** Where the last right click happened; the context menu opens there (issue #4). */
+  private menuPos = { x: 0, y: 0 };
   constructor(private store: Store) { this.actions = new ModelActions(store); }
 
   render(): HTMLElement {
@@ -28,8 +31,10 @@ export class ModelBrowser {
     const dimRoot = this.makeTreeNode("Dimensions", "▦", true, () => this.dimRootMenu());
     const dimChildren = (dimRoot as any)._children as HTMLElement;
     for (const dim of this.store.visibleDims()) {
-      const seqMark = this.store.dimIsSeq(dim.id) ? " →" : "";
-      dimChildren.appendChild(this.makeTreeNode(`${dim.name}${seqMark} (${dim.items})`, "·", false, () => this.dimMenu(dim)));
+      const node = this.makeTreeNode(`${dim.name} (${dim.items})`, "·", false, () => this.dimMenu(dim));
+      // Sequential dimension: the same link mark as its pivot chip (issue #2; was "→").
+      if (this.store.dimIsSeq(dim.id)) node.querySelector(".tree-label .tree-count")?.before(seqLinkIcon());
+      dimChildren.appendChild(node);
     }
     tree.appendChild(dimRoot);
 
@@ -80,7 +85,11 @@ export class ModelBrowser {
       text.addEventListener("click", () => toggleFn());
       (node as any)._children = children;
     }
-    if (onContext) row.addEventListener("contextmenu", (e) => { e.preventDefault(); e.stopPropagation(); onContext(); });
+    if (onContext) row.addEventListener("contextmenu", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      this.menuPos = { x: e.clientX, y: e.clientY };
+      onContext();
+    });
     return node;
   }
 
@@ -138,8 +147,8 @@ export class ModelBrowser {
       menu.appendChild(item);
     }
     document.body.appendChild(menu);
-    menu.style.left = "20px";
-    menu.style.top = "100px";
+    menu.style.left = this.menuPos.x + "px";
+    menu.style.top = this.menuPos.y + "px";
     const close = (e: MouseEvent) => { if (!menu.contains(e.target as Node)) { menu.remove(); document.removeEventListener("click", close); } };
     setTimeout(() => document.addEventListener("click", close), 0);
   }

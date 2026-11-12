@@ -1,5 +1,6 @@
 import { Store } from "../state";
 import { el, clear } from "../dom";
+import { seqLinkIcon } from "../menuIcons";
 import { ModelActions } from "./modelActions";
 
 /** PivotBar — 3-zone pivot-table layout with draggable dimension chips.
@@ -70,7 +71,7 @@ export class PivotBar {
     const name = this.store.dimName(dimId);
     const isSeq = this.store.dimIsSeq(dimId);
     const grip = el("span", { class: "chip-grip" }, ["\u28FF"]); // braille grip
-    const seqMark = isSeq ? el("span", { class: "chip-seq" }, [" \u{1F517}"]) : null;
+    const seqMark = isSeq ? el("span", { class: "chip-seq" }, [seqLinkIcon()]) : null;
     const cls = "dim-chip" + (zone === "page" ? " dim-chip-page" : "");
 
     if (zone === "page") {

@@ -334,6 +334,9 @@ async function openGui(context: vscode.ExtensionContext) {
   if (panel) { panel.reveal(vscode.ViewColumn.One); return; }
   panel = vscode.window.createWebviewPanel("omCoreGui", "OM Core", vscode.ViewColumn.One, {
     enableScripts: true,
+    // Keep the page alive while another editor tab is in front. Without it VS Code destroys the hidden webview
+    // and rebuilds it on return, which drops the open view tabs and the grid state (issue #6).
+    retainContextWhenHidden: true,
   });
   panel.iconPath = { light: vscode.Uri.file(context.asAbsolutePath("media/icon.svg")), dark: vscode.Uri.file(context.asAbsolutePath("media/icon.svg")) };
   panel.webview.html = getHtml(context, panel.webview);

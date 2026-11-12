@@ -37,6 +37,16 @@ const MATERIAL_PATHS = {
 
 export type MaterialIcon = keyof typeof MATERIAL_PATHS;
 
+/** Link mark for a sequential dimension: one icon for the Model Browser and the pivot chips (issue #2).
+ *  Static markup only; no model text goes into innerHTML. */
+export function seqLinkIcon(): HTMLElement {
+  const span = document.createElement("span");
+  span.className = "seq-link";
+  span.title = "Sequential dimension";
+  span.innerHTML = `<svg viewBox="0 -960 960 960" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="${MATERIAL_PATHS.link}"/></svg>`;
+  return span;
+}
+
 /** 18px Material Symbol as inline SVG markup, colored by currentColor. */
 export function materialIconSvg(name: MaterialIcon): string {
   return `<svg viewBox="0 -960 960 960" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="${MATERIAL_PATHS[name]}"/></svg>`;
