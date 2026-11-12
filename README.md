@@ -161,6 +161,32 @@ that engine's model. Stop that process or use `OM Core: Stop Runtime`.
   <https://cloudcell.github.io/om-docs/>
 - Issues: <https://github.com/cloudcell/om-tools/issues>
 
+## Development
+
+```bash
+npm install
+npm run build
+npm run compile
+npm test
+```
+
+`npm test` talks to a running OM Core runtime and changes the model in it: use a throwaway runtime, not one with your own model.
+
+The runtime configuration and integration notes are in [AGENTS.md](AGENTS.md). To use the extension, a compatible OM Core runtime is required.
+
+## Community and governance
+
+- [Contributors and acknowledgements](CONTRIBUTORS.md)
+- [Contribution guidelines](CONTRIBUTING.md)
+- [Contributor sign-off and license grant](legal/CONTRIBUTOR-SIGNOFFS.md)
+- [Formal contributor license agreement](legal/CONTRIBUTOR-CLA.md)
+- [Code of conduct](legal/CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+- [Brand and trademark guidance](legal/TRADEMARKS.md)
+- [Third-party notices](legal/THIRD-PARTY-NOTICES.md)
+
 ## License
 
-AGPL-3.0-or-later, see [LICENSE](LICENSE).
+OM Tools is distributed under the GNU Affero General Public License, version 3 or later (`AGPL-3.0-or-later`), as declared in `package.json`, except for separately licensed materials. See [LICENSE](LICENSE), [NOTICE](NOTICE), and [third-party notices](legal/THIRD-PARTY-NOTICES.md).
+
+OM Core is a separate repository with its own contributor policies and notices; signing an OM Tools agreement does not automatically sign an agreement for OM Core.

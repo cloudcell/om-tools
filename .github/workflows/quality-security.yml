@@ -1,0 +1,46 @@
+name: Quality and security
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+# No workflow write permission or repository secrets are required.
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-security:
+    name: quality-security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (without persistent GitHub credentials)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run compile
+      - name: Build extension and bridge
+        run: npm run build
+      - name: Check for sensitive data in tracked files
+        run: npm run check:sensitive
+      - name: Reject high/critical npm vulnerabilities
+        run: npm audit --audit-level=high
+
+# The integration test harness mutates OM Core model state.
+# Run it only in an isolated engine environment, never on public PR runners
+# connected to a production or shared runtime.

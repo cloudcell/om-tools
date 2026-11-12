@@ -1,0 +1,17 @@
+OM Tools
+
+Copyright © 2026 Alexander Bikeyev and contributors.
+
+Unless otherwise indicated, OM Tools is distributed under the GNU Affero General
+Public License, version 3 or later (AGPL-3.0-or-later), as declared in
+package.json. See LICENSE for the license text.
+
+OM Tools uses third-party materials under their respective licenses. See
+legal/THIRD-PARTY-NOTICES.md. Those materials are not relicensed merely by
+inclusion in this project.
+
+OM Tools integrates with the separately maintained OM Core project. The OM Core
+name and identity are subject to the trademark guidance in the OM Core project.
+See legal/TRADEMARKS.md for OM Tools brand guidance.
+
+This notice records attribution and does not change any applicable license.
