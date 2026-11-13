@@ -18,8 +18,7 @@
       "description": "In Restricted Mode OM Tools does not start the om-core runtime and ignores workspace settings for the runtime path and endpoint. You can still connect to a runtime that is already running.",
       "restrictedConfigurations": [
         "omCore.omCorePath",
-        "omCore.runtimeEndpoint",
-        "omCore.autoStartRuntime"
+        "omCore.runtimeEndpoint"
       ]
     }
   },
@@ -41,25 +40,64 @@
         "icon": "$(play)"
       },
       {
+        "command": "omCore.closeGui",
+        "title": "OM Core: Close GUI",
+        "category": "OM Core",
+        "icon": "$(close)"
+      },
+      {
         "command": "omCore.startRuntime",
         "title": "OM Core: Start Runtime",
-        "category": "OM Core"
+        "category": "OM Core",
+        "icon": "$(debug-start)"
       },
       {
         "command": "omCore.stopRuntime",
         "title": "OM Core: Stop Runtime",
-        "category": "OM Core"
+        "category": "OM Core",
+        "icon": "$(debug-stop)"
       },
       {
         "command": "omCore.reconnect",
         "title": "OM Core: Reconnect to Runtime",
-        "category": "OM Core"
+        "category": "OM Core",
+        "icon": "$(plug)"
       },
       {
         "command": "omCore.refreshStatus",
         "title": "OM Core: Refresh Status",
         "category": "OM Core",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "omCore.choosePath",
+        "title": "OM Core: Choose om-core Folder…",
+        "category": "OM Core",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "omCore.openSettings",
+        "title": "OM Core: Open Settings",
+        "category": "OM Core",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "omCore.revealPath",
+        "title": "OM Core: Reveal om-core Folder in File Explorer",
+        "category": "OM Core",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "omCore.manageTrust",
+        "title": "OM Core: Manage Workspace Trust",
+        "category": "OM Core",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "omCore.uvInstallHelp",
+        "title": "OM Core: How to Install uv",
+        "category": "OM Core",
+        "icon": "$(link-external)"
       }
     ],
     "viewsContainers": {
@@ -76,15 +114,59 @@
         {
           "id": "omCore.launchPad",
           "name": "OM Core",
-          "icon": "media/icon.svg"
+          "icon": "media/icon.svg",
+          "initialSize": 1
+        },
+        {
+          "id": "omCore.actions",
+          "name": "Actions",
+          "initialSize": 1000
         }
       ]
     },
     "viewsWelcome": [
       {
         "view": "omCore.launchPad",
-        "contents": "OM Core Multidimensional Modeling Engine\n\nConnect to the om-core runtime and open the interactive grid GUI.\n\n[Open GUI](command:omCore.openGui)\n[Start Runtime](command:omCore.startRuntime)\n[Reconnect](command:omCore.reconnect)",
-        "when": "true"
+        "contents": "Checking the engine…"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "[Start Runtime](command:omCore.startRuntime \"Start the engine\")\nStarts the engine only. The GUI is separate.",
+        "when": "omCore.runtimeButton == start"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "[Stop Runtime](command:omCore.stopRuntime \"Stop the engine\")\nStops the engine. A model that was not saved is lost.",
+        "when": "omCore.runtimeButton == stop"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "Starting the runtime…",
+        "when": "omCore.runtimeButton == starting"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "The runtime was started outside OM Tools. Stop it where it was started.",
+        "when": "omCore.runtimeButton == external"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "[Open GUI](command:omCore.openGui \"Open the grid in an editor tab\")\nOpens the grid. It connects if the runtime is running.",
+        "when": "omCore.guiButton == open"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "[Close GUI](command:omCore.closeGui \"Close the grid tab\")\nCloses the grid tab. The runtime keeps running.",
+        "when": "omCore.guiButton == close"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "Opening the GUI…",
+        "when": "omCore.guiButton == opening"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "[Settings](command:omCore.openSettings \"Open the OM Core settings\")"
       }
     ],
     "configuration": {
@@ -93,17 +175,12 @@
         "omCore.runtimeEndpoint": {
           "type": "string",
           "default": "",
-          "description": "Transport endpoint for the om-core runtime. Empty = auto-detect: uses OPENM_TRANSPORT_SOCKET or OPENM_TRANSPORT_HOST/PORT env vars when set, probes /tmp/openm-<user>.sock then tcp://127.0.0.1:17391 for a live runtime, and falls back to the platform default (unix socket on Linux/macOS, TCP on Windows). Examples: 'tcp://127.0.0.1:17391', 'unix:///tmp/openm-<user>.sock'."
-        },
-        "omCore.autoStartRuntime": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically launch the om-core runtime when opening the GUI if no endpoint is detected."
+          "description": "Transport endpoint for the om-core runtime. Empty = auto-detect: uses OPENM_TRANSPORT_SOCKET or OPENM_TRANSPORT_HOST/PORT env vars when set, probes /tmp/openm-<user>.sock then tcp://127.0.0.1:17391 for a live runtime, and falls back to the platform default (unix socket on Linux/macOS, TCP on Windows), where Start Runtime starts a runtime. Examples: 'tcp://127.0.0.1:17391', 'unix:///tmp/openm-<user>.sock'."
         },
         "omCore.omCorePath": {
           "type": "string",
           "default": "",
-          "description": "Absolute path to the om-core project root (used to launch the runtime). Empty = auto-detect: OM_CORE_PATH env var, a workspace folder that is an om-core checkout (contains main.py and lib_runtime/), or a one-time folder picker whose answer is saved here."
+          "markdownDescription": "[Choose folder…](command:omCore.choosePath \"Pick the om-core folder; the answer is saved here\")\n\nAbsolute path to the om-core project root (used by Start Runtime to launch the runtime). Empty = auto-detect: `OM_CORE_PATH` env var, a workspace folder that is an om-core checkout (contains `main.py` and `lib_runtime/`), or a one-time folder picker whose answer is saved here."
         },
         "omCore.showSystemElements": {
           "type": "boolean",
@@ -115,34 +192,42 @@
     "menus": {
       "view/title": [
         {
-          "command": "omCore.openGui",
+          "command": "omCore.refreshStatus",
           "when": "view == omCore.launchPad",
           "group": "navigation@1"
         },
         {
-          "command": "omCore.refreshStatus",
-          "when": "view == omCore.launchPad",
-          "group": "navigation@2"
-        },
-        {
-          "command": "omCore.startRuntime",
-          "when": "view == omCore.launchPad",
-          "group": "1_runtime@1"
-        },
-        {
-          "command": "omCore.stopRuntime",
-          "when": "view == omCore.launchPad",
-          "group": "1_runtime@2"
-        },
-        {
           "command": "omCore.reconnect",
           "when": "view == omCore.launchPad",
-          "group": "1_runtime@3"
+          "group": "1_runtime@1"
         }
+      ],
+      "view/item/context": [
+        { "command": "omCore.startRuntime", "when": "view == omCore.launchPad && viewItem == runtime-stopped", "group": "inline@1" },
+        { "command": "omCore.stopRuntime", "when": "view == omCore.launchPad && viewItem == runtime-ours", "group": "inline@1" },
+        { "command": "omCore.manageTrust", "when": "view == omCore.launchPad && viewItem == runtime-restricted", "group": "inline@1" },
+        { "command": "omCore.openSettings", "when": "view == omCore.launchPad && viewItem == runtime-endpoint-error", "group": "inline@1" },
+        { "command": "omCore.openGui", "when": "view == omCore.launchPad && viewItem == gui-closed", "group": "inline@1" },
+        { "command": "omCore.reconnect", "when": "view == omCore.launchPad && viewItem == gui-disconnected", "group": "inline@1" },
+        { "command": "omCore.uvInstallHelp", "when": "view == omCore.launchPad && viewItem == uv-missing", "group": "inline@1" },
+
+        { "command": "omCore.startRuntime", "when": "view == omCore.launchPad && viewItem == runtime-stopped", "group": "1_actions@1" },
+        { "command": "omCore.stopRuntime", "when": "view == omCore.launchPad && viewItem == runtime-ours", "group": "1_actions@1" },
+        { "command": "omCore.manageTrust", "when": "view == omCore.launchPad && viewItem == runtime-restricted", "group": "1_actions@1" },
+        { "command": "omCore.openSettings", "when": "view == omCore.launchPad && viewItem == runtime-endpoint-error", "group": "1_actions@1" },
+        { "command": "omCore.openGui", "when": "view == omCore.launchPad && viewItem =~ /^gui-/", "group": "1_actions@1" },
+        { "command": "omCore.reconnect", "when": "view == omCore.launchPad && viewItem == gui-disconnected", "group": "1_actions@2" },
+        { "command": "omCore.choosePath", "when": "view == omCore.launchPad && viewItem =~ /^path-/", "group": "1_actions@1" },
+        { "command": "omCore.revealPath", "when": "view == omCore.launchPad && viewItem =~ /^path-(ok|not-om-core)$/", "group": "1_actions@2" },
+        { "command": "omCore.openSettings", "when": "view == omCore.launchPad && viewItem =~ /^path-/", "group": "1_actions@3" },
+        { "command": "omCore.uvInstallHelp", "when": "view == omCore.launchPad && viewItem =~ /^uv-(missing|elsewhere)$/", "group": "1_actions@1" }
       ],
       "commandPalette": [
         {
           "command": "omCore.openGui"
+        },
+        {
+          "command": "omCore.closeGui"
         },
         {
           "command": "omCore.startRuntime"
@@ -155,6 +240,23 @@
         },
         {
           "command": "omCore.refreshStatus"
+        },
+        {
+          "command": "omCore.choosePath"
+        },
+        {
+          "command": "omCore.openSettings"
+        },
+        {
+          "command": "omCore.revealPath"
+        },
+        {
+          "command": "omCore.manageTrust",
+          "when": "false"
+        },
+        {
+          "command": "omCore.uvInstallHelp",
+          "when": "false"
         }
       ]
     }

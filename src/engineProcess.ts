@@ -1,7 +1,22 @@
-import { ChildProcess, spawn } from "child_process";
+import { ChildProcess, spawn, spawnSync } from "child_process";
 import * as fs from "fs";
 import { EngineClient, TransportEndpoint } from "./engineClient";
 import { checkUnixEndpointPath } from "./runtimePolicy";
+
+/** Ends a process and everything it started. On Windows `uv run` is a chain: uv.exe, then the venv launcher
+ *  (.venv\Scripts\python.exe), then the real python.exe, and Node's `kill()` ends only the first of them. The runtime
+ *  kept answering after Stop Runtime, and after VS Code was closed; the panel then called it "started outside OM Tools".
+ *  `taskkill /T` walks the tree. Elsewhere `uv run` replaces itself with python, so the signal reaches the runtime.
+ *  Synchronous on purpose: deactivate() cannot wait, and the kill must be done before the extension host exits.
+ *  There is no gentler way: om-core has no stop request in its protocol and only handles Ctrl+C, which a child of
+ *  the extension host without a console cannot be sent on Windows. */
+export function killProcessTree(pid: number): void {
+  if (process.platform === "win32") {
+    const r = spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { windowsHide: true, stdio: "ignore", timeout: 5000 });
+    if (!r.error) return;      // exit code is not looked at: 128 means the process was already gone, which is fine
+  }
+  try { process.kill(pid, "SIGTERM"); } catch { /* already gone */ }
+}
 
 /** Runtime output kept for error messages: the newest part only (T-049, DEV-07). */
 export const LOG_LIMIT_CHARS = 256 * 1024;
@@ -91,12 +106,20 @@ export class EngineProcess {
     return EngineClient.handshake(endpoint, 2000);
   }
 
+  /** Stops the runtime process and what it started. The kill itself happens before the first `await`, so
+   *  `deactivate()` can call this without waiting for it. */
   async stop(): Promise<void> {
-    if (!this.proc) return;
-    try { this.proc.kill("SIGTERM"); } catch {}
+    const proc = this.proc;
+    if (!proc) return;
+    const kill = (signal: NodeJS.Signals) => {
+      if (proc.pid) killProcessTree(proc.pid);
+      else { try { proc.kill(signal); } catch {} }
+    };
+    const gone = new Promise<void>((resolve) => proc.once("exit", () => resolve()));
+    kill("SIGTERM");
     await new Promise<void>((resolve) => {
-      const t = setTimeout(() => { try { this.proc?.kill("SIGKILL"); } catch {} resolve(); }, 4000);
-      this.proc?.once("exit", () => { clearTimeout(t); resolve(); });
+      const t = setTimeout(() => { kill("SIGKILL"); resolve(); }, 4000);
+      void gone.then(() => { clearTimeout(t); resolve(); });
     });
     this.proc = null;
   }

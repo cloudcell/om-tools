@@ -14,15 +14,20 @@ over its newline-delimited JSON envelope socket protocol.
 - `shared/messages.ts` — host<->webview message protocol.
 
 ## om-core runtime connection
-- Endpoint resolution (`resolveEndpoint` in `src/extension.ts`), first match wins:
+- Endpoint resolution (`findRuntime` in `src/extension.ts`), first match wins:
   1. `omCore.runtimeEndpoint` setting
   2. `OPENM_TRANSPORT_SOCKET`, or `OPENM_TRANSPORT_HOST`/`OPENM_TRANSPORT_PORT` env vars
   3. Probe `/tmp/openm-<user>.sock` (POSIX) then `tcp://127.0.0.1:17391` — first live wins
-  4. Platform default for auto-start: unix socket `/tmp/openm-<user>.sock` on POSIX,
+  4. Platform default for Start Runtime: unix socket `/tmp/openm-<user>.sock` on POSIX,
      TCP `127.0.0.1:17391` on Windows (mirrors om-core's own defaults)
+- Starting and connecting are separate. **Start Runtime** (`startRuntimeProcess`, one launch at a time) is the only
+  thing that launches the runtime; **Open GUI** and **Reconnect** (`connect`) only connect to one that answers, and
+  say "disconnected" (with a hint for the page) when none does. A GUI tab that is open connects by itself when
+  Start Runtime finishes. Stopping kills the whole process tree (`killProcessTree`): on Windows `uv run` is
+  uv.exe → venv launcher → python.exe and `proc.kill()` ends only the first.
 - `omCore.omCorePath` resolution (`resolveOmCorePath`): setting > `OM_CORE_PATH` env >
   workspace folder containing `main.py` + `lib_runtime/` + `lib_openm/` > one-time
-  folder picker persisted to the setting. Required only for auto-start.
+  folder picker persisted to the setting. Required only for Start Runtime.
 - Start runtime manually: `cd <om-core root> && uv run python -O main.py --runtime`
   (binds `/tmp/openm-<user>.sock`), or set `OPENM_TRANSPORT_*` for TCP.
 - Protocol: newline-delimited JSON envelopes. Topics: `request.transport.ping`,

@@ -32,6 +32,8 @@ export interface ViewState {
 export interface AppState {
   connected: boolean;
   statusMessage: string;
+  /** What the host says to do about a lost connection ("" when connected or none given); shown as a banner. */
+  statusHint: string;
   showSystemElements: boolean;
   endpoint: string;
   dimensions: DimSummary[];
@@ -71,6 +73,7 @@ export class Store {
   state: AppState = {
     connected: false,
     statusMessage: "disconnected",
+    statusHint: "",
     showSystemElements: false,
     endpoint: "",
     dimensions: [],
@@ -112,9 +115,10 @@ export class Store {
 
   set(partial: Partial<AppState>) { Object.assign(this.state, partial); this.notify(); }
 
-  setStatus(connected: boolean, message: string) {
+  setStatus(connected: boolean, message: string, hint = "") {
     this.state.connected = connected;
     this.state.statusMessage = message;
+    this.state.statusHint = connected ? "" : hint;
     this.notify();
   }
 
@@ -564,6 +568,15 @@ export class Store {
   async loadWorkspaceFile(path: string) {
     try { await this.api.loadWorkspace(path); } catch (e: any) { await alertDialog("Load failed", e?.message || String(e)); return; }
     await this.resetWorkspaceUi(path, true);
+  }
+
+  /** The host launched a new runtime since this page was last connected (Stop Runtime, then Start Runtime): what the page
+   *  shows came from another model. Same reset as File → New, except that nothing is created in the runtime. A page
+   *  that shows nothing yet (the GUI was just opened) only loads the model. */
+  async onRuntimeReplaced() {
+    const stale = this.state.openTabs.length > 0 || this.state.activeView !== null || this.state.filePath !== null || this.state.dirty;
+    if (!stale) { await this.refreshModel(); return; }
+    await this.resetWorkspaceUi(null, false);
   }
 
   /** After New / Open the runtime holds another workspace: tabs, the active view and cached dims and cubes

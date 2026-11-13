@@ -28,6 +28,18 @@ export interface HostStatus {
   type: "status";
   status: "connecting" | "connected" | "disconnected" | "error" | "starting" | "ready";
   message?: string;
+  /** Only on "connected": the host launched a new runtime (or stopped the old one) since the page last was connected,
+   *  so what the page shows (tabs, file name, "unsaved") belongs to another model. */
+  freshRuntime?: boolean;
+  /** Only on "disconnected": what the user can do about it, in the host's own terms (VS Code: a button in the side panel).
+   *  The page shows it under the menu bar until the connection is back. */
+  hint?: string;
+}
+
+/** What `onStatus` callbacks get besides the status and its message. */
+export interface StatusExtra {
+  freshRuntime?: boolean;
+  hint?: string;
 }
 
 export interface HostConfig {

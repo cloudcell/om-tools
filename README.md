@@ -79,8 +79,11 @@ This one is a five-year model of a fictional company (NZ Gadgets & Widgets), wit
 for drivers, profit and loss, balance sheet, cash flow and valuation. The statements are
 calculated by rules from the drivers, so changing a driver changes the results.
 
-1. Click the **OM Core** icon in the activity bar → **Open GUI** (or `Ctrl+Shift+P` →
-   `OM Core: Open GUI`). The extension connects to the engine, or starts it for you.
+1. Click the **OM Core** icon in the activity bar. Under the status rows, press **Start Runtime**
+   (this starts the engine; the first start takes a few seconds), then **Open GUI**. The two buttons are
+   independent: **Open GUI** only opens the interface and connects it to a running engine, it never starts one.
+   You can also press them in the other order: a GUI tab that is already open connects by itself when the
+   engine starts. (Or `Ctrl+Shift+P` → `OM Core: Start Runtime`, `OM Core: Open GUI`.)
 2. **File → Open…** and choose
    `examples/DEMO-03--CALC-FLOW-20260623-0057-5Y-ONLY.json` inside the om-core folder.
 3. In the **Model Browser** on the left, open **Views → Drivers**. These are the assumptions
@@ -101,22 +104,36 @@ does not support yet, for example formatting.
 
 | Command | What it does |
 |---|---|
-| `OM Core: Open GUI` | Opens the grid GUI in an editor tab. Connects to a running engine, or starts one. |
-| `OM Core: Start Runtime` | Starts the engine without opening the GUI. |
-| `OM Core: Stop Runtime` | Stops the engine that the extension started. |
-| `OM Core: Reconnect to Runtime` | Reconnects the GUI if it shows `disconnected`. |
+| `OM Core: Open GUI` | Opens the grid GUI in an editor tab and connects it to a running engine. Does not start the engine: without one the tab shows `disconnected` and what to do. |
+| `OM Core: Close GUI` | Closes the GUI tab. The engine keeps running and keeps the model. |
+| `OM Core: Start Runtime` | Starts the engine (and everything it needs: `uv` runs om-core from `omCore.omCorePath`). Does not open the GUI; a GUI tab that is already open connects to it. |
+| `OM Core: Stop Runtime` | Stops the engine that the extension started, with everything it started. The model in it is lost unless it was saved. |
+| `OM Core: Reconnect to Runtime` | Reconnects the GUI to a running engine if it shows `disconnected`. |
 | `OM Core: Refresh Status` | Re-checks the state shown in the OM Core side panel (it also updates by itself). |
+| `OM Core: Choose om-core Folder…` | Picks the om-core folder and saves it to `omCore.omCorePath` in User settings. |
+| `OM Core: Open Settings` | Opens the OM Core settings. |
+| `OM Core: Reveal om-core Folder in File Explorer` | Shows the om-core folder in your file manager. |
 
 The **OM Core** side panel shows what the engine needs: whether the runtime is running, whether the GUI
 is connected, the om-core folder in use and where that setting comes from, whether `uv sync` has been run,
-and where `uv` is. Hover over a row for details.
+and where `uv` is. Hover over a row for details and for the buttons that fix what it shows (start or stop
+the runtime, open the GUI, trust the workspace). The same actions are in the row's context menu. The header
+of the panel has only Refresh and, in the `…` menu, Reconnect.
+
+Below the rows, the **Actions** section has two independent buttons, **Start Runtime** above and **Open GUI**
+below, and a **Settings** button that opens the OM Core settings. The `omCore.omCorePath` setting has a
+**Choose folder…** link above its description that opens the folder picker and saves the answer.
+**Open GUI** becomes **Close GUI** when the tab is open, **Start Runtime** becomes **Stop Runtime** when OM Tools
+has started the engine. Closing the GUI does not stop the engine, and stopping the engine does not close the GUI
+tab: it shows `disconnected` and connects by itself when you press **Start Runtime** again, with a new, empty
+model. An engine that was started outside OM Tools (a terminal, the om-core Qt GUI) has no Stop button: OM Tools
+cannot stop it.
 
 ## Settings
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `omCore.omCorePath` | empty | Folder of the om-core clone. Required to start the engine from VS Code. |
-| `omCore.autoStartRuntime` | `true` | Start the engine on **Open GUI** if none is running. |
+| `omCore.omCorePath` | empty | Folder of the om-core clone. Required by **Start Runtime**. |
 | `omCore.runtimeEndpoint` | empty | Address of the engine, e.g. `tcp://127.0.0.1:17391`. Empty means the default, local port 17391. |
 | `omCore.showSystemElements` | `false` | Show system elements (names starting with `%`) in the Model Browser, tabs and selectors. |
 
@@ -154,11 +171,13 @@ The usual causes:
 - `uv` is not found. Install it (step 1) and restart VS Code.
 - `uv sync` was not run (step 2). Run it in the om-core folder, then try again.
 
-**The GUI shows "disconnected".** Run `OM Core: Reconnect to Runtime`.
+**The GUI shows "disconnected".** If the engine is not running, press **Start Runtime** in the side panel: the tab
+connects by itself. If it is running, press **Reconnect** on the GUI row (or run `OM Core: Reconnect to Runtime`).
 
 **Another engine is already running.** If something is already listening on port 17391
-(for example the om-core Qt GUI or an earlier run), the extension connects to it and you see
-that engine's model. Stop that process or use `OM Core: Stop Runtime`.
+(for example the om-core Qt GUI or an earlier run), **Open GUI** connects to it and you see that engine's
+model, and **Start Runtime** does not start a second one. Stop that process where it was started:
+**Stop Runtime** only stops an engine that OM Tools started itself.
 
 ## Links
 

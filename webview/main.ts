@@ -22,14 +22,16 @@ async function main() {
   app.replaceWith(shell.render());
 
   // Status updates from the host (connecting/connected/disconnected/error).
-  transport.onStatus((status, message) => {
+  transport.onStatus((status, message, extra) => {
     if (status === "connected") {
       store.setStatus(true, message || "connected");
-      store.refreshModel().catch(() => {});
+      // A new runtime holds another model: tabs, file name and "unsaved" of the old one go (like File → New).
+      (extra?.freshRuntime ? store.onRuntimeReplaced() : store.refreshModel()).catch(() => {});
     } else if (status === "disconnected" || status === "error") {
-      store.setStatus(false, message || status);
+      store.setStatus(false, message || status, extra?.hint);
     } else {
       store.state.statusMessage = message || status;
+      store.state.statusHint = "";     // connecting: the way out of "disconnected" is being taken
       store.notify();
     }
   });

@@ -403,6 +403,18 @@ body {
   background: var(--panel-bg);
 }
 .body > .center { background: transparent; }
+/* Not connected to the engine: what to do about it (text from the host). Hidden while connected. */
+.engine-hint {
+  flex: none;
+  margin: 0 0 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--r-card);
+}
+.engine-hint[hidden] { display: none; }
 .center .center {
   border: 1px solid var(--border);
   border-radius: var(--r-card);

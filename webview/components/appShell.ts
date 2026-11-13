@@ -137,6 +137,16 @@ export class AppShell {
       if (layout.rulePanelCollapsed && !(e.target as HTMLElement).closest(".lower-tab")) bottomSplit.beginDrag(e, tabRow);
     });
 
+    // Not connected: say what to do about it, in the host's words (VS Code: a button in the side panel). Hidden while connected.
+    const hint = el("div", { class: "engine-hint", role: "status" });
+    const syncHint = () => {
+      const s = this.store.state;
+      hint.textContent = s.statusHint;
+      hint.hidden = s.connected || !s.statusHint;
+    };
+    this.store.subscribe(syncHint);
+    syncHint();
+    center.appendChild(hint);
     center.appendChild(this.matrixGrid.render());
     center.appendChild(bottomSplit.el);
     center.appendChild(rulePanelEl);

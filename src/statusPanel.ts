@@ -15,7 +15,8 @@ export class StatusPanel implements vscode.TreeDataProvider<StatusRow>, vscode.D
   private running: Promise<void> | null = null;
   private again = false;
 
-  constructor(viewId: string, private readonly snapshot: () => Promise<StatusSnapshot>) {
+  /** `onSnapshot` runs after every successful read, before the rows are redrawn: the Actions buttons follow the same state. */
+  constructor(viewId: string, private readonly snapshot: () => Promise<StatusSnapshot>, private readonly onSnapshot?: (s: StatusSnapshot) => void) {
     this.view = vscode.window.createTreeView(viewId, { treeDataProvider: this });
     this.view.onDidChangeVisibility(() => this.syncPolling());
     this.syncPolling();
@@ -28,6 +29,8 @@ export class StatusPanel implements vscode.TreeDataProvider<StatusRow>, vscode.D
     item.description = r.description;
     item.tooltip = r.tooltip;
     item.iconPath = new vscode.ThemeIcon(r.icon, r.color ? new vscode.ThemeColor(r.color) : undefined);
+    item.contextValue = r.contextValue;
+    if (r.command) item.command = { command: r.command, title: r.label, arguments: [r] };
     return item;
   }
 
@@ -42,9 +45,11 @@ export class StatusPanel implements vscode.TreeDataProvider<StatusRow>, vscode.D
       do {
         this.again = false;
         try {
-          this.rows = buildStatusRows(await this.snapshot());
+          const snap = await this.snapshot();
+          this.rows = buildStatusRows(snap);
+          try { this.onSnapshot?.(snap); } catch { /* the buttons are a convenience: the rows must still be drawn */ }
         } catch (e: any) {
-          this.rows = [{ id: "runtime", label: "Status", description: "unavailable", tooltip: String(e?.message || e), icon: "error" }];
+          this.rows = [{ id: "runtime", label: "Status", description: "unavailable", tooltip: String(e?.message || e), icon: "error", contextValue: "status-error" }];
         }
         this.changed.fire();
       } while (this.again);
