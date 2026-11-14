@@ -625,7 +625,7 @@ export class MultilevelGrid {
       background: COLORS.headerBg, borderRight: `1px solid ${COLORS.gridline}`, borderBottom: `1px solid ${COLORS.gridline}`,
       display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "11px", color: COLORS.headerFg,
       overflow: "hidden",
-    } }, [this.rowDimNames()]) as HTMLElement;
+    } }) as HTMLElement;  // intentionally empty (issue #12): no axis label in the top-left rectangle
     corner.addEventListener("click", () => this.selectAll());
     corner.addEventListener("mousedown", (e) => { e.preventDefault(); this.selectAll(); });
     canvas.appendChild(corner);
@@ -793,11 +793,6 @@ export class MultilevelGrid {
     he.input.style.top = rect.y + "px";
     he.input.style.width = rect.w + "px";
     he.input.style.height = rect.h + "px";
-  }
-
-  private rowDimNames(): string {
-    const v = this.store.state.activeView!;
-    return v.rowDimIds.map((id) => this.store.dimName(id)).join(" / ");
   }
 
   private colDimNames(): string {
