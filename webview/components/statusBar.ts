@@ -16,6 +16,9 @@ export class StatusBar {
     const sep3 = el("span", { class: "sb-sep" }, ["|"]);
     const stats = el("span", { class: "sb-section" }, [""]);
     const sep4 = el("span", { class: "sb-sep" }, ["|"]);
+    // Workspace file: the name, the full path on hover. In VS Code this and the editor tab are the only
+    // places that show which file is open (document.title is not visible there).
+    const file = el("span", { class: "sb-section sb-file" }, [""]);
     const dirty = el("span", { class: "sb-section dirty-marker" }, [""]);
 
     bar.appendChild(focusPath);
@@ -26,6 +29,7 @@ export class StatusBar {
     bar.appendChild(sep3);
     bar.appendChild(stats);
     bar.appendChild(sep4);
+    bar.appendChild(file);
     bar.appendChild(dirty);
 
     this.store.subscribe(() => {
@@ -50,6 +54,8 @@ export class StatusBar {
       if (st.min != null) parts.push(`min: ${st.min}`);
       if (st.max != null) parts.push(`max: ${st.max}`);
       stats.textContent = parts.join("  ");
+      file.textContent = this.store.fileName();
+      file.title = s.filePath || "Not saved to a file yet";
       dirty.textContent = s.dirty ? "● unsaved" : "";
     });
 

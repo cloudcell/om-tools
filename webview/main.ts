@@ -2,6 +2,7 @@ import { createTransport } from "./transport";
 import { OmApi } from "./api";
 import { Store } from "./state";
 import { AppShell } from "./components/appShell";
+import { applyTheme, sanitizeTheme } from "./theme";
 import "./styles.css";
 
 /** Webview entry point. Wires the transport (VSCode postMessage today,
@@ -12,20 +13,25 @@ async function main() {
   const api = new OmApi(transport);
   const store = new Store(api);
 
+  // Saved colour theme goes on <html> before the first render, so nothing paints in the wrong colours.
+  applyTheme(sanitizeTheme(api.loadUiState()?.theme));
+
   // Render the shell first so the GUI is visible even while connecting.
   const shell = new AppShell(store);
   const app = document.getElementById("app")!;
   app.replaceWith(shell.render());
 
   // Status updates from the host (connecting/connected/disconnected/error).
-  transport.onStatus((status, message) => {
+  transport.onStatus((status, message, extra) => {
     if (status === "connected") {
       store.setStatus(true, message || "connected");
-      store.refreshModel().catch(() => {});
+      // A new runtime holds another model: tabs, file name and "unsaved" of the old one go (like File → New).
+      (extra?.freshRuntime ? store.onRuntimeReplaced() : store.refreshModel()).catch(() => {});
     } else if (status === "disconnected" || status === "error") {
-      store.setStatus(false, message || status);
+      store.setStatus(false, message || status, extra?.hint);
     } else {
       store.state.statusMessage = message || status;
+      store.state.statusHint = "";     // connecting: the way out of "disconnected" is being taken
       store.notify();
     }
   });
@@ -34,6 +40,8 @@ async function main() {
   transport.getConfig().then((cfg) => {
     store.state.showSystemElements = cfg.showSystemElements;
     store.state.endpoint = cfg.endpoint;
+    store.state.nativeFileDialogs = !!cfg.nativeFileDialogs;
+    store.state.defaultDir = cfg.defaultDir || "";
     store.notify();
   }).catch(() => {});
 
@@ -50,5 +58,11 @@ async function main() {
 
 main().catch((e) => {
   const app = document.getElementById("app");
-  if (app) app.innerHTML = `<div style="padding:24px;color:#d32f2f;font-family:system-ui">OM Core GUI failed to start: ${String(e?.message || e)}</div>`;
+  if (app) {
+    // textContent, not innerHTML: the message can carry text from the runtime or the model (T-049, DEV-08).
+    const box = document.createElement("div");
+    box.style.cssText = "padding:24px;color:#d32f2f;font-family:system-ui";
+    box.textContent = `OM Core GUI failed to start: ${String(e?.message || e)}`;
+    app.replaceChildren(box);
+  }
 });

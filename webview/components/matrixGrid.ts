@@ -1,4 +1,4 @@
-import { Store, SelMode } from "../state";
+import { Store, SelMode, SET_RULE_PLACEHOLDER } from "../state";
 import { el, clear } from "../dom";
 import { CellDTO } from "../api";
 import { PivotBar } from "./pivotBar";
@@ -350,8 +350,7 @@ export class MatrixGrid {
     const text = input.value;
     input.remove();
     if (text === "") return;
-    const value = isNaN(Number(text)) ? text : Number(text);
-    this.store.editCell(v.selectedRow, v.selectedCol, value);
+    this.store.applyInput(text, { row: v.selectedRow, col: v.selectedCol });
   }
 
   private cancelEdit() {
@@ -410,8 +409,8 @@ export class MatrixGrid {
       addItem("Edit Cell", () => this.startEdit(v.selectedRow, v.selectedCol));
       addItem("Clear Override", () => this.store.clearSelectedCells());
       addItem("Set Rule…", () => {
-        const expr = prompt("Rule expression (LHS = RHS or =value):");
-        if (expr) this.store.setRuleForCell(expr, expr.startsWith("$"));
+        const text = prompt(`Set Value or Rule (${SET_RULE_PLACEHOLDER}):`);
+        if (text) this.store.applyInput(text);
       });
       addSep();
       addItem("Copy", () => this.doCopy());

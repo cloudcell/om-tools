@@ -1,3 +1,5 @@
+import { UI_STATE_META, type AppConfig, type StatusExtra, type UiState } from "../shared/messages";
+
 /** Transport interface — the only webview/VSCode coupling point.
  *  In VSCode, the implementation posts messages to the extension host which
  *  proxies to the om-core socket. In a future browser build, swap in a
@@ -11,8 +13,22 @@ export interface TransportRequest {
 export interface Transport {
   request(method: string, params?: Record<string, any>): Promise<any>;
   subscribe(topic: string, cb: (envelope: any) => void): void;
-  onStatus(cb: (status: string, message?: string) => void): void;
-  getConfig(): Promise<{ showSystemElements: boolean; endpoint: string }>;
+  /** `extra.freshRuntime` comes only with "connected" (the host started a new runtime since the page was last connected),
+   *  `extra.hint` only with "disconnected" (what to do about it). */
+  onStatus(cb: (status: string, message?: string, extra?: StatusExtra) => void): void;
+  getConfig(): Promise<AppConfig>;
+  /** Saved UI state (panel sizes), read synchronously before the first render; null when nothing is saved. */
+  loadUiState(): UiState | null;
+  /** Persist UI state. Fire-and-forget: a failure only means the sizes are not remembered. */
+  saveUiState(state: UiState): void;
+}
+
+/** The optional fields of a `status` message, validated (the page does not trust what it is sent more than it has to). */
+export function statusExtra(msg: any): StatusExtra {
+  return {
+    ...(msg.freshRuntime === true ? { freshRuntime: true } : {}),
+    ...(typeof msg.hint === "string" && msg.hint ? { hint: msg.hint.slice(0, 500) } : {}),
+  };
 }
 
 declare function acquireVsCodeApi(): {
@@ -46,10 +62,10 @@ export function createTransport(): Transport {
 export class WebSocketTransport implements Transport {
   private ws: WebSocket;
   private pending = new Map<string, { resolve: (v: any) => void; reject: (e: any) => void }>();
-  private statusCbs = new Set<(status: string, message?: string) => void>();
+  private statusCbs = new Set<(status: string, message?: string, extra?: StatusExtra) => void>();
   private eventCbs = new Map<string, Set<(env: any) => void>>();
   private seq = 0;
-  private cfg: { showSystemElements: boolean; endpoint: string } | null = null;
+  private cfg: AppConfig | null = null;
   private sendQueue: string[] = [];
   private ready = false;
 
@@ -87,7 +103,7 @@ export class WebSocketTransport implements Transport {
       const p = this.pending.get(msg.id);
       if (p) { this.pending.delete(msg.id); msg.ok ? p.resolve(msg.data) : p.reject(new Error(msg.error || "failed")); }
     } else if (msg.type === "status") {
-      for (const cb of this.statusCbs) cb(msg.status, msg.message);
+      for (const cb of this.statusCbs) cb(msg.status, msg.message, statusExtra(msg));
     } else if (msg.type === "event") {
       const topic = msg.envelope?.topic;
       if (!topic) return;
@@ -112,18 +128,28 @@ export class WebSocketTransport implements Transport {
     set.add(cb);
     this.request("subscribe", { topic }).catch(() => {});
   }
-  onStatus(cb: (status: string, message?: string) => void): void { this.statusCbs.add(cb); }
-  async getConfig(): Promise<{ showSystemElements: boolean; endpoint: string }> {
+  onStatus(cb: (status: string, message?: string, extra?: StatusExtra) => void): void { this.statusCbs.add(cb); }
+  async getConfig(): Promise<AppConfig> {
     if (this.cfg) return this.cfg;
     return this.request("getConfig");
   }
+
+  /** Browser: per-origin localStorage (private windows or blocked storage just forget). */
+  loadUiState(): UiState | null {
+    try { const raw = localStorage.getItem(UI_STATE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  }
+  saveUiState(state: UiState): void {
+    try { localStorage.setItem(UI_STATE_KEY, JSON.stringify(state)); } catch { /* not remembered */ }
+  }
 }
+
+const UI_STATE_KEY = "omCore.uiState";
 
 /** VSCode postMessage transport. */
 export class VsCodeTransport implements Transport {
   private vs: any;
   private pending = new Map<string, { resolve: (v: any) => void; reject: (e: any) => void }>();
-  private statusCbs = new Set<(status: string, message?: string) => void>();
+  private statusCbs = new Set<(status: string, message?: string, extra?: StatusExtra) => void>();
   private eventCbs = new Map<string, Set<(env: any) => void>>();
   private seq = 0;
 
@@ -142,7 +168,7 @@ export class VsCodeTransport implements Transport {
         msg.ok ? p.resolve(msg.data) : p.reject(new Error(msg.error || "request failed"));
       }
     } else if (msg.type === "status") {
-      for (const cb of this.statusCbs) cb(msg.status, msg.message);
+      for (const cb of this.statusCbs) cb(msg.status, msg.message, statusExtra(msg));
     } else if (msg.type === "event") {
       const env = msg.envelope;
       const topic = env?.topic;
@@ -170,12 +196,28 @@ export class VsCodeTransport implements Transport {
     this.request("subscribe", { topic }).catch(() => {});
   }
 
-  onStatus(cb: (status: string, message?: string) => void): void {
+  onStatus(cb: (status: string, message?: string, extra?: StatusExtra) => void): void {
     this.statusCbs.add(cb);
   }
 
-  async getConfig(): Promise<{ showSystemElements: boolean; endpoint: string }> {
+  async getConfig(): Promise<AppConfig> {
     return this.request("getConfig");
+  }
+
+  /** `vscode.getState()` first: it survives "Reload Webviews", where the page HTML (and its meta tag) is the
+   *  one from panel creation. Otherwise the host's globalState, handed over in the meta tag. */
+  loadUiState(): UiState | null {
+    try {
+      const own = this.vs.getState()?.uiState;
+      if (own) return own;
+      const meta = document.querySelector(`meta[name="${UI_STATE_META}"]`)?.getAttribute("content");
+      return meta ? JSON.parse(decodeURIComponent(meta)) : null;
+    } catch { return null; }
+  }
+  /** Both: setState for webview reloads, the host's globalState for VS Code restarts. */
+  saveUiState(state: UiState): void {
+    try { this.vs.setState({ ...(this.vs.getState() || {}), uiState: state }); } catch { /* ignore */ }
+    this.request("saveUiState", { state }).catch(() => {});
   }
 }
 

@@ -2,7 +2,7 @@
 # start.sh — build and launch the OM Core webview GUI in a browser.
 #
 # Usage:
-#   ./start.sh                          # default: runtime on 127.0.0.1:17391, GUI on 17392
+#   ./start.sh                          # auto-detect runtime endpoint, GUI on 17392
 #   ./start.sh --endpoint tcp://127.0.0.1:17393   # connect to a different runtime
 #   ./start.sh --port 18000             # serve GUI on a different port
 #   ./start.sh --no-build               # skip the build step
@@ -14,7 +14,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-ENDPOINT="tcp://127.0.0.1:17391"
+ENDPOINT=""
 PORT="17392"
 DO_BUILD=1
 DO_OPEN=1
@@ -31,6 +31,20 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
+
+# --- Resolve endpoint (unless --endpoint was given): OPENM_TRANSPORT_* env, then
+# the user's default unix socket when one exists, else TCP. Mirrors the extension. ---
+if [[ -z "$ENDPOINT" ]]; then
+  if [[ -n "${OPENM_TRANSPORT_SOCKET:-}" ]]; then
+    ENDPOINT="unix://${OPENM_TRANSPORT_SOCKET}"
+  elif [[ -n "${OPENM_TRANSPORT_HOST:-}${OPENM_TRANSPORT_PORT:-}" ]]; then
+    ENDPOINT="tcp://${OPENM_TRANSPORT_HOST:-127.0.0.1}:${OPENM_TRANSPORT_PORT:-17391}"
+  elif [[ -S "/tmp/openm-${USER}.sock" ]]; then
+    ENDPOINT="unix:///tmp/openm-${USER}.sock"
+  else
+    ENDPOINT="tcp://127.0.0.1:17391"
+  fi
+fi
 
 # --- Build ---
 if [[ "$DO_BUILD" -eq 1 ]]; then

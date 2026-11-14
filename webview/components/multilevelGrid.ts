@@ -1,5 +1,5 @@
-import { Store, SelMode } from "../state";
-import { el, clear } from "../dom";
+import { Store, SelMode, SET_RULE_PLACEHOLDER } from "../state";
+import { el, clear, NOT_IN_MVP_TITLE } from "../dom";
 import { CellDTO, DimDetail } from "../api";
 import { PivotBar } from "./pivotBar";
 import { inputDialog, confirmDialog, alertDialog, pickDialog } from "./dialogs";
@@ -44,20 +44,24 @@ interface GridMetrics {
 
 const METRICS: GridMetrics = { rowHeaderW: 100, colHeaderH: 24, rowH: 22, colW: 90 };
 const COLORS = {
-  gridline: "#d0d0d0",
-  headerBg: "#f2f4f8",
-  headerFg: "#202020",
-  selBg: "rgba(42, 118, 210, 0.55)",
-  selFg: "#ffffff",
+  gridline: "var(--ml-line)",
+  headerBg: "var(--ml-header-bg)",
+  headerFg: "var(--ml-header-fg)",
+  selBg: "var(--ml-sel-bg)",
+  selFg: "var(--ml-sel-fg)",
   relatedBg: "#d8deeb",
   groupShade: "#d0d0d0",
-  hardnumberBg: "#ffff99",
-  hardnumberTri: "#ff0000",
+  hardnumberBg: "var(--ml-hard-bg)",
+  hardnumberTri: "var(--ml-hard-tri)",
   groupOutline: "rgb(25, 118, 210)",
-  currentCell: "rgb(80, 80, 80)",
+  currentCell: "var(--ml-current)",
   badgeBg: "rgb(220, 220, 220)",
   badgeBorder: "rgb(100, 100, 100)",
   badgeFg: "rgb(50, 50, 50)",
+  // Not part of the original palette: cell and text colours that used to be literals in the cell renderer (T-039 D4).
+  cellBg: "var(--ml-cell-bg)",
+  cellFg: "var(--ml-cell-fg)",
+  error: "var(--ml-error)",
 };
 
 /** MultilevelGrid — custom-painted multilevel grid with band computation,
@@ -621,7 +625,7 @@ export class MultilevelGrid {
       background: COLORS.headerBg, borderRight: `1px solid ${COLORS.gridline}`, borderBottom: `1px solid ${COLORS.gridline}`,
       display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "11px", color: COLORS.headerFg,
       overflow: "hidden",
-    } }, [this.rowDimNames()]) as HTMLElement;
+    } }) as HTMLElement;  // intentionally empty (issue #12): no axis label in the top-left rectangle
     corner.addEventListener("click", () => this.selectAll());
     corner.addEventListener("mousedown", (e) => { e.preventDefault(); this.selectAll(); });
     canvas.appendChild(corner);
@@ -657,10 +661,17 @@ export class MultilevelGrid {
       }
     });
 
-    // Focus for keyboard — but never steal focus from an open editor
+    // Focus for keyboard — but never steal focus from an open editor or from another input
+    // (rule bar, dialog). The grid rebuilds several times per action, and taking focus here sent
+    // keystrokes typed into the rule bar to the grid, which then wrote them into a cell.
     scroll.tabIndex = 0;
     scroll.addEventListener("keydown", (e) => this.onKeyDown(e));
-    if (!this.editor && !this.headerEdit) scroll.focus();
+    const active = document.activeElement;
+    const focusIsFree = !active || active === document.body || mount.contains(active);
+    if (!this.editor && !this.headerEdit && focusIsFree) scroll.focus();
+    // Cell and header mousedown handlers call preventDefault (no native focus change), so a
+    // click inside the grid takes focus explicitly — e.g. coming back from the rule bar.
+    scroll.addEventListener("mousedown", () => { if (!this.editor && !this.headerEdit) scroll.focus(); }, true);
 
     // Cell drag-select (rubberband): mousemove extends range from anchor, mouseup ends
     scroll.addEventListener("mousemove", (e) => {
@@ -784,11 +795,6 @@ export class MultilevelGrid {
     he.input.style.height = rect.h + "px";
   }
 
-  private rowDimNames(): string {
-    const v = this.store.state.activeView!;
-    return v.rowDimIds.map((id) => this.store.dimName(id)).join(" / ");
-  }
-
   private colDimNames(): string {
     const v = this.store.state.activeView!;
     return v.colDimIds.map((id) => this.store.dimName(id)).join(" / ");
@@ -910,7 +916,7 @@ export class MultilevelGrid {
       }
 
       if (col.is_aggregate) {
-        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "#666" } }, ["Σ"]);
+        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "var(--text-label)" } }, ["Σ"]);
         cell.style.position = "absolute";
         cell.appendChild(sigma);
       }
@@ -1107,7 +1113,7 @@ export class MultilevelGrid {
       }
 
       if (row.is_aggregate) {
-        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "#666" } }, ["Σ"]);
+        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "var(--text-label)" } }, ["Σ"]);
         cell.style.position = "absolute";
         cell.appendChild(sigma);
       }
@@ -1234,8 +1240,8 @@ export class MultilevelGrid {
           width: this.colW(c) + "px", height: METRICS.rowH + "px",
           borderRight: `1px solid ${COLORS.gridline}`, borderBottom: `1px solid ${COLORS.gridline}`,
           display: "flex", alignItems: "center", padding: "0 4px", fontSize: "11px",
-          background: isSel ? COLORS.selBg : (cell.explain?.source === "override" ? COLORS.hardnumberBg : "#fff"),
-          color: isSel ? COLORS.selFg : (kind === "error" ? "#c00" : "#000"),
+          background: isSel ? COLORS.selBg : (cell.explain?.source === "override" ? COLORS.hardnumberBg : COLORS.cellBg),
+          color: isSel ? COLORS.selFg : (kind === "error" ? COLORS.error : COLORS.cellFg),
           overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", cursor: "pointer",
           justifyContent: kind === "text" || kind === "error" ? "flex-start" : "flex-end",
         } }, [disp]) as HTMLElement;
@@ -1253,6 +1259,12 @@ export class MultilevelGrid {
         cellEl.title = this.cellTitle(cell);
         cellEl.addEventListener("mousedown", (e) => {
           e.preventDefault();
+          if (e.button !== 0) {
+            // Right click inside the selection keeps it, so Copy in the context menu copies the whole range
+            // (issue #8; as in Excel and the Qt grid). Outside it, select just that cell. Never start a drag-select.
+            if (e.button === 2 && !this.isCellSelected(r, c)) this.selectCell(r, c, false, false);
+            return;
+          }
           if (!e.shiftKey) {
             // Start drag-select (native mousePressEvent → mouseMoveEvent rubberband)
             this.cellDragActive = true;
@@ -2272,8 +2284,12 @@ export class MultilevelGrid {
     const text = input.value;
     input.remove();
     if (text === "") return;
-    const value = isNaN(Number(text)) ? text : Number(text);
-    this.store.editCell(r, c, value);
+    this.store.applyInput(text, { row: r, col: c });
+  }
+
+  /** Give the keyboard to the grid, e.g. after Enter or Escape in the rule bar (as in Qt). */
+  focusGrid() {
+    (this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement | null)?.focus();
   }
 
   private cancelEdit() {
@@ -2691,8 +2707,8 @@ export class MultilevelGrid {
 
     const close = (ev: MouseEvent) => { if (!menu.contains(ev.target as Node)) { menu.remove(); document.removeEventListener("mousedown", close); } };
 
-    const addItem = (label: string, fn: () => void, enabled = true) => {
-      const item = el("div", { class: "ctx-item" + (enabled ? "" : " disabled") }, [label]);
+    const addItem = (label: string, fn: () => void, enabled = true, title = label) => {
+      const item = el("div", { class: "ctx-item" + (enabled ? "" : " disabled"), title }, [label]);
       if (enabled) {
         item.addEventListener("mousedown", (e) => { e.preventDefault(); e.stopPropagation(); });
         item.addEventListener("click", (ev) => {
@@ -2711,10 +2727,11 @@ export class MultilevelGrid {
     const selSuffix = selCount > 1 ? ` (${selCount} items)` : "";
 
     // Check if right-clicking on a group band — native shows only these items
+    // Grouping is outside the MVP preview: its items are shown disabled, not hidden.
     const groupBand = this.findGroupBandAt(e.clientX, e.clientY);
     if (groupBand) {
-      addItem("Add Aggregate Item…", () => this.addAggregateItem(groupBand.axis, groupBand.path));
-      addItem("Ungroup This Group", () => this.ungroupGroup(groupBand.axis, groupBand.path));
+      addItem("Add Aggregate Item…", () => this.addAggregateItem(groupBand.axis, groupBand.path), false, NOT_IN_MVP_TITLE);
+      addItem("Ungroup This Group", () => this.ungroupGroup(groupBand.axis, groupBand.path), false, NOT_IN_MVP_TITLE);
       addSep();
     }
 
@@ -2723,9 +2740,9 @@ export class MultilevelGrid {
       const dimIds = ax === "row" ? v.rowDimIds : v.colDimIds;
       if (!dimIds.length) return;
 
-      addItem(`Add Group…${selSuffix}`, () => this.addGroupForAxis(ax));
-      addItem(`Move Selection To Group…${selSuffix}`, () => this.moveToGroup(ax));
-      addItem(`Ungroup Selection${selSuffix}`, () => this.ungroupItems(ax));
+      addItem(`Add Group…${selSuffix}`, () => this.addGroupForAxis(ax), false, NOT_IN_MVP_TITLE);
+      addItem(`Move Selection To Group…${selSuffix}`, () => this.moveToGroup(ax), false, NOT_IN_MVP_TITLE);
+      addItem(`Ungroup Selection${selSuffix}`, () => this.ungroupItems(ax), false, NOT_IN_MVP_TITLE);
       addSep();
       addItem("Insert Before", () => this.insertRelative(ax, false));
       addItem("Insert After", () => this.insertRelative(ax, true));
@@ -2737,11 +2754,11 @@ export class MultilevelGrid {
       addAxisActions("col");
     } else {
       // Cell context: native shows Row / Column / Mode submenus
-      const addSubmenu = (label: string, items: { label: string; fn: () => void; enabled?: boolean }[]) => {
+      const addSubmenu = (label: string, items: { label: string; fn: () => void; enabled?: boolean; title?: string }[]) => {
         const sub = el("div", { class: "ctx-item ctx-submenu" }, [label + " ▸"]) as HTMLElement;
         const subMenu = el("div", { class: "ctx-menu", style: { display: "none", position: "absolute", left: "100%", top: "0" } });
         for (const it of items) {
-          const mi = el("div", { class: "ctx-item" + (it.enabled === false ? " disabled" : "") }, [it.label]);
+          const mi = el("div", { class: "ctx-item" + (it.enabled === false ? " disabled" : ""), title: it.title || it.label }, [it.label]);
           if (it.enabled !== false) {
             mi.addEventListener("mousedown", (e) => { e.preventDefault(); e.stopPropagation(); });
             mi.addEventListener("click", (ev) => {
@@ -2766,9 +2783,9 @@ export class MultilevelGrid {
 
       if (hasRow) {
         addSubmenu("Row", [
-          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("row") },
-          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("row") },
-          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("row") },
+          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("row"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("row"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("row"), enabled: false, title: NOT_IN_MVP_TITLE },
           { label: "", fn: () => {}, enabled: false },
           { label: "Insert Before", fn: () => this.insertRelative("row", false) },
           { label: "Insert After", fn: () => this.insertRelative("row", true) },
@@ -2776,9 +2793,9 @@ export class MultilevelGrid {
       }
       if (hasCol) {
         addSubmenu("Column", [
-          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("col") },
-          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("col") },
-          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("col") },
+          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("col"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("col"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("col"), enabled: false, title: NOT_IN_MVP_TITLE },
           { label: "", fn: () => {}, enabled: false },
           { label: "Insert Before", fn: () => this.insertRelative("col", false) },
           { label: "Insert After", fn: () => this.insertRelative("col", true) },
@@ -2786,10 +2803,10 @@ export class MultilevelGrid {
       }
       if (hasRow || hasCol) addSep();
       addItem("Edit Cell", () => this.startEdit(this.selRow, this.selCol));
-      addItem("Clear Override", () => this.store.clearSelectedCells());
+      addItem("Clear Override", () => this.store.clearActiveOverride(), this.store.activeCell()?.explain?.source === "override");
       addItem("Set Rule…", async () => {
-        const expr = await inputDialog("Set Rule", "", "LHS = RHS or =value");
-        if (expr) this.store.setRuleForCell(expr, expr.startsWith("$"));
+        const text = await inputDialog("Set Value or Rule", "", SET_RULE_PLACEHOLDER);
+        if (text) this.store.applyInput(text);
       });
       addSep();
       addItem("Copy", () => this.doCopy());

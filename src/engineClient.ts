@@ -60,6 +60,12 @@ export function endpointToString(ep: TransportEndpoint): string {
   return ep.kind === "unix" ? `unix://${ep.path}` : `tcp://${ep.host}:${ep.port}`;
 }
 
+/** Longest line (one envelope) accepted from the runtime, in characters. The biggest real reply is a grid of a few
+ *  hundred KB; this leaves a wide margin and still stops a peer that never sends a newline (T-049, DEV-07). */
+export const MAX_FRAME_CHARS = 32 * 1024 * 1024;
+/** Requests waiting for a reply; more than this means the runtime has stopped answering. */
+export const MAX_PENDING = 256;
+
 function corr(): string {
   return crypto.randomBytes(16).toString("hex");
 }
@@ -100,7 +106,12 @@ export interface EngineClientEvents {
  */
 export class EngineClient extends EventEmitter {
   private socket: net.Socket | null = null;
-  private buf = Buffer.alloc(0);
+  /** Pieces of the line being received; joined once, when its newline arrives (no copy of the whole buffer per chunk). */
+  private parts: string[] = [];
+  private partsLen = 0;
+  private polling = false;
+  /** Why the client closed the connection itself (oversized frame), for the status message. */
+  lastError: string | null = null;
   private pending = new Map<string, { resolve: (e: WireEnvelope) => void; reject: (e: Error) => void }>();
   private eventConn = false;
   readonly endpoint: TransportEndpoint;
@@ -152,28 +163,41 @@ export class EngineClient extends EventEmitter {
   }
 
   private onData(chunk: string) {
-    this.buf = Buffer.concat([this.buf, Buffer.from(chunk, "utf-8")]);
+    let start = 0;
     while (true) {
-      const nl = this.buf.indexOf(0x0a);
-      if (nl < 0) break;
-      const line = this.buf.subarray(0, nl).toString("utf-8").trim();
-      this.buf = this.buf.subarray(nl + 1);
-      if (!line) continue;
-      let env: WireEnvelope;
-      try {
-        env = JSON.parse(line);
-      } catch {
-        continue;
+      const nl = chunk.indexOf("\n", start);
+      const end = nl < 0 ? chunk.length : nl;
+      const piece = chunk.slice(start, end);
+      if (this.partsLen + piece.length > MAX_FRAME_CHARS) {
+        this.lastError = `the runtime sent a message larger than ${MAX_FRAME_CHARS / (1024 * 1024)} MiB without a line break`;
+        this.parts = []; this.partsLen = 0;
+        try { this.socket?.destroy(); } catch {}      // the 'close' event then runs handleDisconnect
+        return;
       }
-      const cid = env.correlation_id;
-      const waiter = cid ? this.pending.get(cid) : undefined;
-      if (waiter) {
-        this.pending.delete(cid);
-        waiter.resolve(env);
-      } else {
-        // unsolicited — likely a polled event
-        this.emit("event", env);
-      }
+      if (nl < 0) { if (piece) { this.parts.push(piece); this.partsLen += piece.length; } return; }
+      this.parts.push(piece);
+      const line = this.parts.join("").trim();
+      this.parts = []; this.partsLen = 0;
+      start = nl + 1;
+      if (line) this.handleLine(line);
+    }
+  }
+
+  private handleLine(line: string) {
+    let env: WireEnvelope;
+    try {
+      env = JSON.parse(line);
+    } catch {
+      return;
+    }
+    const cid = env.correlation_id;
+    const waiter = cid ? this.pending.get(cid) : undefined;
+    if (waiter) {
+      this.pending.delete(cid);
+      waiter.resolve(env);
+    } else {
+      // unsolicited — likely a polled event
+      this.emit("event", env);
     }
   }
 
@@ -181,6 +205,10 @@ export class EngineClient extends EventEmitter {
     return new Promise((resolve, reject) => {
       if (!this.socket || !this._connected) {
         reject(new Error("not connected"));
+        return;
+      }
+      if (this.pending.size >= MAX_PENDING) {
+        reject(new Error(`too many requests waiting for the runtime (${MAX_PENDING})`));
         return;
       }
       const to = setTimeout(() => {
@@ -211,9 +239,9 @@ export class EngineClient extends EventEmitter {
     this.pending.clear();
   }
 
-  async ping(): Promise<boolean> {
+  async ping(timeoutMs?: number): Promise<boolean> {
     try {
-      const r = await this.sendAndWait(makeEnvelope("control", "request.transport.ping", {}));
+      const r = await this.sendAndWait(makeEnvelope("control", "request.transport.ping", {}), timeoutMs);
       return !!r.payload?.data?.pong;
     } catch {
       return false;
@@ -262,6 +290,8 @@ export class EngineClient extends EventEmitter {
   private startPolling() {
     const poll = async () => {
       if (!this._connected || this.subscriptions.size === 0) return;
+      if (this.polling) return;      // the previous poll is still waiting (stalled runtime): do not stack requests
+      this.polling = true;
       try {
         const env = makeEnvelope("control", "request.poll_events", { topics: Array.from(this.subscriptions.keys()) });
         const r = await this.sendAndWait(env, 5000);
@@ -279,9 +309,23 @@ export class EngineClient extends EventEmitter {
         }
       } catch {
         // non-fatal
+      } finally {
+        this.polling = false;
       }
     };
     this.pollTimer = setInterval(poll, 400);
+  }
+
+  /** Is a real om-core runtime behind this endpoint? Connects and gets a correct reply to `request.transport.ping` within
+   *  `timeoutMs`. A port that merely accepts connections (another program, or a stale listener) does not pass (T-049, DEV-10). */
+  static async handshake(endpoint: TransportEndpoint, timeoutMs = 2000): Promise<boolean> {
+    const c = new EngineClient(endpoint);
+    const timeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), timeoutMs));
+    try {
+      return await Promise.race([c.connect().then(() => c.ping(timeoutMs)).catch(() => false), timeout]);
+    } finally {
+      c.close();
+    }
   }
 
   close() {
