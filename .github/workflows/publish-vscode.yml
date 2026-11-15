@@ -1,0 +1,99 @@
+name: Publish VS Code Marketplace
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vscode-marketplace
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish OM Tools
+    if: ${{ !github.event.release.prerelease && !github.event.release.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # Required for Marketplace Trusted Publishing (OIDC).
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify release tag, version, and main ancestry
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "Expected release tag vMAJOR.MINOR.PATCH"; exit 1;
+          }
+          VERSION="$(node -p "require('./package.json').version")"
+          PUBLISHER="$(node -p "require('./package.json').publisher")"
+          EXTENSION="$(node -p "require('./package.json').name")"
+          test "$RELEASE_TAG" = "v$VERSION"
+          test "$PUBLISHER" = "om-core"
+          test "$EXTENSION" = "om-tools"
+          test "$(git rev-parse HEAD)" = "$(git rev-list -n 1 "$RELEASE_TAG")"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor HEAD refs/remotes/origin/main || {
+            echo "Release must reference a commit already on main"; exit 1;
+          }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate source and dependencies
+        run: |
+          npm run compile
+          npm run build
+          npm run check:sensitive
+          npm audit --audit-level=high
+
+      - name: Package VSIX
+        run: npx --no-install vsce package --no-dependencies --out om-tools.vsix
+
+      - name: Inspect package contents
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile("om-tools.vsix") as archive:
+              names = set(archive.namelist())
+              required = {
+                  "extension/package.json",
+                  "extension/dist/extension.js",
+                  "extension/dist/webview.js",
+                  "extension/dist/index.html",
+                  "extension/README.md",
+                  "extension/LICENSE",
+              }
+              missing = required - names
+              if missing:
+                  raise SystemExit(f"Missing VSIX files: {sorted(missing)}")
+              forbidden = [n for n in names if n.startswith((
+                  "extension/.github/", "extension/src/", "extension/scripts/",
+                  "extension/node_modules/", "extension/.devin/"
+              )) or n.endswith((".env", ".pem", ".key"))]
+              if forbidden:
+                  raise SystemExit(f"Unexpected VSIX files: {forbidden}")
+              print(f"VSIX contains {len(names)} archive entries")
+          PY
+
+      - name: Publish to Visual Studio Marketplace (OIDC)
+        run: npx --no-install vsce publish --oidc --packagePath om-tools.vsix
