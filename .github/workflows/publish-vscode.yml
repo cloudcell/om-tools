@@ -74,16 +74,20 @@ jobs:
           python3 - <<'PY'
           import zipfile
           with zipfile.ZipFile("om-tools.vsix") as archive:
-              names = set(archive.namelist())
+              # vsce normalises doc filenames (README.md -> readme.md,
+              # LICENSE -> LICENSE.txt), so compare case-insensitively.
+              names = {n.lower() for n in archive.namelist()}
               required = {
                   "extension/package.json",
                   "extension/dist/extension.js",
                   "extension/dist/webview.js",
                   "extension/dist/index.html",
-                  "extension/README.md",
-                  "extension/LICENSE",
               }
               missing = required - names
+              if not any(n.startswith("extension/readme") for n in names):
+                  missing.add("extension/README.md (any case)")
+              if not any(n.startswith("extension/license") for n in names):
+                  missing.add("extension/LICENSE (any name/case)")
               if missing:
                   raise SystemExit(f"Missing VSIX files: {sorted(missing)}")
               forbidden = [n for n in names if n.startswith((
