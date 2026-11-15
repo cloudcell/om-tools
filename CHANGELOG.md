@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1
+## 0.1.2
 
 - Correct the extension publisher identifier to `cloudcell` for Visual Studio Marketplace publishing.
 - No changes to the OM Core extension functionality since 0.1.0.
