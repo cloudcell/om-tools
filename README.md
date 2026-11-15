@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="media/om-core-logo-transparent-new.png" alt="OM Core" width="480" />
+</p>
+
 # OM Core for VS Code
 
 A grid GUI for [OM Core](https://github.com/cloudcell/om-core), a multidimensional

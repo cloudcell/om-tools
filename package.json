@@ -5,6 +5,7 @@
   "version": "0.1.2",
   "publisher": "cloudcell",
   "license": "AGPL-3.0-or-later",
+  "icon": "media/om-core-icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/cloudcell/om-tools.git"
@@ -105,7 +106,7 @@
         {
           "id": "omCore",
           "title": "OM Core",
-          "icon": "media/icon.svg"
+          "icon": "media/button.svg"
         }
       ]
     },
@@ -114,7 +115,7 @@
         {
           "id": "omCore.launchPad",
           "name": "OM Core",
-          "icon": "media/icon.svg",
+          "icon": "media/button.svg",
           "initialSize": 1
         },
         {
