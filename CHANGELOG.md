@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+- Adopt the OM Core logo: the vectorised hexagon+cube mark now drives the activity
+  bar button and view icons (`media/button.svg`, `media/icon.svg`), a square render
+  is the Marketplace listing icon (`media/om-core-icon.png`), and the full lockup
+  appears at the top of the README / Marketplace page.
+- No changes to the OM Core extension functionality since 0.1.0.
+
 ## 0.1.2
 
 - Correct the extension publisher identifier to `cloudcell` for Visual Studio Marketplace publishing.
