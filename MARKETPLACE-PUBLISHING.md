@@ -19,7 +19,7 @@ The extension is published as `cloudcell.om-tools` from GitHub releases using **
 
 ## First publication after correcting the publisher
 
-The GitHub release `v0.1.0` was created while the extension manifest still contained publisher `om-core`, so its Marketplace publishing attempt failed with `The requested publisher doesn't exist`. Do not move or replace that historical tag. The corrected publisher identifier is `cloudcell` and the first Marketplace release should use `v0.1.1`.
+The GitHub release `v0.1.0` was created while the extension manifest still contained publisher `om-core`, so its Marketplace publishing attempt failed with `The requested publisher doesn't exist`. Do not move or replace that historical tag. The corrected publisher identifier is `cloudcell` and the first Marketplace release should use `v0.1.2`.
 
 Before publishing, confirm that the **cloudcell** Marketplace publisher has a Trusted Publishing policy matching GitHub repository `cloudcell/om-tools`, workflow `publish-vscode.yml`, and an empty environment field. The GitHub release's tag must match the version in both `package.json` and `package-lock.json`.
 
@@ -33,8 +33,8 @@ Before publishing, confirm that the **cloudcell** Marketplace publisher has a Tr
    git checkout main
    git pull --ff-only
    # package.json must now contain 0.1.0, for example
-   git tag -a v0.1.1 -m "OM Tools 0.1.1"
-   git push origin v0.1.1
+   git tag -a v0.1.2 -m "OM Tools 0.1.2"
+   git push origin v0.1.2
    ```
 
 4. On GitHub, open **Releases > Draft a new release**, select that tag, and publish a **normal** release (not draft/prerelease).
