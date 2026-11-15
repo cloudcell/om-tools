@@ -41,7 +41,7 @@ jobs:
           PUBLISHER="$(node -p "require('./package.json').publisher")"
           EXTENSION="$(node -p "require('./package.json').name")"
           test "$RELEASE_TAG" = "v$VERSION"
-          test "$PUBLISHER" = "om-core"
+          test "$PUBLISHER" = "cloudcell"
           test "$EXTENSION" = "om-tools"
           test "$(git rev-parse HEAD)" = "$(git rev-list -n 1 "$RELEASE_TAG")"
           git fetch --no-tags origin main
