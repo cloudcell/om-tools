@@ -12,7 +12,7 @@ src/**
 webview/**
 bridge/**
 shared/**
-docs/**
+docs
 scripts/**
 node_modules/**
 tsconfig.json
