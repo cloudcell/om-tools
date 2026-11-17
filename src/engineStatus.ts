@@ -30,12 +30,14 @@ export interface CorePathInput {
   settingScope: string | null;
   /** OM_CORE_PATH, else OPENM_CORE_PATH. */
   env: string;
+  /** The copy Install Engine downloaded (globalState), "" when there is none. */
+  managed: string;
   workspaceFolders: string[];
   /** Workspace folders the user already allowed to run om-core from (globalState). */
   approvedFolders: string[];
 }
 
-export type CorePathSource = "setting" | "env" | "workspace" | "none";
+export type CorePathSource = "setting" | "env" | "managed" | "workspace" | "none";
 
 export interface CorePathInfo {
   source: CorePathSource;
@@ -51,7 +53,7 @@ export interface CorePathInfo {
 }
 
 /** Which om-core folder starting the runtime would use. Same order as resolveOmCorePath in extension.ts (setting > env >
- *  workspace folder > folder picker), but it only looks: no questions, no warnings. Keep the two in step. */
+ *  managed install > workspace folder > folder picker), but it only looks: no questions, no warnings. Keep the two in step. */
 export function describeOmCorePath(input: CorePathInput): CorePathInfo {
   const ignored: CorePathInfo["ignored"] = [];
   const base = { settingScope: input.settingScope, missingParts: [] as string[], needsApproval: false, ignored };
@@ -67,6 +69,13 @@ export function describeOmCorePath(input: CorePathInput): CorePathInfo {
   if (env) {
     const reason = fs.existsSync(env) ? `not an om-core folder (missing ${missingOmCoreParts(env).join(", ")})` : "folder not found";
     ignored.push({ what: "OM_CORE_PATH", value: env, reason });
+  }
+
+  const managed = input.managed.trim();
+  if (managed && looksLikeOmCore(managed)) return { ...base, source: "managed", path: managed };
+  if (managed) {
+    const reason = fs.existsSync(managed) ? `not an om-core folder (missing ${missingOmCoreParts(managed).join(", ")})` : "folder not found";
+    ignored.push({ what: "the om-core copy OM Tools installed", value: managed, reason });
   }
 
   for (const dir of input.workspaceFolders) {
@@ -150,6 +159,8 @@ export interface StatusSnapshot {
   /** Last status the extension reported (sendStatus): "starting", "connecting", "error", … */
   lastStatus: { status: string; message?: string } | null;
   corePath: CorePathInfo;
+  /** Install Engine is downloading/installing om-core right now (up to ~15 min). */
+  installingCore: boolean;
   /** null when there is no usable om-core folder to look into. */
   venv: boolean | null;
   commit: string | null;
@@ -236,6 +247,7 @@ function sourceText(p: CorePathInfo): string {
   switch (p.source) {
     case "setting": return `omCore.omCorePath${p.settingScope ? ` (${p.settingScope})` : ""}`;
     case "env": return "the OM_CORE_PATH environment variable";
+    case "managed": return "the copy OM Tools downloaded";
     case "workspace": return "the open workspace folder";
     default: return "";
   }
@@ -246,8 +258,14 @@ function pathRow(s: StatusSnapshot): StatusRow {
   // A click opens the setting; the Choose folder… link in the omCore.omCorePath setting, or the row's context menu, chooses a folder.
   const row = { id: "path" as const, label: "Engine path", command: "omCore.openSettings" };
   const ignoredText = p.ignored.map((i) => `${i.what} = ${i.value}: ${i.reason}, not used.`).join("\n");
-  const notes = (extra: string) => [ignoredText, extra, "Click to open the setting."].filter(Boolean).join("\n\n");
+  const order = "First found wins: the omCore.omCorePath setting, then the OM_CORE_PATH environment variable, then the copy OM Tools installed, then an om-core folder in the open workspace. A later one is shown only when everything before it is unset or unusable.";
+  const notes = (extra: string) => [ignoredText, extra, order, "Click to open the setting."].filter(Boolean).join("\n\n");
 
+  if (s.installingCore) {
+    // "installing" is not a /^path-/ contextValue: the row's buttons (Choose…, Install, settings) hide while it runs.
+    return { ...row, contextValue: "installing", icon: "loading~spin", description: "Installing…",
+      tooltip: "Downloading om-core from GitHub and running uv sync. Details are in the OM Core output channel." };
+  }
   if (!p.path) {
     const ask = "Choose the om-core folder (the clone that contains main.py) with Choose… in the Actions section, or Start Runtime will ask for it.";
     if (p.ignored.length) {
@@ -263,7 +281,7 @@ function pathRow(s: StatusSnapshot): StatusRow {
     };
   }
   const commit = s.commit ? ` · ${s.commit}` : "";
-  const scope = p.source === "setting" && p.settingScope ? `  (${p.settingScope})` : p.source === "env" ? "  (OM_CORE_PATH)" : p.source === "workspace" ? "  (workspace)" : "";
+  const scope = p.source === "setting" && p.settingScope ? `  (${p.settingScope})` : p.source === "env" ? "  (OM_CORE_PATH)" : p.source === "managed" ? "  (managed)" : p.source === "workspace" ? "  (workspace)" : "";
   const approval = p.needsApproval ? "OM Tools will ask once before running om-core from this folder." : "";
   const version = s.commit ? `Commit ${s.commit}.` : "";
   return {
@@ -309,16 +327,20 @@ export function buildStatusRows(s: StatusSnapshot): StatusRow[] {
 export type RuntimeButton = "start" | "stop" | "starting" | "external";
 /** Same for the GUI tab: Open, Close, or nothing to press while it connects (a second click would close it again). */
 export type GuiButton = "open" | "close" | "opening";
+/** The Install Engine button: a clickable link, a note while it runs, or a trust prompt in Restricted Mode. */
+export type InstallButton = "install" | "installing" | "restricted";
 
 /** Context keys that `viewsWelcome` entries of the Actions section test in their `when`. */
 export const RUNTIME_BUTTON_KEY = "omCore.runtimeButton";
 export const GUI_BUTTON_KEY = "omCore.guiButton";
+export const INSTALL_BUTTON_KEY = "omCore.installButton";
 
-export function buttonStates(s: StatusSnapshot): { runtime: RuntimeButton; gui: GuiButton } {
+export function buttonStates(s: StatusSnapshot): { runtime: RuntimeButton; gui: GuiButton; install: InstallButton } {
   const r = s.runtime;
   const runtime: RuntimeButton = r.starting && !r.running ? "starting" : r.running ? (r.startedByUs ? "stop" : "external") : "start";
   // A tab that is open but not connected (the runtime was stopped or died) is "close": it is reconnected by Start Runtime
   // or Reconnect, and "Opening…" would hide the only way to get rid of it.
   const gui: GuiButton = !s.gui.open ? "open" : s.gui.connecting ? "opening" : "close";
-  return { runtime, gui };
+  const install: InstallButton = s.installingCore ? "installing" : s.trusted ? "install" : "restricted";
+  return { runtime, gui, install };
 }

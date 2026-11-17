@@ -22,4 +22,4 @@ Thumbs.db
 # Local agent config
 .devin/config.local.json
 
-docs/
+docs

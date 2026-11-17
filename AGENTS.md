@@ -26,8 +26,15 @@ over its newline-delimited JSON envelope socket protocol.
   Start Runtime finishes. Stopping kills the whole process tree (`killProcessTree`): on Windows `uv run` is
   uv.exe → venv launcher → python.exe and `proc.kill()` ends only the first.
 - `omCore.omCorePath` resolution (`resolveOmCorePath`): setting > `OM_CORE_PATH` env >
-  workspace folder containing `main.py` + `lib_runtime/` + `lib_openm/` > one-time
-  folder picker persisted to the setting. Required only for Start Runtime.
+  managed clone (Install Engine's download, recorded in globalState as
+  `omCore.managedCorePath`; nothing is written to `omCorePath`) > workspace folder
+  containing `main.py` + `lib_runtime/` + `lib_openm/` > download-or-pick prompt
+  (folder choice persisted to the setting). Required only for Start Runtime.
+- **Install Engine** (`omCore.downloadCore`): clones cloudcell/om-core at
+  `OM_CORE_PINNED_COMMIT` (`omCoreInstaller.ts`, vscode-free) into `globalStorage`,
+  verifies the checkout, runs `uv sync`. Blocked in Restricted Mode like Start
+  Runtime (`installBlockedReason`). Entry points: Actions-section button, `path-none`
+  row, the prompt above. One install at a time (`installingCore` dedupe).
 - Start runtime manually: `cd <om-core root> && uv run python -O main.py --runtime`
   (binds `/tmp/openm-<user>.sock`), or set `OPENM_TRANSPORT_*` for TCP.
 - Protocol: newline-delimited JSON envelopes. Topics: `request.transport.ping`,
