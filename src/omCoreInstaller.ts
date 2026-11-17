@@ -9,6 +9,10 @@ import { spawn, spawnSync } from "child_process";
 import { looksLikeOmCore, missingOmCoreParts } from "./engineStatus";
 
 export const OM_CORE_REPO = "https://github.com/cloudcell/om-core.git";
+/** Interpreter for the managed install's `uv sync`. om-core allows >=3.12, but its dependency `pdfo` only ships
+ *  wheels for older Pythons: on a newer one uv falls back to a source build that needs a Fortran compiler. 3.12 is
+ *  what the pinned commit was tested with and what the lock file has wheels for. */
+export const OM_CORE_PYTHON = "3.12";
 /** README-tested commit. The pin IS the integrity check (a-08-0d): git objects are content-addressed, so a fetched
  *  HEAD equal to this hash proves the tree is exactly the tested one. Never widen it to a branch or tag. */
 export const OM_CORE_PINNED_COMMIT = "72a90caa6cbe3399da6c8b19a82ef9cd73f828e6";
@@ -95,6 +99,6 @@ export async function installOmCore(dest: string, opts: InstallOptions = {}): Pr
   }
   // The checkout is already in place when `uv sync` fails: the folder stays so the side panel can show the
   // path and the ".venv missing — run uv sync" row instead of losing the download.
-  if (!opts.skipUvSync) await run("uv", ["sync"], dest, UV_TIMEOUT, opts.onOutput);
+  if (!opts.skipUvSync) await run("uv", ["sync", "--python", OM_CORE_PYTHON], dest, UV_TIMEOUT, opts.onOutput);
   if (!looksLikeOmCore(dest)) throw new Error("internal error: installed folder is not an om-core checkout");
 }

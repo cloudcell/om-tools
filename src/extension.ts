@@ -223,10 +223,17 @@ async function doInstallEngine(): Promise<string | null> {
   const ch = outputChannel();
   ch.show(true);
   ch.appendLine(`Installing om-core to ${dest}`);
-  await vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Notification, title: "Installing om-core…", cancellable: false },
-    async () => installOmCore(dest, { onOutput: (s) => ch.append(s) }),
-  );
+  try {
+    await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: "Installing om-core…", cancellable: false },
+      async () => installOmCore(dest, { onOutput: (s) => ch.append(s) }),
+    );
+  } catch (e) {
+    // A download that failed at uv sync still leaves a valid checkout: record it so the side panel shows the
+    // path and the ".venv missing" row (and Install Engine can repair it) instead of looking like nothing happened.
+    if (looksLikeOmCore(dest)) await extContext.globalState.update(MANAGED_CORE_KEY, dest);
+    throw e;
+  }
   await extContext.globalState.update(MANAGED_CORE_KEY, dest);
   ch.appendLine("Install finished.");
   return dest;
