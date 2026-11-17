@@ -258,7 +258,8 @@ function pathRow(s: StatusSnapshot): StatusRow {
   // A click opens the setting; the Choose folder… link in the omCore.omCorePath setting, or the row's context menu, chooses a folder.
   const row = { id: "path" as const, label: "Engine path", command: "omCore.openSettings" };
   const ignoredText = p.ignored.map((i) => `${i.what} = ${i.value}: ${i.reason}, not used.`).join("\n");
-  const notes = (extra: string) => [ignoredText, extra, "Click to open the setting."].filter(Boolean).join("\n\n");
+  const order = "First found wins: the omCore.omCorePath setting, then the OM_CORE_PATH environment variable, then the copy OM Tools installed, then an om-core folder in the open workspace. A later one is shown only when everything before it is unset or unusable.";
+  const notes = (extra: string) => [ignoredText, extra, order, "Click to open the setting."].filter(Boolean).join("\n\n");
 
   if (s.installingCore) {
     // "installing" is not a /^path-/ contextValue: the row's buttons (Choose…, Install, settings) hide while it runs.
