@@ -369,13 +369,14 @@
     "package": "vsce package --no-dependencies",
     "check:sensitive": "node scripts/check-sensitive.js --all",
     "prepare": "simple-git-hooks",
-    "test:installer": "esbuild ./test-installer.ts --bundle --platform=node --format=cjs --outfile=dist/test-installer.js && node dist/test-installer.js"
+    "test:installer": "esbuild ./test-installer.ts --bundle --platform=node --format=cjs --outfile=dist/test-installer.js && node dist/test-installer.js",
+    "audit:gate": "node scripts/npm-audit.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.80.0",
     "@types/ws": "^8.5.0",
-    "@vscode/vsce": "^4.1.0",
+    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.28.2",
     "simple-git-hooks": "^2.11.1",
     "typescript": "^5.4.0",
