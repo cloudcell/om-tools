@@ -63,7 +63,7 @@ jobs:
           npm run compile
           npm run build
           npm run check:sensitive
-          npm audit --audit-level=high
+          npm run audit:gate
 
       - name: Package VSIX
         run: npx --no-install vsce package --no-dependencies --out om-tools.vsix

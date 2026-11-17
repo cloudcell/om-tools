@@ -39,7 +39,7 @@ jobs:
       - name: Check for sensitive data in tracked files
         run: npm run check:sensitive
       - name: Reject high/critical npm vulnerabilities
-        run: npm audit --audit-level=high
+        run: npm run audit:gate
 
 # The integration test harness mutates OM Core model state.
 # Run it only in an isolated engine environment, never on public PR runners
