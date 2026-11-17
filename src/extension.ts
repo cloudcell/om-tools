@@ -25,6 +25,10 @@ let lastStatus: { status: string; message?: string } | null = null;
 let extContext: vscode.ExtensionContext | null = null;
 const UI_STATE_KEY = "omCore.uiState";
 
+/** "<version>+<git describe>" stamped by scripts/build.mjs; "dev" for watch builds. */
+declare const OM_TOOLS_BUILD: string | undefined;
+const BUILD_INFO: string = typeof OM_TOOLS_BUILD === "undefined" ? "dev" : OM_TOOLS_BUILD;
+
 const DEFAULT_TCP: TransportEndpoint = { kind: "tcp", host: "127.0.0.1", port: 17391 };
 let resolvedEndpoint: TransportEndpoint | null = null;
 
@@ -508,7 +512,7 @@ function updateStatusBar(status: string, message?: string) {
     : status === "connecting" || status === "starting"
     ? new vscode.ThemeColor("statusBarItem.warningBackground")
     : undefined;
-  statusBar.tooltip = `OM Core — ${status}${message ? ": " + message : ""}`;
+  statusBar.tooltip = `OM Core ${BUILD_INFO} — ${status}${message ? ": " + message : ""}`;
 }
 
 function postToWebview(msg: HostToWebview) {
