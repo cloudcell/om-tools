@@ -2,9 +2,10 @@ import * as vscode from "vscode";
 import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString, topicMatches } from "./engineClient";
 import { EngineProcess } from "./engineProcess";
 import { HostRequest, HostToWebview, AppConfig, PickFileParams, UiState, UI_STATE_META } from "../shared/messages";
-import { autoStartBlockedReason, isRemoteEndpoint } from "./runtimePolicy";
+import { autoStartBlockedReason, installBlockedReason, isRemoteEndpoint } from "./runtimePolicy";
 import { sanitizeUiState } from "./uiState";
-import { GUI_BUTTON_KEY, RUNTIME_BUTTON_KEY, StatusSnapshot, UV_INSTALL_URL, buttonStates, describeOmCorePath, findUv, hasVenv, looksLikeOmCore, missingOmCoreParts, readGitCommit } from "./engineStatus";
+import { GUI_BUTTON_KEY, INSTALL_BUTTON_KEY, RUNTIME_BUTTON_KEY, StatusSnapshot, UV_INSTALL_URL, buttonStates, describeOmCorePath, findUv, hasVenv, looksLikeOmCore, missingOmCoreParts, readGitCommit } from "./engineStatus";
+import { gitOnPath, installOmCore, managedCoreDir } from "./omCoreInstaller";
 import { StatusPanel } from "./statusPanel";
 import * as os from "os";
 import * as fs from "fs";
@@ -148,15 +149,87 @@ async function pickOmCoreFolder(): Promise<string | null> {
   return dir;
 }
 
+/** Start Runtime reached the end of the resolution chain: offer a managed download before asking for a folder. */
 async function pickAndPersistOmCorePath(): Promise<string> {
   try {
-    const dir = await pickOmCoreFolder();
-    if (!dir) throw new Error("om-core path is not set. Configure 'omCore.omCorePath' or set OM_CORE_PATH.");
-    await vscode.workspace.getConfiguration("omCore").update("omCorePath", dir, vscode.ConfigurationTarget.Global);
-    return dir;
+    const download = "Download om-core from GitHub (recommended)";
+    const choose = "Choose existing folder…";
+    const pick = await vscode.window.showQuickPick(
+      [{ label: download, description: "OM Tools clones cloudcell/om-core at a tested commit and runs uv sync" },
+       { label: choose, description: "use an om-core checkout already on this computer" }],
+      { title: "No om-core engine found", placeHolder: "How should OM Tools get the om-core engine?" });
+    if (pick?.label === download) {
+      const dir = await installEngine();
+      if (dir) return dir;
+      throw new Error("om-core path is not set. Use Install Engine in the OM Core side panel, set 'omCore.omCorePath', or set OM_CORE_PATH.");
+    }
+    if (pick?.label === choose) {
+      const dir = await pickOmCoreFolder();
+      if (dir) {
+        await vscode.workspace.getConfiguration("omCore").update("omCorePath", dir, vscode.ConfigurationTarget.Global);
+        return dir;
+      }
+    }
+    throw new Error("om-core path is not set. Use Install Engine in the OM Core side panel, set 'omCore.omCorePath', or set OM_CORE_PATH.");
   } finally {
     omCorePathPrompt = null;
   }
+}
+
+/** The managed clone Install Engine downloaded (globalState), so describeOmCorePath can show it as `managed`. */
+const MANAGED_CORE_KEY = "omCore.managedCorePath";
+
+function managedCorePath(): string {
+  return extContext?.globalState.get<string>(MANAGED_CORE_KEY, "") ?? "";
+}
+
+/** Where Install Engine's output goes: git fetch and uv sync can take minutes and their progress matters. */
+let engineOutput: vscode.OutputChannel | null = null;
+function outputChannel(): vscode.OutputChannel {
+  if (!engineOutput) engineOutput = vscode.window.createOutputChannel("OM Core");
+  return engineOutput;
+}
+
+/** One install at a time: the path row, the quick-pick, and the Install Engine button all reach the same promise,
+ *  like startingRuntime/connecting dedupe double clicks. Resolves to the managed folder, null when cancelled. */
+let installingCore: Promise<string | null> | null = null;
+
+function installEngine(): Promise<string | null> {
+  if (!installingCore) installingCore = doInstallEngine().finally(() => { installingCore = null; void statusPanel?.refresh(); });
+  return installingCore;
+}
+
+async function doInstallEngine(): Promise<string | null> {
+  if (!extContext) throw new Error("extension not activated");
+  // Installing runs uv sync, which executes package build scripts: not in Restricted Mode (Workspace Trust).
+  const blocked = installBlockedReason(vscode.workspace.isTrusted);
+  if (blocked) throw new Error(blocked);
+  if (!gitOnPath()) throw new Error("git is needed to download om-core but was not found on PATH. Install git, or install om-core manually and set omCore.omCorePath (see the OM Tools README).");
+  const uv = findUv();
+  if (!uv.onPath) throw new Error(uv.elsewhere
+    ? `uv is installed at ${uv.elsewhere} but not on this PATH. Close all VS Code windows and start VS Code again (Reload Window is not enough), then try Install Engine again.`
+    : `uv is needed to install om-core's dependencies. Install it (${UV_INSTALL_URL}), restart VS Code, then try again.`);
+  // Install Engine never silently replaces an engine that already resolves: the managed tier is implicit,
+  // so a configured env/workspace path would keep losing to the new copy without a word. Ask first.
+  const existing = currentCorePath();
+  if (existing.path && !existing.missingParts.length && existing.source !== "managed") {
+    const yes = "Install anyway";
+    const pick = await vscode.window.showWarningMessage(
+      `om-core is already set up at ${existing.path} and OM Tools is using it. Download a separate managed copy anyway?`,
+      { modal: true }, yes);
+    if (pick !== yes) return null;
+  }
+  const dest = managedCoreDir(extContext.globalStorageUri.fsPath);
+  const ch = outputChannel();
+  ch.show(true);
+  ch.appendLine(`Installing om-core to ${dest}`);
+  await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: "Installing om-core…", cancellable: false },
+    async () => installOmCore(dest, { onOutput: (s) => ch.append(s) }),
+  );
+  await extContext.globalState.update(MANAGED_CORE_KEY, dest);
+  ch.appendLine("Install finished.");
+  return dest;
 }
 
 /** Side panel button "Choose om-core Folder…": saves to User settings and says when that does not take effect. */
@@ -186,6 +259,7 @@ function currentCorePath(): ReturnType<typeof describeOmCorePath> {
     setting,
     settingScope: omCorePathScope(cfg, setting.trim()),
     env: process.env.OM_CORE_PATH || process.env.OPENM_CORE_PATH || "",
+    managed: managedCorePath(),
     workspaceFolders: (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath),
     approvedFolders: extContext?.globalState.get<string[]>(APPROVED_CORE_KEY, []) ?? [],
   });
@@ -213,8 +287,10 @@ async function approveWorkspaceCore(dir: string): Promise<boolean> {
   return true;
 }
 
-/** Where the runtime lives, for auto-start: omCore.omCorePath > OM_CORE_PATH env > a workspace
- *  folder that is an om-core checkout (after the user approves it) > one-time folder picker (persisted to global settings).
+/** Where the runtime lives, for auto-start: omCore.omCorePath > OM_CORE_PATH env > the managed clone Install
+ *  Engine downloaded > a workspace folder that is an om-core checkout (after the user approves it) > a
+ *  download-or-pick prompt (pick persisted to global settings). The managed tier is implicit — nothing is written
+ *  to omCore.omCorePath — so an explicit user choice always outranks it.
  *  The side panel shows the same choice without asking anything: describeOmCorePath in engineStatus.ts. Keep the two in step. */
 async function resolveOmCorePath(): Promise<string> {
   const cfg = vscode.workspace.getConfiguration("omCore");
@@ -224,6 +300,9 @@ async function resolveOmCorePath(): Promise<string> {
 
   const fromEnv = (process.env.OM_CORE_PATH || process.env.OPENM_CORE_PATH || "").trim();
   if (fromEnv && looksLikeOmCore(fromEnv)) return fromEnv;
+
+  const managed = managedCorePath().trim();
+  if (managed && looksLikeOmCore(managed)) return managed;
 
   for (const folder of vscode.workspace.workspaceFolders ?? []) {
     const dir = folder.uri.fsPath;
@@ -389,6 +468,7 @@ async function statusSnapshot(): Promise<StatusSnapshot> {
     gui: { open: !!panel, connected: !!client?.isConnected, connecting: connecting !== null, session: currentSessionId },
     lastStatus,
     corePath,
+    installingCore: installingCore !== null,
     venv: usable ? hasVenv(usable) : null,
     commit: usable ? readGitCommit(usable) : null,
     uv: findUv(),
@@ -400,6 +480,7 @@ function applyButtonContext(s: StatusSnapshot): void {
   const b = buttonStates(s);
   void vscode.commands.executeCommand("setContext", RUNTIME_BUTTON_KEY, b.runtime);
   void vscode.commands.executeCommand("setContext", GUI_BUTTON_KEY, b.gui);
+  void vscode.commands.executeCommand("setContext", INSTALL_BUTTON_KEY, b.install);
 }
 
 function updateStatusBar(status: string, message?: string) {
@@ -564,6 +645,11 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("omCore.refreshStatus", () => statusPanel?.refresh()),
     // Side panel row actions (T-062, step 2). Inline buttons pass the row as the argument.
     vscode.commands.registerCommand("omCore.choosePath", () => chooseOmCorePath()),
+    vscode.commands.registerCommand("omCore.downloadCore", async () => {
+      try { if (await installEngine()) vscode.window.showInformationMessage("om-core engine installed."); }
+      catch (e: any) { vscode.window.showErrorMessage(`Failed to install om-core: ${e?.message || e}`); }
+      refreshPanel();
+    }),
     vscode.commands.registerCommand("omCore.openSettings", (row?: unknown) => vscode.commands.executeCommand("workbench.action.openSettings", settingForRow(row))),
     vscode.commands.registerCommand("omCore.revealPath", async () => {
       const dir = currentCorePath().path;
@@ -575,6 +661,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((e) => { if (e.affectsConfiguration("omCore")) refreshPanel(); }),
     vscode.workspace.onDidGrantWorkspaceTrust(refreshPanel),
     vscode.workspace.onDidChangeWorkspaceFolders(refreshPanel),
+    { dispose: () => { engineOutput?.dispose(); engineOutput = null; } },
   );
 }
 

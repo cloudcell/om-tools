@@ -42,27 +42,7 @@ Open a **new** terminal and check that it works: `uv --version` prints a version
 **Then close all VS Code windows and start VS Code again.** VS Code only picks up the new `PATH`
 when it starts; **Reload Window** is not enough.
 
-### 2. Get the engine
-
-In a terminal, go to the folder where you want the engine to live (for example your home folder),
-then run:
-
-```bash
-git clone https://github.com/cloudcell/om-core.git
-cd om-core
-git checkout 72a90ca
-uv sync
-```
-
-- This creates an `om-core` folder there, for example `C:\Users\you\om-core` on Windows or <!-- check-sensitive: allow -->
-  `/home/you/om-core` on Linux. Remember it: step 4 needs it. <!-- check-sensitive: allow -->
-- `git checkout 72a90ca` is the om-core version this extension was tested with. Newer
-  versions may work, but are not checked.
-- Do not skip `uv sync`. It downloads the dependencies (several hundred MB, a few
-  minutes the first time). If it has not been run, the first start of the runtime takes
-  longer than the extension waits (20 seconds) and fails.
-
-### 3. Install the extension
+### 2. Install the extension
 
 Download `om-tools-<version>.vsix` from the
 [Releases](https://github.com/cloudcell/om-tools/releases) page, then in VS Code:
@@ -77,20 +57,41 @@ code --install-extension om-tools-<version>.vsix
 (On macOS, `code` works in a terminal only after **Shell Command: Install 'code' command in PATH**
 in the VS Code command palette.)
 
-### 4. Point the extension at the engine
+### 3. Get the engine
 
-Click the **OM Core** icon in the activity bar (the left edge of the window). In the side panel, press
-**Settings**, then click **Choose folder…** above the **Om Core: Om Core Path** setting and choose the
-`om-core` folder from step 2 (the one that contains `main.py`).
+Click the **OM Core** icon in the activity bar (the left edge of the window), then press
+**Install Engine** in the **Actions** section under **Settings**. OM Tools downloads om-core
+at the version it was tested with and runs `uv sync` in it — several hundred MB, a few
+minutes the first time. Progress goes to the **OM Core** output channel.
 
-You can also skip this step: when the setting is empty, **Start Runtime** asks for the folder once and
-saves it. Or type the path into the setting yourself, or put it in `settings.json`:
+The copy is managed by the extension and used automatically; nothing is written to your
+settings. To use your own om-core instead (for development, or when download is not
+possible), install it yourself — the extension uses `omCore.omCorePath`,
+`OM_CORE_PATH`, or an om-core checkout in the open workspace before the managed copy:
 
-```json
-"omCore.omCorePath": "path/to/om-core"
+```bash
+git clone https://github.com/cloudcell/om-core.git
+cd om-core
+git checkout 72a90ca
+uv sync
 ```
 
-### 5. Check that everything is ready
+- `git checkout 72a90ca` is the om-core version this extension was tested with. Newer
+  versions may work, but are not checked.
+- Do not skip `uv sync`. Without it the first start of the runtime takes longer than
+  the extension waits (20 seconds) and fails.
+- Then point the extension at it: **Settings** in the side panel → **Choose folder…**
+  above the **Om Core: Om Core Path** setting, or set it directly:
+
+  ```json
+  "omCore.omCorePath": "path/to/om-core"
+  ```
+
+- **Restricted Mode**: Install Engine is unavailable — `uv sync` runs package build
+  scripts, so OM Tools treats it like running code. Trust the workspace, or install
+  om-core yourself as above.
+
+### 4. Check that everything is ready
 
 The **OM Core** side panel shows one row per part the engine needs. Before the first start it should look
 like this:
@@ -99,7 +100,7 @@ like this:
 |---|---|
 | Runtime | `Not running` (it is started in the quick start below) |
 | GUI | `Not open` |
-| Engine path | the folder from step 2, green |
+| Engine path | the engine folder (managed copies say `managed`), green |
 | Dependencies | `.venv found`, green |
 | uv | the path to `uv`, green |
 

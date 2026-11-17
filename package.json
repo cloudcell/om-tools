@@ -77,6 +77,12 @@
         "icon": "$(edit)"
       },
       {
+        "command": "omCore.downloadCore",
+        "title": "OM Core: Install Engine",
+        "category": "OM Core",
+        "icon": "$(cloud-download)"
+      },
+      {
         "command": "omCore.openSettings",
         "title": "OM Core: Open Settings",
         "category": "OM Core",
@@ -168,6 +174,21 @@
       {
         "view": "omCore.actions",
         "contents": "[Settings](command:omCore.openSettings \"Open the OM Core settings\")"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "[Install Engine](command:omCore.downloadCore \"Download and install the om-core engine\")\nDownloads om-core from GitHub and installs its dependencies (one-time setup).",
+        "when": "omCore.installButton == install"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "Installing om-core…\nDetails are in the OM Core output channel.",
+        "when": "omCore.installButton == installing"
+      },
+      {
+        "view": "omCore.actions",
+        "contents": "Install Engine requires a trusted workspace.\n[Manage Workspace Trust](command:omCore.manageTrust \"Trust this workspace to install the engine\")",
+        "when": "omCore.installButton == restricted"
       }
     ],
     "configuration": {
@@ -288,6 +309,11 @@
           "command": "omCore.uvInstallHelp",
           "when": "view == omCore.launchPad && viewItem =~ /^uv-(missing|elsewhere)$/",
           "group": "1_actions@1"
+        },
+        {
+          "command": "omCore.downloadCore",
+          "when": "view == omCore.launchPad && viewItem =~ /^path-(none|not-om-core)$/",
+          "group": "1_actions@0"
         }
       ],
       "commandPalette": [
@@ -342,7 +368,8 @@
     "web": "npm run build && node dist/bridge.js",
     "package": "vsce package --no-dependencies",
     "check:sensitive": "node scripts/check-sensitive.js --all",
-    "prepare": "simple-git-hooks"
+    "prepare": "simple-git-hooks",
+    "test:installer": "esbuild ./test-installer.ts --bundle --platform=node --format=cjs --outfile=dist/test-installer.js && node dist/test-installer.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
