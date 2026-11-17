@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.4
+
+- **Install Engine**: the extension can now download and install om-core itself —
+  a managed clone in extension storage at the tested commit, verified, with `uv sync`
+  run for you. New entry points: the **Install Engine** button under Settings in the
+  Actions section, the Engine path row, and the prompt shown when Start Runtime finds
+  no engine. Blocked in Restricted Mode; never overwrites a configured `omCorePath`.
+  Manual setup (own clone + `omCore.omCorePath`) still works and takes precedence.
+
+
 ## 0.1.3
 
 - Adopt the OM Core logo: the vectorised hexagon+cube mark now drives the activity
