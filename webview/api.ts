@@ -19,6 +19,11 @@ export interface CellDTO {
   view_id: string; cube_id: string;
   row_key: string[]; col_key: string[]; addr: string[];
   value: any; display_value: string; kind: string; explain: CellExplain;
+  /** `@`-channel paints from `grid_viewport_snapshot` (channels.fill / .font_color). */
+  fill?: string | null; font_color?: string | null;
+  /** `@`-channel format masks applied to display_value (om-core format_cell_value). */
+  format_number?: string | null; format_text?: string | null;
+  format_null?: string | null; format_error?: string | null;
 }
 export interface CellRangeDTO {
   view_id: string; cube_id: string;
@@ -151,7 +156,7 @@ export class OmApi {
   setDimensionItemOrder(dimId: string, itemIds: string[]) { return this.t.request("command", { command_id: "set_dimension_item_order", params: { dim_id: dimId, item_ids: itemIds } }); }
   setDimensionOutline(dimId: string, outline: any[] | null) { return this.t.request("command", { command_id: "set_dimension_outline", params: { dim_id: dimId, outline } }); }
   clearDimensionOutline(dimId: string) { return this.t.request("command", { command_id: "clear_dimension_outline", params: { dim_id: dimId } }); }
-  createGroup(dimId: string, label: string, parentGroupId?: string) { return this.t.request("command", { command_id: "create_group", params: { dim_id: dimId, label, parent_group_id: parentGroupId ?? null } }); }
+  createGroup(dimId: string, label: string, parentGroupId?: string, childItemIds?: string[]) { return this.t.request("command", { command_id: "create_group", params: { dim_id: dimId, label, parent_group_id: parentGroupId ?? null, child_item_ids: childItemIds ?? null } }); }
   deleteGroup(dimId: string, groupNodeId: string, cascade = true) { return this.t.request("command", { command_id: "delete_group", params: { dim_id: dimId, group_node_id: groupNodeId, cascade } }); }
   deleteGroupNode(dimId: string, nodeId: string) { return this.t.request("command", { command_id: "delete_group_node", params: { dim_id: dimId, node_id: nodeId, promote_children: "to_parent" } }); }
   moveItemsToGroup(dimId: string, itemIds: string[], groupNodeId?: string) { return this.t.request("command", { command_id: "move_items_to_group", params: { dim_id: dimId, item_ids: itemIds, group_node_id: groupNodeId ?? null } }); }

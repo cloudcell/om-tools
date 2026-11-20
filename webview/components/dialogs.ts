@@ -1,4 +1,5 @@
 import { el } from "../dom";
+import { AGGREGATE_SIGN_CHOICES, DEFAULT_OPTIONS, type UiOptions } from "../../shared/messages";
 
 /** HIG-compliant dialog helpers.
  *  Replaces native prompt()/confirm()/alert() with proper modal dialogs
@@ -374,6 +375,92 @@ export function formDialog(title: string, fields: FormField[], opts: { okLabel?:
     });
     ov.addEventListener("click", (e) => { if (e.target === ov) done(null); });
     (dlg.querySelector("input, select") as HTMLElement | null)?.focus();
+  });
+}
+
+/** Tools → Options… — display preferences, persisted in UiState. Each row shows
+ *  what the default setup uses; "Restore defaults" resets every control.
+ *  Resolves with the full options map on OK, or null on Cancel/Escape/outside click. */
+export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions | null> {
+  return new Promise((resolve) => {
+    const ov = ensureOverlay();
+    clear(ov);
+    const dlg = el("div", { class: "dlg dlg-options", role: "dialog", "aria-label": "Options", style: {
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "20px",
+      minWidth: "360px", maxWidth: "440px", boxShadow: "var(--dlg-shadow)",
+      fontFamily: "-apple-system, system-ui, sans-serif",
+    } }) as HTMLElement;
+    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "12px", color: "var(--dlg-title)" } }, ["Options"]));
+
+    const defaultTag = (isDefault: boolean) =>
+      el("span", { style: { fontSize: "11px", color: "var(--text-label)", marginLeft: "6px" } },
+        [isDefault ? "(default)" : ""]);
+
+    // — Mark hardvalue cells —
+    const hvCb = document.createElement("input");
+    hvCb.type = "checkbox"; hvCb.checked = current.markHardvalues;
+    const hvDefault = el("span", { style: { fontSize: "11px", color: "var(--text-label)", marginLeft: "auto" } },
+      [`default: ${DEFAULT_OPTIONS.markHardvalues ? "on" : "off"}`]);
+    dlg.appendChild(el("label", { style: { display: "flex", gap: "6px", alignItems: "center", fontSize: "13px", marginBottom: "12px", cursor: "pointer" } }, [
+      hvCb,
+      document.createTextNode("Mark hardvalue cells"),
+      el("span", { style: { fontSize: "11px", color: "var(--text-label)" } }, ["yellow fill + red corner"]),
+      hvDefault,
+    ]));
+
+    // — Aggregate sign —
+    const signSelect = document.createElement("select");
+    signSelect.style.cssText = "box-sizing: border-box; padding: 4px 8px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit;";
+    for (const c of AGGREGATE_SIGN_CHOICES) {
+      const op = document.createElement("option");
+      op.value = c.value;
+      op.textContent = c.value === DEFAULT_OPTIONS.aggregateSign ? `${c.label} (default)` : c.label;
+      signSelect.appendChild(op);
+    }
+    signSelect.value = AGGREGATE_SIGN_CHOICES.some((c) => c.value === current.aggregateSign)
+      ? current.aggregateSign : DEFAULT_OPTIONS.aggregateSign;
+    const signTag = defaultTag(signSelect.value === DEFAULT_OPTIONS.aggregateSign);
+    dlg.appendChild(el("div", { style: { display: "flex", gap: "8px", alignItems: "center", fontSize: "13px", marginBottom: "16px" } }, [
+      el("span", {}, ["Aggregate sign"]),
+      signSelect,
+      signTag,
+    ]));
+
+    // — Buttons —
+    const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
+    const resetBtn = el("button", { style: {
+      padding: "6px 16px", border: "1px solid var(--dlg-border)", borderRadius: "6px",
+      background: "var(--dlg-btn-bg)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", marginRight: "auto",
+    } }, ["Restore Defaults"]) as HTMLButtonElement;
+    const cancelBtn = el("button", { style: {
+      padding: "6px 16px", border: "1px solid var(--dlg-border)", borderRadius: "6px",
+      background: "var(--dlg-btn-bg)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+    } }, ["Cancel"]) as HTMLButtonElement;
+    const okBtn = el("button", { style: {
+      padding: "6px 16px", border: "none", borderRadius: "6px",
+      background: "var(--dlg-primary)", color: "var(--on-accent)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
+    } }, ["OK"]) as HTMLButtonElement;
+    btnRow.appendChild(resetBtn); btnRow.appendChild(cancelBtn); btnRow.appendChild(okBtn);
+    dlg.appendChild(btnRow);
+    ov.appendChild(dlg);
+
+    resetBtn.addEventListener("click", () => {
+      hvCb.checked = DEFAULT_OPTIONS.markHardvalues;
+      signSelect.value = DEFAULT_OPTIONS.aggregateSign;
+      signTag.textContent = "(default)";
+    });
+    signSelect.addEventListener("change", () => {
+      signTag.textContent = signSelect.value === DEFAULT_OPTIONS.aggregateSign ? "(default)" : "";
+    });
+
+    const done = (v: UiOptions | null) => { closeOverlay(); resolve(v); };
+    cancelBtn.addEventListener("click", () => done(null));
+    okBtn.addEventListener("click", () => done({ markHardvalues: hvCb.checked, aggregateSign: signSelect.value }));
+    dlg.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { e.preventDefault(); done(null); }
+    });
+    ov.addEventListener("click", (e) => { if (e.target === ov) done(null); });
+    okBtn.focus();
   });
 }
 

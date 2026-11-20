@@ -1,6 +1,7 @@
 import { OmApi, DimSummary, DimDetail, CubeSummary, ViewSummary, ViewDetail, CellRangeDTO, RuleDTO, WorkspaceSummary, CellDTO } from "./api";
+import { formatCellValue } from "./formatting";
 import { alertDialog } from "./components/dialogs";
-import type { UiLayout } from "../shared/messages";
+import { DEFAULT_OPTIONS, type UiLayout, type UiOptions } from "../shared/messages";
 
 /** Default panel sizes, px (T-045); same as the CSS variables in styles.css. */
 export const DEFAULT_LAYOUT: Required<UiLayout> = { leftDockWidth: 250, leftCollapsed: false, rulePanelHeight: 200, rulePanelCollapsed: false };
@@ -65,6 +66,8 @@ export interface AppState {
   /** Left column / bottom panel sizes and collapsed state (T-045). Sizes change without notify() while
    *  dragging; notify() only when a panel collapses or expands. Persisted via api.saveUiState. */
   layout: Required<UiLayout>;
+  /** Display options (Tools → Options). Persisted via api.saveUiState. */
+  options: Required<UiOptions>;
 }
 
 type Listener = () => void;
@@ -102,13 +105,23 @@ export class Store {
     // perf/timeline are outside the MVP (their View menu items are disabled), so start hidden.
     dockVisible: { browser: true, info: false, format: false, perf: false, timeline: false },
     layout: { ...DEFAULT_LAYOUT },
+    options: { ...DEFAULT_OPTIONS },
   };
   api: OmApi;
   private listeners = new Set<Listener>();
   dimCache = new Map<string, DimDetail>();
   cubeCache = new Map<string, any>();
 
-  constructor(api: OmApi) { this.api = api; }
+  constructor(api: OmApi) {
+    this.api = api;
+    this.state.options = { ...DEFAULT_OPTIONS, ...(api.loadUiState()?.options ?? {}) };
+  }
+
+  /** Persist + apply display options; a set() repaint follows via subscribers. */
+  setOptions(patch: UiOptions) {
+    this.set({ options: { ...this.state.options, ...patch } });
+    this.api.updateUiState({ options: this.state.options });
+  }
 
   subscribe(fn: Listener): () => void { this.listeners.add(fn); return () => this.listeners.delete(fn); }
   notify() { for (const l of this.listeners) l(); }
@@ -259,6 +272,7 @@ export class Store {
       const rowHeaders = await Promise.all(rk.map((_, i) => this.api.viewRowHeader(viewId, i).then((r) => r.header).catch(() => "")));
       const colHeaders = await Promise.all(ck.map((_, i) => this.api.viewColHeader(viewId, i).then((r) => r.header).catch(() => "")));
       const cells = rk.length && ck.length ? await this.api.cellRange(viewId, rk, ck) : null;
+      if (cells) await this.mergeChannelPaints(cells, viewId, rk, ck, pageSel);
       const prev = this.state.activeView;
       this.state.activeView = {
         viewId, viewName: detail.name, cubeId: detail.cube_id,
@@ -284,6 +298,28 @@ export class Store {
       this.notify();
       console.error("loadView failed", e);
     }
+  }
+
+  /** `@`-channel paints (fill/font_color rules) for the loaded tile — engine-side
+   *  styling, merged onto the CellDTOs. Cosmetic: failures leave cells unpainted. */
+  private async mergeChannelPaints(cells: CellRangeDTO, viewId: string, rk: string[][], ck: string[][], pageSel: Record<string, string>) {
+    try {
+      const fmtChannels = ["format_number", "format_text", "format_null", "format_error"];
+      const snap = await this.api.gridViewportSnapshot(viewId, rk, ck, pageSel, ["fill", "font_color", ...fmtChannels]);
+      const chans = snap?.channels ?? {};
+      const fills = chans.fill ?? {}, fonts = chans.font_color ?? {};
+      cells.cells.forEach((cell, i) => {
+        const key = makeViewportCellKey(rk[Math.floor(i / ck.length)] ?? [], ck[i % ck.length] ?? []);
+        if (fills[key] != null) cell.fill = String(fills[key]);
+        if (fonts[key] != null) cell.font_color = String(fonts[key]);
+        let hasFmt = false;
+        for (const ch of fmtChannels) {
+          const v = (chans[ch] ?? {})[key];
+          if (v != null) { (cell as any)[ch] = String(v); hasFmt = true; }
+        }
+        if (hasFmt) cell.display_value = formatCellValue(cell.value, cell, cell.kind);
+      });
+    } catch { /* channels are cosmetic — the grid still renders without them */ }
   }
 
   async moveDimension(dimId: string, dest: "row" | "col" | "page", index?: number) {
@@ -623,6 +659,11 @@ export class Store {
  *  shows `=expr` for any cell a rule computes (cube rules too, via the rule_detail query) and for
  *  error cells, otherwise the value. One deliberate difference: for an override Qt shows the rule
  *  hidden under it (`=3` while the cell holds 5); here the bar shows the value the cell holds. */
+/** om-core `make_viewport_cell_key`: JSON keys joined by U+F8FF (private-use). */
+export function makeViewportCellKey(rowKey: string[], colKey: string[]): string {
+  return JSON.stringify(rowKey) + "\uf8ff" + JSON.stringify(colKey);
+}
+
 export function ruleBarText(cell: CellDTO | null | undefined): string {
   if (!cell) return "";
   const ex = cell.explain;

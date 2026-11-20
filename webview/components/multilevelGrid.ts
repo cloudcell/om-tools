@@ -194,6 +194,10 @@ export class MultilevelGrid {
 
   // ---- Refresh ----
   private refresh() {
+    // The grid DOM (incl. the scroll element) is rebuilt on every refresh —
+    // carry scroll position over so re-renders never jump back to top-left.
+    const oldScroll = this.root.querySelector(".ml-grid-scroll") as HTMLElement | null;
+    const sl = oldScroll?.scrollLeft ?? 0, stp = oldScroll?.scrollTop ?? 0;
     clear(this.root);
 
     // tab bar
@@ -229,6 +233,8 @@ export class MultilevelGrid {
     // Build the multilevel grid
     this.buildGrid(v);
     this.renderGrid(gridMount);
+    const ns = gridMount.querySelector(".ml-grid-scroll") as HTMLElement | null;
+    if (ns) { ns.scrollLeft = sl; ns.scrollTop = stp; }
   }
 
   // ---- Build grid entries from view data ----
@@ -668,10 +674,10 @@ export class MultilevelGrid {
     scroll.addEventListener("keydown", (e) => this.onKeyDown(e));
     const active = document.activeElement;
     const focusIsFree = !active || active === document.body || mount.contains(active);
-    if (!this.editor && !this.headerEdit && focusIsFree) scroll.focus();
+    if (!this.editor && !this.headerEdit && focusIsFree) scroll.focus({ preventScroll: true });
     // Cell and header mousedown handlers call preventDefault (no native focus change), so a
     // click inside the grid takes focus explicitly — e.g. coming back from the rule bar.
-    scroll.addEventListener("mousedown", () => { if (!this.editor && !this.headerEdit) scroll.focus(); }, true);
+    scroll.addEventListener("mousedown", () => { if (!this.editor && !this.headerEdit) scroll.focus({ preventScroll: true }); }, true);
 
     // Cell drag-select (rubberband): mousemove extends range from anchor, mouseup ends
     scroll.addEventListener("mousemove", (e) => {
@@ -916,7 +922,7 @@ export class MultilevelGrid {
       }
 
       if (col.is_aggregate) {
-        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "var(--text-label)" } }, ["Σ"]);
+        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "var(--text-label)" } }, [this.store.state.options.aggregateSign]);
         cell.style.position = "absolute";
         cell.appendChild(sigma);
       }
@@ -1113,7 +1119,7 @@ export class MultilevelGrid {
       }
 
       if (row.is_aggregate) {
-        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "var(--text-label)" } }, ["Σ"]);
+        const sigma = el("span", { style: { position: "absolute", top: "1px", right: "2px", fontSize: "9px", color: "var(--text-label)" } }, [this.store.state.options.aggregateSign]);
         cell.style.position = "absolute";
         cell.appendChild(sigma);
       }
@@ -1229,25 +1235,28 @@ export class MultilevelGrid {
         const isSel = this.isCellSelected(r, c);
         const kind = cell.kind || "empty";
         const disp = cell.display_value ?? "";
+        const markHard = this.store.state.options.markHardvalues && cell.explain?.source === "override";
 
         const cls = ["ml-cell", kind];
         if (isSel) cls.push("selected");
         if (kind === "error") cls.push("error");
-        if (cell.explain?.source === "override") cls.push("hardnumber");
+        if (markHard) cls.push("hardnumber");
 
         const cellEl = el("div", { class: cls.join(" "), style: {
           position: "absolute", left: x + "px", top: y + "px",
           width: this.colW(c) + "px", height: METRICS.rowH + "px",
           borderRight: `1px solid ${COLORS.gridline}`, borderBottom: `1px solid ${COLORS.gridline}`,
           display: "flex", alignItems: "center", padding: "0 4px", fontSize: "11px",
-          background: isSel ? COLORS.selBg : (cell.explain?.source === "override" ? COLORS.hardnumberBg : COLORS.cellBg),
-          color: isSel ? COLORS.selFg : (kind === "error" ? COLORS.error : COLORS.cellFg),
+          // Engine '@'-channel paint takes precedence over the hardcoded-cell
+          // style (same order as lib_gui_elements/matrix_grid.py: engine_fill > fmt).
+          background: isSel ? COLORS.selBg : (cell.fill ?? (markHard ? COLORS.hardnumberBg : COLORS.cellBg)),
+          color: isSel ? COLORS.selFg : (cell.font_color ?? (kind === "error" ? COLORS.error : COLORS.cellFg)),
           overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", cursor: "pointer",
           justifyContent: kind === "text" || kind === "error" ? "flex-start" : "flex-end",
         } }, [disp]) as HTMLElement;
 
         // Hardnumber triangle
-        if (cell.explain?.source === "override") {
+        if (markHard) {
           const tri = el("div", { style: {
             position: "absolute", top: "0", right: "0", width: "0", height: "0",
             borderTop: `6px solid ${COLORS.hardnumberTri}`,
@@ -1471,11 +1480,17 @@ export class MultilevelGrid {
   private rerenderGrid() {
     const mount = this.gridMount;
     if (!mount) return;
+    // The scroll element is rebuilt on every render — carry scroll position
+    // over so an unrequested jump back to the top-left never happens.
+    const oldScroll = mount.querySelector(".ml-grid-scroll") as HTMLElement | null;
+    const sl = oldScroll?.scrollLeft ?? 0, stp = oldScroll?.scrollTop ?? 0;
     clear(mount);
     const v = this.store.state.activeView;
     if (!v || !v.cells) return;
     this.buildGrid(v);
     this.renderGrid(mount);
+    const ns = mount.querySelector(".ml-grid-scroll") as HTMLElement | null;
+    if (ns) { ns.scrollLeft = sl; ns.scrollTop = stp; }
   }
 
   // ---- Collapse/Expand ----
@@ -2289,7 +2304,7 @@ export class MultilevelGrid {
 
   /** Give the keyboard to the grid, e.g. after Enter or Escape in the rule bar (as in Qt). */
   focusGrid() {
-    (this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement | null)?.focus();
+    (this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement | null)?.focus({ preventScroll: true });
   }
 
   private cancelEdit() {
@@ -2301,7 +2316,7 @@ export class MultilevelGrid {
     this.editorCell = null;
     input.remove();
     // Native _hide_editor(restore_grid_focus=True)
-    (this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement | null)?.focus();
+    (this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement | null)?.focus({ preventScroll: true });
   }
 
   // ---- Header editing (native: inline QLineEdit over header) ----
@@ -2730,8 +2745,8 @@ export class MultilevelGrid {
     // Grouping is outside the MVP preview: its items are shown disabled, not hidden.
     const groupBand = this.findGroupBandAt(e.clientX, e.clientY);
     if (groupBand) {
-      addItem("Add Aggregate Item…", () => this.addAggregateItem(groupBand.axis, groupBand.path), false, NOT_IN_MVP_TITLE);
-      addItem("Ungroup This Group", () => this.ungroupGroup(groupBand.axis, groupBand.path), false, NOT_IN_MVP_TITLE);
+      addItem("Add Aggregate Item…", () => this.addAggregateItem(groupBand.axis, groupBand.path));
+      addItem("Ungroup This Group", () => this.ungroupGroup(groupBand.axis, groupBand.path));
       addSep();
     }
 
@@ -2740,9 +2755,9 @@ export class MultilevelGrid {
       const dimIds = ax === "row" ? v.rowDimIds : v.colDimIds;
       if (!dimIds.length) return;
 
-      addItem(`Add Group…${selSuffix}`, () => this.addGroupForAxis(ax), false, NOT_IN_MVP_TITLE);
-      addItem(`Move Selection To Group…${selSuffix}`, () => this.moveToGroup(ax), false, NOT_IN_MVP_TITLE);
-      addItem(`Ungroup Selection${selSuffix}`, () => this.ungroupItems(ax), false, NOT_IN_MVP_TITLE);
+      addItem(`Add Group…${selSuffix}`, () => this.addGroupForAxis(ax));
+      addItem(`Move Selection To Group…${selSuffix}`, () => this.moveToGroup(ax));
+      addItem(`Ungroup Selection${selSuffix}`, () => this.ungroupItems(ax));
       addSep();
       addItem("Insert Before", () => this.insertRelative(ax, false));
       addItem("Insert After", () => this.insertRelative(ax, true));
@@ -2783,9 +2798,9 @@ export class MultilevelGrid {
 
       if (hasRow) {
         addSubmenu("Row", [
-          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("row"), enabled: false, title: NOT_IN_MVP_TITLE },
-          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("row"), enabled: false, title: NOT_IN_MVP_TITLE },
-          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("row"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("row") },
+          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("row") },
+          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("row") },
           { label: "", fn: () => {}, enabled: false },
           { label: "Insert Before", fn: () => this.insertRelative("row", false) },
           { label: "Insert After", fn: () => this.insertRelative("row", true) },
@@ -2793,9 +2808,9 @@ export class MultilevelGrid {
       }
       if (hasCol) {
         addSubmenu("Column", [
-          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("col"), enabled: false, title: NOT_IN_MVP_TITLE },
-          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("col"), enabled: false, title: NOT_IN_MVP_TITLE },
-          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("col"), enabled: false, title: NOT_IN_MVP_TITLE },
+          { label: `Add Group…${selSuffix}`, fn: () => this.addGroupForAxis("col") },
+          { label: `Move Selection To Group…${selSuffix}`, fn: () => this.moveToGroup("col") },
+          { label: `Ungroup Selection${selSuffix}`, fn: () => this.ungroupItems("col") },
           { label: "", fn: () => {}, enabled: false },
           { label: "Insert Before", fn: () => this.insertRelative("col", false) },
           { label: "Insert After", fn: () => this.insertRelative("col", true) },
@@ -3088,34 +3103,53 @@ export class MultilevelGrid {
     }
     const label = await inputDialog("Add Group", "", "Group name");
     if (!label || !label.trim()) return;
-    console.log("[addGroupForAxis] creating group", { dimId, label: label.trim() });
-    try {
-      const r = await this.store.api.createGroup(dimId, label.trim());
-      console.log("[addGroupForAxis] group created:", r);
-      const groupNodeId = typeof r === "string" ? r : (r?.data?.id || r?.data?.group_node_id || r?.id);
-      this.store.invalidateDimCache(dimId);
 
-      // If items are selected, move them into the new group so it appears in the grid.
-      const sel = axis === "row" ? this.selRow : this.selCol;
-      const entries = axis === "row" ? this.rows : this.cols;
-      const selEntry = entries[sel];
-      const itemIds: string[] = [];
-      if (selEntry?.item_id) {
-        if (this.selMode === "row" || this.selMode === "col") {
-          // Multi-select: gather all selected items on this axis
-          const idxs = this.selIndices.size ? [...this.selIndices] : [sel];
-          for (const i of idxs) {
-            const e = entries[i];
-            if (e?.item_id) itemIds.push(e.item_id);
-          }
-        } else {
-          itemIds.push(selEntry.item_id);
+    // Qt parity: validate against existing groups and item names.
+    await this.store.ensureDimCache([dimId]);
+    const dim = this.store.dimCache.get(dimId);
+    const existingGroups = dim?.outline ? this.collectGroups(dim.outline) : [];
+    const cleanName = label.trim().toLowerCase();
+    for (const g of existingGroups) {
+      if (g.label.toLowerCase() === cleanName) {
+        await alertDialog("Duplicate Group Name", `A group named '${label.trim()}' already exists in this dimension.`);
+        return;
+      }
+    }
+    for (const it of dim?.items || []) {
+      if (it.name.trim().toLowerCase() === cleanName) {
+        await alertDialog("Name Conflict", `The name '${label.trim()}' is already used by an item in this dimension.`);
+        return;
+      }
+    }
+
+    // Qt parity: when groups exist, ask where to place the new group.
+    let parentGroupId: string | undefined;
+    if (existingGroups.length) {
+      const chosen = await pickDialog("Add inside:", ["(root)", ...existingGroups.map((g) => g.label)]);
+      if (!chosen) return;
+      if (chosen !== "(root)") parentGroupId = existingGroups.find((g) => g.label === chosen)?.node_id;
+    }
+
+    // Collect selected item IDs — they are attached as children in the same
+    // create_group call (the engine garbage-collects empty groups, so a
+    // separate move_items_to_group would target a deleted node).
+    const sel = axis === "row" ? this.selRow : this.selCol;
+    const entries = axis === "row" ? this.rows : this.cols;
+    const selEntry = entries[sel];
+    const itemIds: string[] = [];
+    if (selEntry?.item_id) {
+      if (this.selMode === axis) {
+        const idxs = this.selIndices.size ? [...this.selIndices] : [sel];
+        for (const i of idxs) {
+          const e = entries[i];
+          if (e?.item_id) itemIds.push(e.item_id);
         }
+      } else {
+        itemIds.push(selEntry.item_id);
       }
-      if (itemIds.length && groupNodeId) {
-        await this.store.api.moveItemsToGroup(dimId, itemIds, groupNodeId);
-      }
-
+    }
+    try {
+      await this.store.api.createGroup(dimId, label.trim(), parentGroupId, itemIds.length ? itemIds : undefined);
       this.store.markDirty();
       this.store.invalidateDimCache(dimId);
       await this.store.loadView(v.viewId);
