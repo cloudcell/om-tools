@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import * as http from "http";
 import * as fs from "fs";
 import * as path from "path";
+import { execFile, spawnSync } from "child_process";
 import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString } from "../src/engineClient";
 
 /** Bridge server — the future browser deployment piece.
@@ -13,9 +14,12 @@ import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString } from
  *
  *  Run: node dist/bridge.js [--endpoint tcp://127.0.0.1:17391] [--port 17392] [--dir <folder>]
  *
- *  A browser has no API that returns a file path, so the webview asks for workspace paths in a text
- *  field (`nativeFileDialogs: false`). The runtime resolves relative paths against its own cwd (the
- *  om-core clone), so the bridge makes them absolute against `--dir` (default: the bridge's cwd).
+ *  A browser has no API that returns a file path, so the bridge shows the platform's
+ *  native file chooser itself (`pickFile` → zenity/kdialog/osascript/PowerShell) and
+ *  returns the picked absolute path to the runtime, which reads/writes the file.
+ *  If no chooser is available (headless), it advertises `serverFileBrowse` and the
+ *  webview falls back to an `fsList`-backed dialog. Relative paths resolve against
+ *  `--dir` (default: the bridge's cwd).
  */
 
 interface HostRequest { type: "request"; id: string; method: string; params?: Record<string, any> }
@@ -30,7 +34,71 @@ const port = process.argv.includes("--port") ? parseInt(process.argv[process.arg
 const endpoint = defaultEndpoint();
 const distDir = __dirname; // dist/ contains webview.js, webview.css, index.html
 const defaultDir = path.resolve(process.argv.includes("--dir") ? process.argv[process.argv.indexOf("--dir") + 1] : process.cwd());
-const config = () => ({ showSystemElements: false, endpoint: endpointToString(endpoint), nativeFileDialogs: false, defaultDir });
+
+/** Native file chooser. A browser can't show an OS dialog for paths, but the bridge
+ *  is a local process: it spawns the platform chooser (zenity/kdialog/osascript/
+ *  PowerShell) and returns the picked path. Falls back to `serverFileBrowse` when
+ *  no chooser exists (e.g. headless host). */
+type PickerMode = "open" | "save";
+interface NativePicker { cmd: string; args: (mode: PickerMode, start: string, title: string) => string[] }
+
+const PICKERS: Record<string, NativePicker> = {
+  zenity: {
+    cmd: "zenity",
+    args: (mode, start, title) => [
+      "--file-selection", `--title=${title}`, `--filename=${start}`,
+      "--file-filter=Workspace files (*.json) | *.json",
+      ...(mode === "save" ? ["--save", "--confirm-overwrite"] : []),
+    ],
+  },
+  kdialog: {
+    cmd: "kdialog",
+    args: (mode, start, title) => [
+      mode === "save" ? "--getsavefilename" : "--getopenfilename", start, "Workspace files (*.json)",
+      "--title", title,
+    ],
+  },
+  osascript: {
+    cmd: "osascript",
+    args: (mode, start, title) => [
+      "-e", mode === "save"
+        ? `POSIX path of (choose file name with prompt "${title}" default location POSIX file "${start}")`
+        : `POSIX path of (choose file with prompt "${title}" default location POSIX file "${start}")`,
+    ],
+  },
+  powershell: {
+    cmd: "powershell",
+    args: (mode, start, title) => [
+      "-NoProfile", "-Command",
+      `Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.${mode === "save" ? "Save" : "Open"}FileDialog; ` +
+      `$d.Title = '${title}'; $d.Filter = 'Workspace files (*.json)|*.json'; $d.InitialDirectory = '${path.dirname(start)}'; ` +
+      (mode === "save" ? `$d.FileName = '${path.basename(start)}'; ` : "") +
+      `if ($d.ShowDialog() -eq 'OK') { $d.FileName }`,
+    ],
+  },
+};
+
+function detectPicker(): NativePicker | null {
+  if (process.platform === "darwin") return PICKERS.osascript;
+  if (process.platform === "win32") return PICKERS.powershell;
+  for (const name of ["zenity", "kdialog"]) {
+    if (spawnSync(name, ["--version"], { stdio: "ignore" }).status === 0) return PICKERS[name];
+  }
+  return null;
+}
+
+const picker = detectPicker();
+
+function runPicker(mode: PickerMode, start: string, title: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    if (!picker) { resolve(null); return; }
+    execFile(picker.cmd, picker.args(mode, start, title), { timeout: 120000 }, (err, stdout) => {
+      resolve(err ? null : stdout.trim() || null);
+    });
+  });
+}
+
+const config = () => ({ showSystemElements: false, endpoint: endpointToString(endpoint), nativeFileDialogs: !!picker, serverFileBrowse: !picker, defaultDir });
 const FILE_COMMANDS = new Set(["save_workspace", "load_workspace"]);
 
 /** Relative `path` of save_workspace / load_workspace → absolute against defaultDir. */
@@ -49,6 +117,24 @@ async function handle(req: HostRequest, client: EngineClient, sessionId: () => s
     case "subscribe": { client.subscribe(p.topic, (env) => send({ type: "event", envelope: env })); return { ok: true, data: { topic: p.topic } }; }
     case "unsubscribe": { client.unsubscribe(p.topic); return { ok: true }; }
     case "getConfig": return { ok: true, data: config() };
+    case "pickFile": {
+      if (!picker) return { ok: false, error: "no native file dialog available" };
+      const mode: PickerMode = p.mode === "save" ? "save" : "open";
+      const start = typeof p.current === "string" && p.current
+        ? p.current
+        : path.join(defaultDir, mode === "save" && typeof p.defaultName === "string" ? p.defaultName : "");
+      const title = mode === "save" ? "Save Workspace" : "Open Workspace";
+      return { ok: true, data: { path: await runPicker(mode, start, title) } };
+    }
+    case "fsList": {
+      const dir = typeof p.dir === "string" && p.dir ? path.resolve(p.dir) : defaultDir;
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      const names = (e: fs.Dirent) => !e.name.startsWith(".");
+      const dirs = entries.filter((e) => e.isDirectory() && names(e)).map((e) => e.name).sort();
+      const files = entries.filter((e) => e.isFile() && names(e)).map((e) => e.name).sort();
+      const parent = path.dirname(dir);
+      return { ok: true, data: { dir, parent: parent === dir ? null : parent, dirs, files } };
+    }
     case "reconnect": return { ok: true, data: { session_id: sessionId() } };
     case "startRuntime": return { ok: true, data: { endpoint: endpointToString(endpoint) } };
     case "stopRuntime": return { ok: true };

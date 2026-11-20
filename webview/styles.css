@@ -403,6 +403,9 @@ body {
   background: var(--panel-bg);
 }
 .body > .center { background: transparent; }
+/* Docked layout: the center column sits inside .body-row (not a card itself — the
+   panes inside it are), so it must not paint white behind their rounded corners. */
+.body-row > .center { background: transparent; }
 /* Not connected to the engine: what to do about it (text from the host). Hidden while connected. */
 .engine-hint {
   flex: none;
@@ -673,6 +676,15 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .dim-chip:hover { background: var(--chip-hover-bg); border-color: var(--chip-hover-border); }
 .dim-chip:active { cursor: grabbing; }
 .dim-chip.dragging { opacity: 0.4; }
+/* Drop-slot preview: a dashed echo of the dragged chip placed at the insert index. */
+.dim-chip-ghost {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--chip-accent);
+  color: var(--chip-accent);
+  pointer-events: none;
+}
+.dim-chip-ghost .chip-grip, .dim-chip-ghost .chip-seq, .dim-chip-ghost .chip-arrow { color: var(--chip-accent); border-top-color: var(--chip-accent); }
 .dim-chip .chip-grip { color: var(--chip-grip); font-size: 12px; }
 .dim-chip .chip-seq { color: var(--chip-grip); }
 .dim-chip-page { padding-right: 22px; }
@@ -716,6 +728,7 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .pc-topleft.drop-zone.drag-over { border-bottom: 1px dashed var(--drop-border); }
 .pc-bottom.drop-zone.drag-over { border-top: 1px dashed var(--drop-border); }
 .pc-pageright.drop-zone.drag-over { border-left: 1px dashed var(--drop-border); }
+.drop-zone.drag-over .drop-placeholder { display: none; }
 .drop-placeholder {
   color: var(--pv-placeholder);
   font-size: 10px;
@@ -1185,3 +1198,105 @@ table.matrix td.cell.rule-marker::before { content: ""; }
 .context-menu .cm-item:hover { background: var(--selection); }
 .context-menu .cm-sep { height: 1px; background: var(--border); margin: 2px 0; }
 .context-menu .cm-item.disabled { color: var(--text-muted); }
+
+/* ---- Dock zones (Quantrix-style docking, T-dock) ----
+   .body-docked stacks .body-row (left zone | center | right zone) over the bottom zone.
+   A zone is a card: .lower-tabs-style tab strip on top, one active panel in .dock-body.
+   Empty zones hide; collapsed zones keep only their tab strip (28px, --tabbar-height). */
+.body { position: relative; }
+.body-docked { flex-direction: column; }
+.body-row { flex: 1; display: flex; min-height: 0; }
+.dock-zone {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+.dock-zone[hidden] { display: none; }
+.dock-left { width: var(--left-dock-width); max-width: 50%; min-width: 160px; }
+.dock-right { width: var(--right-dock-width); max-width: 50%; min-width: 160px; margin-left: 0; }
+.dock-left.collapsed, .dock-right.collapsed { display: none; }
+.dock-bottom { height: var(--rule-panel-height); flex-shrink: 0; }
+.dock-bottom.collapsed { height: var(--tabbar-height); flex-shrink: 0; }
+.dock-bottom.collapsed.multi .dock-body { display: none; }
+.dock-bottom.collapsed.solo .dock-content, .dock-bottom.collapsed.solo .lower-content { display: none; }
+.dock-bottom.collapsed .dock-tabs { border-bottom: none; cursor: row-resize; }
+.dock-bottom.collapsed .dock-tab.active { border-bottom-color: transparent; font-weight: normal; color: var(--text-muted); }
+/* A solo zone renders no zone strip — the panel's own caption is the drag handle, so
+   a single panel costs no extra row of chrome. Multi zones show the strip (it is how
+   you switch members) and hide each member's redundant caption. */
+.dock-tabs[hidden] { display: none; }
+.dock-body { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: auto; }
+.dock-body > .dock { flex: 1; min-height: 0; border-bottom: none; }
+.dock-zone.multi .dock-body > .dock > .dock-header { display: none; }
+.dock-body > .rule-panel { flex: 1; height: auto; max-height: none; min-height: 0; border: none; border-radius: 0; }
+/* Solo-zone drag handles: the tool panel's own .dock-header or the Rule Panel's own
+   .lower-tabs section strip (class added by DockController.attachHandles). */
+.dock-handle { cursor: grab; touch-action: none; }
+.dock-handle:active { cursor: grabbing; }
+/* Drag: ghost follows the cursor, the target zone gets an outline, and every empty zone
+   shows an edge strip as its drop target (the zone itself is hidden, so it cannot be hit). */
+.dock-ghost {
+  position: fixed; z-index: 5000; padding: 2px 8px;
+  font-size: 12px; color: var(--text);
+  background: var(--popup-bg); border: 1px solid var(--accent); border-radius: 4px;
+  pointer-events: none;
+}
+.dock-zone.dock-target { outline: 2px solid var(--accent); outline-offset: -2px; }
+.dock-edge {
+  position: absolute; z-index: 60;
+  background: rgba(42, 118, 210, 0.15);
+  border: 1px dashed var(--accent); border-radius: 4px;
+}
+.dock-edge.hover { background: rgba(42, 118, 210, 0.38); border-style: solid; }
+.dock-edge-left { left: 0; top: 0; bottom: 0; width: 28px; }
+.dock-edge-right { right: 0; top: 0; bottom: 0; width: 28px; }
+.dock-edge-bottom { left: 0; right: 0; bottom: 0; height: 28px; }
+body.dock-dragging, body.dock-dragging * { cursor: grabbing !important; user-select: none !important; }
+.dock-tab { touch-action: none; }
+.dock-tab { cursor: grab; }
+.dock-tab:active { cursor: grabbing; }
+
+/* ---- Aggregate view panes (Quantrix editor groups) ----
+   .view-area holds a split tree of .va-group panes: each pane is one unit —
+   view tab strip + grid + its own rules subpane behind a separator. */
+.view-area { flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--page-bg); }
+.va-split { display: flex; flex: 1 1 0; min-height: 0; min-width: 0; }
+.va-split-x { flex-direction: row; }
+.va-split-y { flex-direction: column; }
+.va-group {
+  position: relative;
+  display: flex; flex-direction: column;
+  flex: 1 1 0; min-width: 0; min-height: 0;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+.va-group.focused { border-color: var(--accent); }
+.va-group > .center { flex: 1; min-height: 0; border: none; border-radius: 0; }
+.va-rules { flex: none; }
+.va-rules-hide { margin-left: auto; }
+/* Sashes between sibling panes (split sizes are session state). Invisible gap like
+   .splitter — the same page background the rounded pane corners rest on. */
+.va-divider { flex: none; background: transparent; }
+.va-divider-x { width: 5px; cursor: col-resize; }
+.va-divider-y { height: 5px; cursor: row-resize; }
+.va-divider-x:hover { background: linear-gradient(to right, transparent calc(50% - 1px), var(--accent) calc(50% - 1px), var(--accent) calc(50% + 1px), transparent calc(50% + 1px)); }
+.va-divider-y:hover { background: linear-gradient(to bottom, transparent calc(50% - 1px), var(--accent) calc(50% - 1px), var(--accent) calc(50% + 1px), transparent calc(50% + 1px)); }
+/* View-tab drag-out: each pane gets five drop cells — edges split it, center merges. */
+.va-drop { position: absolute; inset: 0; z-index: 80; pointer-events: none; }
+.va-target { position: absolute; pointer-events: auto; background: rgba(42, 118, 210, 0.10); }
+.va-target.hover { background: rgba(42, 118, 210, 0.38); outline: 1px solid var(--accent); outline-offset: -1px; }
+.va-t-left { left: 0; top: 0; bottom: 0; width: 25%; }
+.va-t-right { right: 0; top: 0; bottom: 0; width: 25%; }
+.va-t-top { left: 0; right: 0; top: 0; height: 25%; }
+.va-t-bottom { left: 0; right: 0; bottom: 0; height: 25%; }
+.va-t-center { left: 25%; right: 25%; top: 25%; bottom: 25%; }
+
+/* ── Server-side file browser dialog (bridge mode) ─────────────── */
+.browse-item:hover { background: var(--hover-bg); }

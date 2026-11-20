@@ -97,9 +97,9 @@ export class Splitter {
     };
     const finish = (cancel: boolean) => {
       if (frame) { cancelAnimationFrame(frame); frame = 0; }
-      handle.removeEventListener("pointermove", onMove);
-      handle.removeEventListener("pointerup", onUp);
-      handle.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener("pointercancel", onCancel, true);
       window.removeEventListener("keydown", onEsc, true);
       try { handle.releasePointerCapture(e.pointerId); } catch { /* already released */ }
       this.el.classList.remove("dragging");
@@ -118,10 +118,12 @@ export class Splitter {
       finish(true);
     };
 
-    handle.setPointerCapture(e.pointerId);
-    handle.addEventListener("pointermove", onMove);
-    handle.addEventListener("pointerup", onUp);
-    handle.addEventListener("pointercancel", onCancel);
+    // Pointer capture is best-effort (it can throw in webviews); tracking on window
+    // keeps the drag alive even when capture fails or the pointer leaves the handle.
+    try { handle.setPointerCapture(e.pointerId); } catch { /* capture unavailable */ }
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener("pointercancel", onCancel, true);
     window.addEventListener("keydown", onEsc, true);
     this.el.classList.add("dragging");
     document.body.classList.add(`splitter-dragging-${this.o.axis}`);

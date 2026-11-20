@@ -2,7 +2,7 @@
  *  Kept transport-agnostic so the same webview bundle can run in a browser
  *  later (the browser transport would be a WebSocket instead of postMessage). */
 
-export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "setTitle" | "saveUiState";
+export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "fsList" | "setTitle" | "saveUiState";
 
 export interface HostRequest {
   type: "request";
@@ -55,8 +55,20 @@ export interface AppConfig {
   endpoint: string;
   /** true: the host shows native Open/Save dialogs (`pickFile`); false: the webview asks for a path in a text field. */
   nativeFileDialogs?: boolean;
+  /** true: the host answers `fsList` — the webview offers a server-side file-browser
+   *  dialog for Open/Save (bridge mode: the runtime needs a real path, which a
+   *  browser file input cannot return). */
+  serverFileBrowse?: boolean;
   /** Absolute folder for default file paths. In the bridge, relative paths for save/load resolve against it. */
   defaultDir?: string;
+}
+
+/** `fsList` response: directory listing for the webview's server-side file browser. */
+export interface FsListResult {
+  dir: string;
+  parent: string | null;
+  dirs: string[];
+  files: string[];
 }
 
 /** `pickFile` params. The runtime reads and writes workspace files itself, by path, so the UI only needs an
@@ -69,13 +81,52 @@ export interface PickFileParams {
   defaultName?: string;
 }
 
-/** Panel sizes the webview remembers (T-045). Kept by the host in `globalState` (VS Code) or in
- *  `localStorage` (browser). Every field is optional: a missing or invalid one falls back to the default. */
+/** Dockable tool-window ids. `"rules"` is the bottom Rule Panel; the others match the
+ *  `dockVisible` keys in AppState. */
+export type DockPanelId = "browser" | "info" | "format" | "perf" | "timeline" | "rules";
+
+/** Edge dock zones (Quantrix-style): panels tab-stack inside a zone, one visible at a time. */
+export type DockZoneId = "left" | "right" | "bottom";
+
+export interface DockZoneState {
+  /** Visible panels stacked in this zone; order is the tab order. */
+  panels: DockPanelId[];
+  /** The tab showing — one of `panels`, or null when the zone is empty. */
+  active: DockPanelId | null;
+}
+
+/** Which panels sit in which edge zone, and where a hidden panel goes back to (T-dock). */
+export interface DockLayout {
+  left: DockZoneState;
+  right: DockZoneState;
+  bottom: DockZoneState;
+  /** Last zone a hidden panel lived in — where it re-docks when shown again. */
+  lastZone: Record<DockPanelId, DockZoneId>;
+}
+
+/** Default zone membership mirrors the default panel visibility: only Model Browser and the
+ *  Rule Panel show on first run (info/format/perf/timeline stay in `lastZone` so they re-dock
+ *  in their Quantrix home when enabled). */
+export const DEFAULT_DOCK: DockLayout = {
+  left: { panels: ["browser"], active: "browser" },
+  right: { panels: [], active: null },
+  // The bottom zone starts empty: rules is a subpane of each view group (aggregate
+  // panes), not a dock member. lastZone keeps a slot so persisted layouts stay valid.
+  bottom: { panels: [], active: null },
+  lastZone: { browser: "left", info: "left", format: "left", perf: "right", timeline: "right", rules: "bottom" },
+};
+
+/** Panel sizes the webview remembers (T-045) plus the dock-zone layout (T-dock). Kept by the host
+ *  in `globalState` (VS Code) or in `localStorage` (browser). Every field is optional: a missing or
+ *  invalid one falls back to the default. */
 export interface UiLayout {
   leftDockWidth?: number;
   leftCollapsed?: boolean;
+  rightDockWidth?: number;
+  rightCollapsed?: boolean;
   rulePanelHeight?: number;
   rulePanelCollapsed?: boolean;
+  dock?: DockLayout;
 }
 
 /** Colour theme (T-039). Chosen by hand with the switch in the menu bar; dark when nothing is saved. */
@@ -90,6 +141,11 @@ export interface UiOptions {
   aggregateSign?: string;
   /** Show the AI Assistant panel toggle (om-tools-web). */
   assistant?: boolean;
+  /** Quantrix-style dockable panels: edge zones with tabbed tool windows, drag between zones.
+   *  Off = the fixed legacy column layout. */
+  docking?: boolean;
+  /** Experimental panels: Performance Watch and Timeline in the View menu. Off by default. */
+  advancedPanels?: boolean;
 }
 
 /** What a fresh install uses — shown next to each control in the Options dialog. */
@@ -97,6 +153,8 @@ export const DEFAULT_OPTIONS: Required<UiOptions> = {
   markHardvalues: true,
   aggregateSign: "Σ",
   assistant: true,
+  docking: true,
+  advancedPanels: false,
 };
 
 /** Aggregate-sign choices offered in Tools → Options. The first entry is the default. */

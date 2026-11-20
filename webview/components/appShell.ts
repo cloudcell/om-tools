@@ -1,5 +1,5 @@
 import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText, DEFAULT_LAYOUT } from "../state";
-import type { UiLayout, UiTheme } from "../../shared/messages";
+import { DEFAULT_DOCK, type DockLayout, type DockPanelId, type DockZoneId, type UiLayout, type UiTheme } from "../../shared/messages";
 import { applyTheme, currentTheme } from "../theme";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, type MaterialIcon } from "../menuIcons";
@@ -10,10 +10,13 @@ import { StatusBar } from "./statusBar";
 import { InfoToolbox } from "./infoToolbox";
 import { FormatToolbox } from "./formatToolbox";
 import { PerformanceWatch } from "./performanceWatch";
-import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog, optionsDialog } from "./dialogs";
+import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog, optionsDialog, browseDialog } from "./dialogs";
 import { Timeline } from "./timeline";
 import { ModelActions } from "./modelActions";
 import { Splitter } from "./splitter";
+import { DockController, DOCK_PANEL_TITLES, DOCK_ZONES, type DockPanelRef } from "./dockZone";
+import { ViewArea } from "./viewGroups";
+import { DockDrag } from "./dockDrag";
 
 /** `icon` is inline SVG markup; a `checked` item shows a check mark in the icon column instead. */
 type DockName = keyof AppState["dockVisible"];
@@ -32,18 +35,54 @@ const LEFT_MIN = 160;
 const BOTTOM_MIN = 60;
 const GRID_MIN_HEIGHT = 120;
 
+const DOCK_PANEL_IDS: DockPanelId[] = ["browser", "info", "format", "perf", "timeline", "rules"];
+const DOCK_ZONE_IDS: DockZoneId[] = ["left", "right", "bottom"];
+
 /** Saved layout from storage: keep only sane values, the rest falls back to DEFAULT_LAYOUT. */
 function sanitizeLayout(raw: unknown): Partial<Required<UiLayout>> {
   const out: Partial<Required<UiLayout>> = {};
   if (!raw || typeof raw !== "object") return out;
   const r = raw as Record<string, unknown>;
   const px = (v: unknown, min: number) => typeof v === "number" && Number.isFinite(v) && v >= min && v < 10000 ? Math.round(v) : undefined;
-  const w = px(r.leftDockWidth, LEFT_MIN), h = px(r.rulePanelHeight, BOTTOM_MIN);
+  const w = px(r.leftDockWidth, LEFT_MIN), rw = px(r.rightDockWidth, LEFT_MIN), h = px(r.rulePanelHeight, BOTTOM_MIN);
   if (w !== undefined) out.leftDockWidth = w;
+  if (rw !== undefined) out.rightDockWidth = rw;
   if (h !== undefined) out.rulePanelHeight = h;
   if (typeof r.leftCollapsed === "boolean") out.leftCollapsed = r.leftCollapsed;
+  if (typeof r.rightCollapsed === "boolean") out.rightCollapsed = r.rightCollapsed;
   if (typeof r.rulePanelCollapsed === "boolean") out.rulePanelCollapsed = r.rulePanelCollapsed;
+  const dock = sanitizeDock(r.dock);
+  if (dock) out.dock = dock;
   return out;
+}
+
+/** Stored `layout.dock` is user-corruptible: validate field-by-field, drop what is broken,
+ *  dedupe panels that ended up in two zones. Returns null when nothing usable remains. */
+function sanitizeDock(raw: unknown): DockLayout | null {
+  if (!raw || typeof raw !== "object") return null;
+  const d = raw as Record<string, unknown>;
+  const seen = new Set<DockPanelId>();
+  const zone = (z: unknown): { panels: DockPanelId[]; active: DockPanelId | null } | null => {
+    if (!z || typeof z !== "object") return null;
+    const p = (z as Record<string, unknown>).panels;
+    if (!Array.isArray(p)) return null;
+    // "rules" is filtered out: it is no longer a dock-zone member (aggregate panes own it).
+    const panels = p.filter((x): x is DockPanelId => x !== "rules" && DOCK_PANEL_IDS.includes(x as DockPanelId) && !seen.has(x as DockPanelId));
+    panels.forEach((x) => seen.add(x));
+    const a = (z as Record<string, unknown>).active;
+    const active = panels.includes(a as DockPanelId) ? (a as DockPanelId) : null;
+    return { panels, active };
+  };
+  const left = zone(d.left), right = zone(d.right), bottom = zone(d.bottom);
+  if (!left || !right || !bottom) return null;
+  const lastZone = { ...DEFAULT_DOCK.lastZone };
+  if (d.lastZone && typeof d.lastZone === "object") {
+    for (const p of DOCK_PANEL_IDS) {
+      const z = (d.lastZone as Record<string, unknown>)[p];
+      if (DOCK_ZONE_IDS.includes(z as DockZoneId)) lastZone[p] = z as DockZoneId;
+    }
+  }
+  return { left, right, bottom, lastZone };
 }
 
 /** Menu items for features outside the MVP preview: greyed out, not hidden. */
@@ -55,10 +94,13 @@ const NOT_IN_MVP: Pick<MenuItem, "disabled" | "title"> = { disabled: true, title
  *  bottom rule panel; status bar. Mirrors lib_gui/app.py MainWindow. */
 export class AppShell {
   constructor(private store: Store) { this.actions = new ModelActions(store); }
-  private perf = new PerformanceWatch(this.store);
+  private perf: PerformanceWatch | null = null;
   private matrixGrid = new MultilevelGrid(this.store);
+  private viewArea: ViewArea | null = null;
   private ruleBarInput: HTMLInputElement | null = null;
   private actions: ModelActions;
+  private bodyEl: HTMLElement | null = null;
+  private bodyDispose: (() => void) | null = null;
 
   render(): HTMLElement {
     const app = el("div", { id: "app" });
@@ -68,20 +110,67 @@ export class AppShell {
     mb.insertBefore(this.toolbar(), mb.querySelector(".spacer"));
     app.appendChild(mb);
     app.appendChild(this.ruleBar());
-    const body = el("div", { class: "body" });
+    this.bodyEl = el("div", { class: "body" });
+    app.appendChild(this.bodyEl);
+    app.appendChild(new StatusBar(this.store).render());
 
-    const docks: Record<DockName, HTMLElement> = {
+    // Saved layout first: panel renders already check whether it is collapsed.
+    const layout = this.store.state.layout;
+    Object.assign(layout, sanitizeLayout(this.store.api.loadUiState()?.layout));
+
+    this.buildBody();
+    // Tools → Options → "Dockable panels" swaps the body between zone and legacy layout.
+    // The subscriber is shell-scoped (not captured): it outlives body rebuilds.
+    let docked = this.store.state.options.docking;
+    this.store.subscribe(() => {
+      if (this.store.state.options.docking !== docked) { docked = this.store.state.options.docking; this.buildBody(); }
+    });
+
+    this.store.subscribe(() => this.updateTitle());
+    this.updateTitle();
+    return app;
+  }
+
+  /** Build the .body children for the current layout mode. Components subscribe inside render(),
+   *  so the whole body is built inside captureSubscriptions() — tearing it down releases every
+   *  listener it registered instead of leaking them onto detached DOM. */
+  private buildBody() {
+    this.bodyDispose?.();
+    this.perf?.dispose();
+    this.perf = null;
+    const docked = this.store.state.options.docking;
+    this.bodyEl!.classList.toggle("body-docked", docked);
+    const { result, dispose } = this.store.captureSubscriptions(() =>
+      docked ? this.buildDockedBody() : this.buildLegacyBody());
+    this.bodyDispose = dispose;
+    this.bodyEl!.replaceChildren(...result);
+  }
+
+  /** Not connected: say what to do about it, in the host's words (VS Code: a button in the side panel). Hidden while connected. */
+  private buildEngineHint(): HTMLElement {
+    const hint = el("div", { class: "engine-hint", role: "status" });
+    const syncHint = () => {
+      const s = this.store.state;
+      hint.textContent = s.statusHint;
+      hint.hidden = s.connected || !s.statusHint;
+    };
+    this.store.subscribe(syncHint);
+    syncHint();
+    return hint;
+  }
+
+  // ---- Legacy fixed layout (option off): left docks | center | right docks, bottom rule panel ----
+  private buildLegacyBody(): HTMLElement[] {
+    const layout = this.store.state.layout;
+    const saveLayout = () => this.store.saveLayout();
+
+    const docks: Record<Exclude<DockName, "rules">, HTMLElement> = {
       browser: new ModelBrowser(this.store).render(),
       info: new InfoToolbox(this.store).render(),
       format: new FormatToolbox(this.store).render(),
-      perf: this.perf.render(),
+      perf: (this.perf = new PerformanceWatch(this.store)).render(),
       timeline: new Timeline(this.store).render(),
     };
-
-    // Saved panel sizes first: RulePanel's first render already checks whether it is collapsed.
-    const layout = this.store.state.layout;
-    Object.assign(layout, sanitizeLayout(this.store.api.loadUiState()?.layout));
-    const saveLayout = () => this.store.api.updateUiState({ layout: { ...layout } });
 
     const left = el("div", { class: "left-docks" });
     left.append(docks.browser, docks.info, docks.format);
@@ -96,21 +185,22 @@ export class AppShell {
     // ---- Resizable, collapsible left column and bottom panel (T-045) ----
     // Sizes change without notify(): the grid would rebuild on every mouse move. Only the bottom
     // panel's collapse/expand notifies, so RulePanel stops / resumes rendering.
+    const bodyEl = this.bodyEl!;
     const applyLeft = (size: number, collapsed: boolean) => {
       layout.leftDockWidth = size;
       layout.leftCollapsed = collapsed;
-      app.style.setProperty("--left-dock-width", `${size}px`);
+      bodyEl.style.setProperty("--left-dock-width", `${size}px`);
       left.classList.toggle("collapsed", collapsed);
     };
     const applyBottom = (size: number, collapsed: boolean) => {
       const changed = collapsed !== layout.rulePanelCollapsed;
       layout.rulePanelHeight = size;
       layout.rulePanelCollapsed = collapsed;
-      app.style.setProperty("--rule-panel-height", `${size}px`);
+      bodyEl.style.setProperty("--rule-panel-height", `${size}px`);
       rulePanelEl.classList.toggle("collapsed", collapsed);
       if (changed) this.store.notify();
     };
-    const leftMax = () => Math.max(LEFT_MIN, body.clientWidth * 0.5);
+    const leftMax = () => Math.max(LEFT_MIN, bodyEl.clientWidth * 0.5);
     // The splitter is now a 6px gap between two cards (T-039 stage 3), so its height comes off the room for the grid too.
     let bottomSplitEl: HTMLElement | null = null;   // set below: the Splitter constructor already calls get() (and so bottomMax)
     const bottomMax = (): number => Math.max(BOTTOM_MIN, center.clientHeight - GRID_MIN_HEIGHT - (bottomSplitEl ? bottomSplitEl.offsetHeight : 0));
@@ -137,16 +227,8 @@ export class AppShell {
       if (layout.rulePanelCollapsed && !(e.target as HTMLElement).closest(".lower-tab")) bottomSplit.beginDrag(e, tabRow);
     });
 
-    // Not connected: say what to do about it, in the host's words (VS Code: a button in the side panel). Hidden while connected.
-    const hint = el("div", { class: "engine-hint", role: "status" });
-    const syncHint = () => {
-      const s = this.store.state;
-      hint.textContent = s.statusHint;
-      hint.hidden = s.connected || !s.statusHint;
-    };
-    this.store.subscribe(syncHint);
-    syncHint();
-    center.appendChild(hint);
+    center.appendChild(this.buildEngineHint());
+    this.matrixGrid = new MultilevelGrid(this.store);
     center.appendChild(this.matrixGrid.render());
     center.appendChild(bottomSplit.el);
     center.appendChild(rulePanelEl);
@@ -157,7 +239,9 @@ export class AppShell {
     const prevVis = { ...this.store.state.dockVisible };
     const applyDockVisibility = () => {
       const vis = this.store.state.dockVisible;
-      for (const name of Object.keys(docks) as DockName[]) docks[name].hidden = !vis[name];
+      const adv = this.store.state.options.advancedPanels;
+      for (const name of Object.keys(docks) as (keyof typeof docks)[]) docks[name].hidden = !vis[name] || ((name === "perf" || name === "timeline") && !adv);
+      rulePanelEl.hidden = bottomSplit.el.hidden = !vis.rules;
       left.hidden = !(vis.browser || vis.info || vis.format);
       leftSplit.el.hidden = left.hidden;
       right.hidden = !(vis.perf || vis.timeline);
@@ -168,20 +252,153 @@ export class AppShell {
     this.store.subscribe(applyDockVisibility);
     applyDockVisibility();
 
-    body.appendChild(left);
-    body.appendChild(leftSplit.el);
-    body.appendChild(center);
-    body.appendChild(right);
-    app.appendChild(body);
-    app.appendChild(new StatusBar(this.store).render());
-
-    this.store.subscribe(() => this.updateTitle());
-    this.updateTitle();
-
-    return app;
+    return [left, leftSplit.el, center, right];
   }
 
-  dispose() { this.perf.dispose(); }
+  // ---- Quantrix-style docked layout (option on, default): edge zones of tabbed panels ----
+  private buildDockedBody(): HTMLElement[] {
+    const layout = this.store.state.layout;
+    const dock = layout.dock;
+    const saveLayout = () => this.store.saveLayout();
+    const bodyEl = this.bodyEl!;
+
+    // Visibility derives from zone membership: the dock layout is persisted, dockVisible
+    // mirrors it (transient — View menu checkmarks) so an arrangement survives a reload.
+    // "rules" is excepted — it is a subpane of each view group, not a dock-zone member.
+    const members = new Set<DockPanelId>([...dock.left.panels, ...dock.right.panels, ...dock.bottom.panels]);
+    const dv = this.store.state.dockVisible;
+    for (const n of Object.keys(dv) as DockName[]) { if (n !== "rules") dv[n] = members.has(n); }
+
+    this.perf = new PerformanceWatch(this.store);
+    const toolRef = (el: HTMLElement, title: string): DockPanelRef =>
+      ({ el, title, handle: el.querySelector(".dock-header") as HTMLElement });
+    const panels: Partial<Record<DockPanelId, DockPanelRef>> = {
+      browser: toolRef(new ModelBrowser(this.store).render(), DOCK_PANEL_TITLES.browser),
+      info: toolRef(new InfoToolbox(this.store).render(), DOCK_PANEL_TITLES.info),
+      format: toolRef(new FormatToolbox(this.store).render(), DOCK_PANEL_TITLES.format),
+      perf: toolRef(this.perf.render(), DOCK_PANEL_TITLES.perf),
+      timeline: toolRef(new Timeline(this.store).render(), DOCK_PANEL_TITLES.timeline),
+    };
+    const ctl = new DockController(this.store, panels);
+    const zones = ctl.zones;
+
+    const center = el("div", { class: "center" });
+    center.appendChild(this.buildEngineHint());
+    // The views area: aggregate panes (tab strip + grid + rules subpane) in a split
+    // tree — view tabs drag out to pane edges to spawn sibling panes.
+    this.viewArea = new ViewArea(this.store);
+    center.appendChild(this.viewArea.render());
+
+    // ---- Zone splitters: same mechanics as the legacy columns; the right one is new ----
+    const applyLeft = (size: number, collapsed: boolean) => {
+      layout.leftDockWidth = size;
+      layout.leftCollapsed = collapsed;
+      bodyEl.style.setProperty("--left-dock-width", `${size}px`);
+      zones.left.el.classList.toggle("collapsed", collapsed);
+    };
+    const applyRight = (size: number, collapsed: boolean) => {
+      layout.rightDockWidth = size;
+      layout.rightCollapsed = collapsed;
+      bodyEl.style.setProperty("--right-dock-width", `${size}px`);
+      zones.right.el.classList.toggle("collapsed", collapsed);
+    };
+    const applyBottom = (size: number, collapsed: boolean) => {
+      const changed = collapsed !== layout.rulePanelCollapsed;
+      layout.rulePanelHeight = size;
+      layout.rulePanelCollapsed = collapsed;
+      bodyEl.style.setProperty("--rule-panel-height", `${size}px`);
+      zones.bottom.el.classList.toggle("collapsed", collapsed);
+      if (changed) this.store.notify();
+    };
+    const sideMax = () => Math.max(LEFT_MIN, bodyEl.clientWidth * 0.5);
+    const row = el("div", { class: "body-row" });
+    let bottomSplitEl: HTMLElement | null = null;
+    const bottomMax = (): number => Math.max(BOTTOM_MIN, center.clientHeight - GRID_MIN_HEIGHT - (bottomSplitEl ? bottomSplitEl.offsetHeight : 0));
+    const leftSplit = new Splitter({
+      axis: "x", grow: 1, min: LEFT_MIN, max: sideMax, defaultSize: DEFAULT_LAYOUT.leftDockWidth,
+      collapsedSize: 8, label: "the left panel",
+      get: () => ({ size: Math.min(layout.leftDockWidth, sideMax()), collapsed: layout.leftCollapsed }),
+      apply: applyLeft, commit: saveLayout,
+    });
+    const rightSplit = new Splitter({
+      axis: "x", grow: -1, min: LEFT_MIN, max: sideMax, defaultSize: DEFAULT_LAYOUT.rightDockWidth,
+      collapsedSize: 8, label: "the right panel",
+      get: () => ({ size: Math.min(layout.rightDockWidth, sideMax()), collapsed: layout.rightCollapsed }),
+      apply: applyRight, commit: saveLayout,
+    });
+    const bottomSplit = new Splitter({
+      axis: "y", grow: -1, min: BOTTOM_MIN, max: bottomMax, defaultSize: DEFAULT_LAYOUT.rulePanelHeight,
+      collapsedSize: 28, label: "the bottom panel",   // collapsed = the zone's own tab strip
+      get: () => ({ size: Math.min(layout.rulePanelHeight, bottomMax()), collapsed: layout.rulePanelCollapsed }),
+      apply: applyBottom, commit: saveLayout,
+    });
+    applyLeft(layout.leftDockWidth, layout.leftCollapsed);
+    applyRight(layout.rightDockWidth, layout.rightCollapsed);
+    bottomSplitEl = bottomSplit.el;
+    applyBottom(layout.rulePanelHeight, layout.rulePanelCollapsed);
+
+    // Collapsed bottom zone shows only its tab strip: a tab click re-opens the zone on that
+    // tab (the activate hook), and the strip's empty part drags like the splitter.
+    ctl.onActivate = (zone) => { if (zone === "bottom" && layout.rulePanelCollapsed) bottomSplit.setCollapsed(false); };
+    zones.bottom.tabsEl.addEventListener("pointerdown", (e) => {
+      if (layout.rulePanelCollapsed && !(e.target as HTMLElement).closest(".lower-tab")) bottomSplit.beginDrag(e, zones.bottom.tabsEl);
+    });
+    // Zone visibility: empty zones (and their splitters) hide so the grid takes the space;
+    // a zone that gains members while collapsed expands.
+    const syncZoneChrome = () => {
+      leftSplit.el.hidden = dock.left.panels.length === 0;
+      rightSplit.el.hidden = dock.right.panels.length === 0;
+      bottomSplit.el.hidden = dock.bottom.panels.length === 0;
+    };
+
+    // Mask experimental panels before the first reconcile — a persisted dock that lists
+    // them must not flash them for a frame while the option is off.
+    if (!this.store.state.options.advancedPanels) { dv.perf = false; dv.timeline = false; }
+    this.store.syncDockMembership();
+
+    // The drag controller must exist before reconcile() — multi-zone tabs are wired there;
+    // panel captions (solo-zone handles) are stable elements, wired once here.
+    ctl.drag = new DockDrag(ctl, bodyEl);
+    ctl.attachHandles();
+    ctl.reconcile();
+    syncZoneChrome();
+
+    // View-menu toggles flip dockVisible; membership follows (hide → lastZone, show → re-dock).
+    // Reconcile only when membership actually changed — a rebuild during a tab drag would
+    // detach the tab and kill its pointer capture.
+    const applyDockVisibility = () => {
+      // Experimental panels have no enabled View-menu path while the option is off —
+      // masking the flag makes membership drop them (they re-dock from lastZone on re-show).
+      if (!this.store.state.options.advancedPanels) { dv.perf = false; dv.timeline = false; }
+      const before = DOCK_ZONE_IDS.map((z) => dock[z].panels.length);
+      if (!this.store.syncDockMembership()) return;
+      ctl.reconcile();
+      syncZoneChrome();
+      DOCK_ZONE_IDS.forEach((z, i) => {
+        if (before[i] === 0 && dock[z].panels.length > 0) {
+          if (z === "left" && layout.leftCollapsed) leftSplit.setCollapsed(false);
+          if (z === "right" && layout.rightCollapsed) rightSplit.setCollapsed(false);
+          if (z === "bottom" && layout.rulePanelCollapsed) bottomSplit.setCollapsed(false);
+        }
+      });
+    };
+    this.store.subscribe(applyDockVisibility);
+
+    // The bottom zone lives inside the center column under the aggregate panes —
+    // tool panels docked at the bottom do not underlap the side zones (Qt-style).
+    center.appendChild(bottomSplit.el);
+    center.appendChild(zones.bottom.el);
+    row.append(zones.left.el, leftSplit.el, center, rightSplit.el, zones.right.el);
+    return [row];
+  }
+
+  dispose() { this.bodyDispose?.(); this.perf?.dispose(); this.perf = null; }
+
+  /** The grid menus/toolbar/keyboard act on: the focused aggregate pane's grid in
+   *  docked mode, the single grid in the legacy fixed layout. */
+  private focusedGrid(): MultilevelGrid | null {
+    return this.store.state.options.docking ? this.viewArea?.focusedGrid() ?? null : this.matrixGrid;
+  }
 
   private lastTitle = "";
   /** Qt `_update_window_title`: `OM Core: *<file>`. In VS Code `document.title` does not reach the editor tab,
@@ -364,8 +581,8 @@ export class AppShell {
       { icon: msym("undo"), label: "Undo" + (s.undoDesc ? ` (${s.undoDesc})` : ""), fn: () => this.store.undo(), disabled: !s.canUndo },
       { icon: msym("redo"), label: "Redo" + (s.redoDesc ? ` (${s.redoDesc})` : ""), fn: () => this.store.redo(), disabled: !s.canRedo },
       { sep: true },
-      { icon: msym("content_copy"), label: "Copy", fn: () => this.matrixGrid.copyToClipboard(), disabled: !s.activeView },
-      { icon: msym("content_paste"), label: "Paste", fn: () => this.matrixGrid.pasteFromClipboard(), disabled: !s.activeView },
+      { icon: msym("content_copy"), label: "Copy", fn: () => this.focusedGrid()?.copyToClipboard(), disabled: !s.activeView },
+      { icon: msym("content_paste"), label: "Paste", fn: () => this.focusedGrid()?.pasteFromClipboard(), disabled: !s.activeView },
       { icon: msym("content_paste_go"), label: "Paste as New Cube…", fn: () => this.pasteAsNewCube(), ...NOT_IN_MVP },
       { sep: true },
       { icon: msym("label"), label: "Convert Selection to Dimension Labels…", fn: () => this.convertSelectionToDimLabels(), ...NOT_IN_MVP },
@@ -402,12 +619,17 @@ export class AppShell {
 
   private viewMenuItems(): MenuItem[] {
     const s = this.store.state;
+    const adv = s.options.advancedPanels;
+    const gated = (item: MenuItem): MenuItem => adv ? item : { ...item, disabled: true, title: "Enable via Tools → Options → Performance & Timeline panels" };
     return [
       { label: "Model Browser", checked: s.dockVisible.browser, fn: () => this.store.toggleDock("browser") },
       { label: "Info Toolbox", checked: s.dockVisible.info, fn: () => this.store.toggleDock("info") },
       { label: "Format Toolbox", checked: s.dockVisible.format, fn: () => this.store.toggleDock("format"), ...NOT_IN_MVP },
-      { label: "Performance Watch", checked: s.dockVisible.perf, fn: () => this.store.toggleDock("perf"), ...NOT_IN_MVP },
-      { label: "Timeline", checked: s.dockVisible.timeline, fn: () => this.store.toggleDock("timeline"), ...NOT_IN_MVP },
+      gated({ label: "Performance Watch", checked: s.dockVisible.perf && adv, fn: () => this.store.toggleDock("perf") }),
+      gated({ label: "Timeline", checked: s.dockVisible.timeline && adv, fn: () => this.store.toggleDock("timeline") }),
+      // Docked: toggles the focused pane's rules subpane. Legacy: hides the fixed panel.
+      { label: "Rule Panel", checked: s.options.docking ? this.store.groupRulesOpen() : s.dockVisible.rules,
+        fn: () => { if (s.options.docking) this.store.toggleGroupRules(); else this.store.toggleDock("rules"); } },
       { sep: true },
       { label: "Toggle System Elements", checked: s.showSystemElements, fn: () => { this.store.state.showSystemElements = !this.store.state.showSystemElements; this.store.notify(); this.store.refreshModel(); } },
       { sep: true },
@@ -420,8 +642,8 @@ export class AppShell {
     const s = this.store.state;
     return [
       { icon: msym("memory"), label: "Calculation Engine", submenu: [
-        { label: "Python", checked: s.engineType === "python", fn: () => this.store.api.setEngine("python").then(() => { this.store.set({ engineType: "python", isRemote: false }); }) },
-        { label: "Remote", checked: s.engineType === "remote", fn: () => this.store.api.setEngine("remote").then(() => { this.store.set({ engineType: "remote", isRemote: true }); }) },
+        { label: "Python (embedded in the runtime)", checked: s.engineType === "python", fn: () => this.store.api.setEngine("python").then(() => { this.store.set({ engineType: "python", isRemote: false }); }) },
+        { label: `Remote — ${s.endpoint || "in-browser"}`, checked: s.engineType === "remote", fn: () => this.store.api.setEngine("remote").then(() => { this.store.set({ engineType: "remote", isRemote: true }); }) },
       ], ...NOT_IN_MVP },
       { sep: true },
       { icon: msym("settings"), label: "Options…", fn: () => this.openOptions() },
@@ -469,8 +691,8 @@ export class AppShell {
     tb.appendChild(undoBtn);
     tb.appendChild(redoBtn);
     tb.appendChild(el("span", { class: "tb-sep" }));
-    const copyBtn = ibtn("content_copy", () => this.matrixGrid.copyToClipboard(), "Copy");
-    const pasteBtn = ibtn("content_paste", () => this.matrixGrid.pasteFromClipboard(), "Paste");
+    const copyBtn = ibtn("content_copy", () => this.focusedGrid()?.copyToClipboard(), "Copy");
+    const pasteBtn = ibtn("content_paste", () => this.focusedGrid()?.pasteFromClipboard(), "Paste");
     tb.appendChild(copyBtn);
     tb.appendChild(pasteBtn);
     tb.appendChild(el("span", { class: "tb-sep" }));
@@ -546,11 +768,11 @@ export class AppShell {
         // As in Qt, Enter and Escape hand the keyboard back to the grid. Enter on unchanged text
         // does nothing: re-applying "=expr" shown for a cube rule would turn it into a cell rule.
         if (text && text !== shown.trim()) this.store.applyInput(text);
-        this.matrixGrid.focusGrid();
+        this.focusedGrid()?.focusGrid();
       } else if (e.key === "Escape") {
         e.preventDefault();
         input.value = shown;
-        this.matrixGrid.focusGrid();
+        this.focusedGrid()?.focusGrid();
       }
     });
     input.addEventListener("blur", sync);
@@ -607,6 +829,16 @@ export class AppShell {
     if (s.nativeFileDialogs) {
       try { path = (await this.store.api.pickFile({ mode, current: s.filePath, defaultName })).path; }
       catch (e: any) { await alertDialog(mode === "save" ? "Save failed" : "Load failed", e?.message || String(e)); return null; }
+    } else if (s.serverFileBrowse) {
+      const fileDir = s.filePath ? s.filePath.replace(/[\\/][^\\/]*$/, "") : "";
+      try {
+        path = await browseDialog({
+          title: mode === "save" ? "Save Workspace" : "Open Workspace",
+          api: this.store.api, mode,
+          startDir: fileDir || s.defaultDir || "/",
+          defaultName: mode === "save" ? defaultName : undefined,
+        });
+      } catch (e: any) { await alertDialog(mode === "save" ? "Save failed" : "Load failed", e?.message || String(e)); return null; }
     } else {
       const dir = s.defaultDir.replace(/[\\/]+$/, "");
       const sep = dir.includes("\\") ? "\\" : "/";

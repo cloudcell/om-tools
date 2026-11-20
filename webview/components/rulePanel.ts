@@ -8,9 +8,17 @@ import { RULE_CHANNELS, computeRuleInfos, toggleChannel, type RuleInfo } from ".
 /** RulePanel — bottom panel with 3 tabs: Rules, Calculation Flow, Circular References.
  *  Mirrors lib_gui/rule_panel.py + lib_gui/calculation_flow_panel.py + lib_gui/circular_refs_panel.py. */
 export class RulePanel {
-  constructor(private store: Store) {}
+  constructor(private store: Store, private gid?: string) {}
   /** Set by AppShell: open the panel when it is collapsed to its tab row and a tab is clicked. */
   onExpand?: () => void;
+
+  /** Collapse state is per-pane in aggregate groups, the shared layout field in the
+   *  legacy fixed layout (unscoped use). */
+  private isCollapsed(): boolean {
+    return this.gid !== undefined
+      ? this.store.group(this.gid)?.rulesCollapsed ?? false
+      : this.store.state.layout.rulePanelCollapsed;
+  }
   private activeTab = "rules";
   private activeCubeId: string | null = null;
   /** Channel pills in use (Qt `ChannelFilterBar.selected_channels`); empty = all channels. */
@@ -31,7 +39,7 @@ export class RulePanel {
       }, [label]);
       if (!off) t.addEventListener("click", () => {
         this.activeTab = id;
-        if (this.store.state.layout.rulePanelCollapsed) this.onExpand?.();
+        if (this.isCollapsed()) this.onExpand?.();
         this.refresh(panel);
       });
       tabs.appendChild(t);
@@ -50,8 +58,9 @@ export class RulePanel {
     if (!content) return;
     clear(content);
     // update tab active states
-    const collapsed = this.store.state.layout.rulePanelCollapsed;
+    const collapsed = this.isCollapsed();
     panel.querySelectorAll(".lower-tab").forEach((t, i) => {
+      if (!tabNames[i]) return;
       t.classList.toggle("active", tabNames[i][0] === this.activeTab);
       if (!disabledTabs.has(tabNames[i][0])) (t as HTMLElement).title = collapsed ? `Show ${tabNames[i][1]}` : tabNames[i][1];
     });
@@ -65,7 +74,7 @@ export class RulePanel {
 
   // ---- Rules tab ----
   private renderRules(content: HTMLElement) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     this.activeCubeId = v?.cubeId || null;
     // Qt rule_panel.rebuild: rules in rule_order (evaluation order), then any the order does not list
     const order = this.store.state.ruleOrder;
@@ -269,7 +278,7 @@ export class RulePanel {
 
   private renderCalcFlow(content: HTMLElement) {
     const panel = content.parentElement as HTMLElement;
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     const header = el("div", { class: "calc-flow-header" }, ["Calculation Flow"]);
     content.appendChild(header);
 
@@ -359,7 +368,7 @@ export class RulePanel {
   private renderFlowGraph(box: HTMLElement, entry: CalcFlowCache) {
     const { nodes, edges } = layoutFlowGraph(entry.flow || []);
     if (!nodes.length) { box.appendChild(el("div", { class: "muted" }, ["No flow information available."])); return; }
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     const cellIndex = this.currentViewCellIndex();
 
     const canvas = el("div", { class: "cf-graph-canvas" });
@@ -536,7 +545,7 @@ export class RulePanel {
   /** One list line. Clickable (selects the cell) when the address is on the current grid page. */
   private flowLine(text: string, cls: string, pad: number, cubeId?: string, addr?: string[], cellIndex?: Map<string, number>): HTMLElement {
     const line = el("div", { class: `calc-flow-entry ${cls}`, style: { paddingLeft: `${pad}px` } }, [text]);
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (cubeId && addr && cellIndex && v && cubeId === v.cubeId && cellIndex.has(addr.join("|"))) {
       line.classList.add("link");
       line.title = "Select this cell";
@@ -548,25 +557,25 @@ export class RulePanel {
   /** addr ("a|b|c") → flat index into activeView.cells.cells. */
   private currentViewCellIndex(): Map<string, number> {
     const idx = new Map<string, number>();
-    const cells = this.store.state.activeView?.cells?.cells || [];
+    const cells = this.store.viewOf(this.gid)?.cells?.cells || [];
     cells.forEach((c, i) => { if (c?.addr) idx.set(c.addr.join("|"), i); });
     return idx;
   }
 
   /** Select the cell in the active view. Cells of other cubes or other page selections are not navigable yet. */
   private navigateToCell(cubeId: string, addr: string[]) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v || v.cubeId !== cubeId || !v.colKeys.length) return;
     const i = this.currentViewCellIndex().get(addr.join("|"));
     if (i === undefined) return;
-    this.store.setSelectionFull(Math.floor(i / v.colKeys.length), i % v.colKeys.length, "cell", new Set<string>());
+    this.store.setSelectionFull(Math.floor(i / v.colKeys.length), i % v.colKeys.length, "cell", new Set<string>(), undefined, undefined, this.gid);
   }
 
   // ---- Circular References tab ----
   private circRefsDepth = 12;
 
   private renderCircRefs(content: HTMLElement) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     const header = el("div", { class: "calc-flow-header" }, ["Circular References"]);
     content.appendChild(header);
 

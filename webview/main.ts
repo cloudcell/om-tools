@@ -41,6 +41,7 @@ async function main() {
     store.state.showSystemElements = cfg.showSystemElements;
     store.state.endpoint = cfg.endpoint;
     store.state.nativeFileDialogs = !!cfg.nativeFileDialogs;
+    store.state.serverFileBrowse = !!cfg.serverFileBrowse;
     store.state.defaultDir = cfg.defaultDir || "";
     store.notify();
   }).catch(() => {});
