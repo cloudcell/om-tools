@@ -420,10 +420,22 @@ export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions |
     signSelect.value = AGGREGATE_SIGN_CHOICES.some((c) => c.value === current.aggregateSign)
       ? current.aggregateSign : DEFAULT_OPTIONS.aggregateSign;
     const signTag = defaultTag(signSelect.value === DEFAULT_OPTIONS.aggregateSign);
-    dlg.appendChild(el("div", { style: { display: "flex", gap: "8px", alignItems: "center", fontSize: "13px", marginBottom: "16px" } }, [
+    dlg.appendChild(el("div", { style: { display: "flex", gap: "8px", alignItems: "center", fontSize: "13px", marginBottom: "12px" } }, [
       el("span", {}, ["Aggregate sign"]),
       signSelect,
       signTag,
+    ]));
+
+    // — Assistant —
+    const aiCb = document.createElement("input");
+    aiCb.type = "checkbox"; aiCb.checked = current.assistant;
+    const aiDefault = el("span", { style: { fontSize: "11px", color: "var(--text-label)", marginLeft: "auto" } },
+      [`default: ${DEFAULT_OPTIONS.assistant ? "on" : "off"}`]);
+    dlg.appendChild(el("label", { style: { display: "flex", gap: "6px", alignItems: "center", fontSize: "13px", marginBottom: "16px", cursor: "pointer" } }, [
+      aiCb,
+      document.createTextNode("Show AI Assistant"),
+      el("span", { style: { fontSize: "11px", color: "var(--text-label)" } }, ["chat panel (om-tools-web)"]),
+      aiDefault,
     ]));
 
     // — Buttons —
@@ -447,6 +459,7 @@ export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions |
     resetBtn.addEventListener("click", () => {
       hvCb.checked = DEFAULT_OPTIONS.markHardvalues;
       signSelect.value = DEFAULT_OPTIONS.aggregateSign;
+      aiCb.checked = DEFAULT_OPTIONS.assistant;
       signTag.textContent = "(default)";
     });
     signSelect.addEventListener("change", () => {
@@ -455,7 +468,7 @@ export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions |
 
     const done = (v: UiOptions | null) => { closeOverlay(); resolve(v); };
     cancelBtn.addEventListener("click", () => done(null));
-    okBtn.addEventListener("click", () => done({ markHardvalues: hvCb.checked, aggregateSign: signSelect.value }));
+    okBtn.addEventListener("click", () => done({ markHardvalues: hvCb.checked, aggregateSign: signSelect.value, assistant: aiCb.checked }));
     dlg.addEventListener("keydown", (e) => {
       if (e.key === "Escape") { e.preventDefault(); done(null); }
     });
