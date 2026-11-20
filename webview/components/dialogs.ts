@@ -1,5 +1,6 @@
 import { el } from "../dom";
 import { AGGREGATE_SIGN_CHOICES, DEFAULT_OPTIONS, type UiOptions } from "../../shared/messages";
+import type { OmApi } from "../api";
 
 /** HIG-compliant dialog helpers.
  *  Replaces native prompt()/confirm()/alert() with proper modal dialogs
@@ -431,11 +432,35 @@ export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions |
     aiCb.type = "checkbox"; aiCb.checked = current.assistant;
     const aiDefault = el("span", { style: { fontSize: "11px", color: "var(--text-label)", marginLeft: "auto" } },
       [`default: ${DEFAULT_OPTIONS.assistant ? "on" : "off"}`]);
-    dlg.appendChild(el("label", { style: { display: "flex", gap: "6px", alignItems: "center", fontSize: "13px", marginBottom: "16px", cursor: "pointer" } }, [
+    dlg.appendChild(el("label", { style: { display: "flex", gap: "6px", alignItems: "center", fontSize: "13px", marginBottom: "12px", cursor: "pointer" } }, [
       aiCb,
       document.createTextNode("Show AI Assistant"),
       el("span", { style: { fontSize: "11px", color: "var(--text-label)" } }, ["chat panel (om-tools-web)"]),
       aiDefault,
+    ]));
+
+    // — Dockable panels —
+    const dockCb = document.createElement("input");
+    dockCb.type = "checkbox"; dockCb.checked = current.docking;
+    const dockDefault = el("span", { style: { fontSize: "11px", color: "var(--text-label)", marginLeft: "auto" } },
+      [`default: ${DEFAULT_OPTIONS.docking ? "on" : "off"}`]);
+    dlg.appendChild(el("label", { style: { display: "flex", gap: "6px", alignItems: "center", fontSize: "13px", marginBottom: "12px", cursor: "pointer" } }, [
+      dockCb,
+      document.createTextNode("Dockable panels"),
+      el("span", { style: { fontSize: "11px", color: "var(--text-label)" } }, ["tabbed zones, drag between edges"]),
+      dockDefault,
+    ]));
+
+    // — Advanced panels —
+    const advCb = document.createElement("input");
+    advCb.type = "checkbox"; advCb.checked = current.advancedPanels;
+    const advDefault = el("span", { style: { fontSize: "11px", color: "var(--text-label)", marginLeft: "auto" } },
+      [`default: ${DEFAULT_OPTIONS.advancedPanels ? "on" : "off"}`]);
+    dlg.appendChild(el("label", { style: { display: "flex", gap: "6px", alignItems: "center", fontSize: "13px", marginBottom: "16px", cursor: "pointer" } }, [
+      advCb,
+      document.createTextNode("Performance & Timeline panels"),
+      el("span", { style: { fontSize: "11px", color: "var(--text-label)" } }, ["experimental — enables View menu"]),
+      advDefault,
     ]));
 
     // — Buttons —
@@ -460,6 +485,8 @@ export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions |
       hvCb.checked = DEFAULT_OPTIONS.markHardvalues;
       signSelect.value = DEFAULT_OPTIONS.aggregateSign;
       aiCb.checked = DEFAULT_OPTIONS.assistant;
+      dockCb.checked = DEFAULT_OPTIONS.docking;
+      advCb.checked = DEFAULT_OPTIONS.advancedPanels;
       signTag.textContent = "(default)";
     });
     signSelect.addEventListener("change", () => {
@@ -468,12 +495,125 @@ export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions |
 
     const done = (v: UiOptions | null) => { closeOverlay(); resolve(v); };
     cancelBtn.addEventListener("click", () => done(null));
-    okBtn.addEventListener("click", () => done({ markHardvalues: hvCb.checked, aggregateSign: signSelect.value, assistant: aiCb.checked }));
+    okBtn.addEventListener("click", () => done({ markHardvalues: hvCb.checked, aggregateSign: signSelect.value, assistant: aiCb.checked, docking: dockCb.checked, advancedPanels: advCb.checked }));
     dlg.addEventListener("keydown", (e) => {
       if (e.key === "Escape") { e.preventDefault(); done(null); }
     });
     ov.addEventListener("click", (e) => { if (e.target === ov) done(null); });
     okBtn.focus();
+  });
+}
+
+/** Server-side file browser for hosts that answer `fsList` (the bridge — the runtime
+ *  needs a real path, which a browser <input type=file> cannot return).
+ *  Directories open on double-click or via "Up"; a file click fills the name field;
+ *  OK resolves the absolute path (name + current dir), Escape/Cancel → null. */
+export function browseDialog(opts: {
+  title: string;
+  api: OmApi;
+  startDir: string;
+  mode: "open" | "save";
+  defaultName?: string;
+}): Promise<string | null> {
+  return new Promise((resolve) => {
+    const ov = ensureOverlay();
+    clear(ov);
+    const sepOf = (d: string) => (d.includes("\\") ? "\\" : "/");
+
+    const dlg = el("div", { class: "dlg", style: {
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "16px",
+      width: "460px", maxWidth: "90vw", boxShadow: "var(--dlg-shadow)",
+      fontFamily: "-apple-system, system-ui, sans-serif",
+    } }) as HTMLElement;
+    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "10px", color: "var(--dlg-title)" } }, [opts.title]));
+
+    const dirLabel = el("div", { style: { fontSize: "11px", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "1" } });
+    const upBtn = el("button", { style: {
+      padding: "3px 10px", border: "1px solid var(--dlg-border)", borderRadius: "6px",
+      background: "var(--dlg-btn-bg)", fontSize: "12px", cursor: "pointer", fontFamily: "inherit", marginRight: "8px",
+    }, title: "Up one folder" }, ["Up"]) as HTMLButtonElement;
+    dlg.appendChild(el("div", { style: { display: "flex", alignItems: "center", marginBottom: "8px" } }, [upBtn, dirLabel]));
+
+    const list = el("div", { style: {
+      height: "220px", overflowY: "auto", border: "1px solid var(--dlg-border)",
+      borderRadius: "6px", background: "var(--input-bg)", marginBottom: "10px",
+    } }) as HTMLElement;
+    dlg.appendChild(list);
+
+    const nameInput = document.createElement("input") as HTMLInputElement;
+    nameInput.type = "text";
+    nameInput.value = opts.mode === "save" ? (opts.defaultName ?? "") : "";
+    nameInput.placeholder = opts.mode === "save" ? "File name" : "Select a file above";
+    nameInput.style.cssText = "width: 100%; box-sizing: border-box; padding: 7px 10px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 12px;";
+    dlg.appendChild(nameInput);
+
+    const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
+    const mkBtn = (label: string, primary = false) => el("button", { style: {
+      padding: "6px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+      border: primary ? "none" : "1px solid var(--dlg-border)",
+      background: primary ? "var(--dlg-primary)" : "var(--dlg-btn-bg)",
+      color: primary ? "var(--on-accent)" : "inherit",
+    } }, [label]) as HTMLButtonElement;
+    const cancelBtn = mkBtn("Cancel"), okBtn = mkBtn(opts.mode === "save" ? "Save" : "Open", true);
+    btnRow.appendChild(cancelBtn); btnRow.appendChild(okBtn);
+    dlg.appendChild(btnRow);
+    ov.appendChild(dlg);
+
+    let dir = opts.startDir || "/";
+    let selected = "";
+
+    const render = async () => {
+      dirLabel.textContent = dir;
+      list.innerHTML = "";
+      let r;
+      try { r = await opts.api.fsList(dir); }
+      catch (e: any) { list.appendChild(el("div", { style: { padding: "10px", color: "var(--error, #c00)", fontSize: "12px" } }, [String(e?.message || e)])); return; }
+      dir = r.dir;
+      dirLabel.textContent = dir;
+      upBtn.disabled = !r.parent;
+      const sep = sepOf(dir);
+      const row = (name: string, isDir: boolean) => {
+        const item = el("div", { class: "browse-item", style: {
+          padding: "4px 10px", fontSize: "13px", cursor: "default", display: "flex", gap: "6px",
+          color: isDir ? "var(--accent)" : "inherit",
+        } }, [isDir ? `${name}/` : name]);
+        item.addEventListener("click", () => {
+          if (isDir) return;
+          selected = name;
+          nameInput.value = name;
+          list.querySelectorAll(".browse-item").forEach((x) => (x as HTMLElement).style.background = "");
+          item.style.background = "var(--selection)";
+        });
+        item.addEventListener("dblclick", () => {
+          if (isDir) { dir = dir.replace(/[\\/]+$/, "") + sep + name; void render(); }
+          else { selected = name; nameInput.value = name; void done(join()); }
+        });
+        return item;
+      };
+      for (const d of r.dirs) list.appendChild(row(d, true));
+      for (const f of r.files) list.appendChild(row(f, false));
+      if (!r.dirs.length && !r.files.length) list.appendChild(el("div", { class: "muted", style: { padding: "10px", fontSize: "12px" } }, ["Empty folder"]));
+    };
+
+    const join = (): string | null => {
+      const name = nameInput.value.trim();
+      if (!name) return null;
+      const sep = sepOf(dir);
+      return name.includes("/") || name.includes("\\") ? name : dir.replace(/[\\/]+$/, "") + sep + name;
+    };
+    const done = (v: string | null) => { closeOverlay(); resolve(v); };
+
+    upBtn.addEventListener("click", () => { void opts.api.fsList(dir).then((r) => { if (r.parent) { dir = r.parent; void render(); } }); });
+    cancelBtn.addEventListener("click", () => done(null));
+    okBtn.addEventListener("click", () => done(join()));
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); done(join()); }
+      else if (e.key === "Escape") { e.preventDefault(); done(null); }
+    });
+    dlg.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); done(null); } });
+    ov.addEventListener("click", (e) => { if (e.target === ov) done(null); });
+    nameInput.focus();
+    void render();
   });
 }
 

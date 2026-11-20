@@ -13,9 +13,41 @@ import { ModelActions } from "./modelActions";
 
 type Zone = "row" | "col" | "page";
 
+/** The chip being dragged (any PivotBar — chips cross panes). Null outside a drag. */
+function draggedChip(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(".dim-chip.dragging");
+}
+
+/** One dashed "shadow chip" per document previews the drop slot; the real chips'
+ *  rects already include it, so insertion must exclude it (`.dim-chip-ghost`). */
+function showShadowChip(zoneEl: HTMLElement, index: number): void {
+  let ghost = document.querySelector<HTMLElement>(".dim-chip-ghost");
+  if (!ghost) {
+    const src = draggedChip();
+    ghost = (src ? src.cloneNode(true) : el("div", { class: "dim-chip" })) as HTMLElement;
+    ghost.classList.remove("dragging");
+    ghost.classList.add("dim-chip-ghost");
+    ghost.removeAttribute("draggable");
+    ghost.removeAttribute("title");
+  }
+  const chips = Array.from(zoneEl.querySelectorAll<HTMLElement>(":scope > .dim-chip:not(.dim-chip-ghost)"));
+  const ref = chips[index] ?? zoneEl.querySelector(".dim-chip-plus");
+  if (ghost.parentElement !== zoneEl || ghost.nextElementSibling !== ref) {
+    ref ? zoneEl.insertBefore(ghost, ref) : zoneEl.appendChild(ghost);
+  }
+}
+
+function hideShadowChips(): void {
+  document.querySelectorAll(".dim-chip-ghost").forEach((n) => n.remove());
+}
+
 export class PivotBar {
   private actions: ModelActions;
-  constructor(private store: Store) { this.actions = new ModelActions(store); }
+  /** Latest zone elements — render() replaces them on every call, so the single
+   *  subscription must refresh whatever is current (never close over them). */
+  private zones: { topLeft: HTMLElement; pageRight: HTMLElement; bottom: HTMLElement } | null = null;
+  private subscribed = false;
+  constructor(private store: Store, private gid?: string) { this.actions = new ModelActions(store); }
 
   /** Render the full pivot canvas (3 zones + grid slot). Returns the container
    *  and a ref to the grid mount point so MatrixGrid can fill it. */
@@ -38,14 +70,18 @@ export class PivotBar {
     this.setupDropZone(pageRight, "col");
     this.setupDropZone(bottom, "row");
 
-    this.store.subscribe(() => this.refresh(topLeft, pageRight, bottom));
+    this.zones = { topLeft, pageRight, bottom };
+    if (!this.subscribed) {
+      this.subscribed = true;
+      this.store.subscribe(() => { if (this.zones) this.refresh(this.zones.topLeft, this.zones.pageRight, this.zones.bottom); });
+    }
     this.refresh(topLeft, pageRight, bottom);
 
     return { container, gridMount };
   }
 
   private refresh(topLeft: HTMLElement, pageRight: HTMLElement, bottom: HTMLElement) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) { clear(topLeft); clear(pageRight); clear(bottom); return; }
     this.renderZone(topLeft, "page", v.pageDimIds);
     this.renderZone(pageRight, "col", v.colDimIds);
@@ -77,7 +113,7 @@ export class PivotBar {
     if (zone === "page") {
       // PageChip: grip + "DimName: ItemName" + dropdown arrow
       const items = this.store.dimItems(dimId);
-      const curId = this.store.state.activeView?.pageSelections[dimId];
+      const curId = this.store.viewOf(this.gid)?.pageSelections[dimId];
       const curName = items.find((it) => it.id === curId)?.name || (items[0]?.name || "\u2014");
       const label = el("span", {}, [`${name}: ${curName}`]);
       const arrow = el("span", { class: "chip-arrow" });
@@ -101,7 +137,7 @@ export class PivotBar {
       e.dataTransfer!.effectAllowed = "move";
       chip.classList.add("dragging");
     });
-    chip.addEventListener("dragend", () => chip.classList.remove("dragging"));
+    chip.addEventListener("dragend", () => { chip.classList.remove("dragging"); hideShadowChips(); });
   }
 
   private setupDropZone(zoneEl: HTMLElement, zone: Zone) {
@@ -111,13 +147,15 @@ export class PivotBar {
       e.preventDefault();
       e.dataTransfer!.dropEffect = "move";
       zoneEl.classList.add("drag-over");
+      showShadowChip(zoneEl, this.computeInsertIndex(zoneEl, e.clientX, e.clientY, zone));
     });
     zoneEl.addEventListener("dragleave", (e) => {
-      if (e.target === zoneEl) zoneEl.classList.remove("drag-over");
+      if (e.target === zoneEl) { zoneEl.classList.remove("drag-over"); hideShadowChips(); }
     });
     zoneEl.addEventListener("drop", (e) => {
       e.preventDefault();
       zoneEl.classList.remove("drag-over");
+      hideShadowChips();
       const raw = e.dataTransfer!.getData("application/x-openm-dim");
       if (!raw) return;
       try {
@@ -125,13 +163,13 @@ export class PivotBar {
         const dimId = data.dim_id;
         if (!dimId) return;
         const insertIndex = this.computeInsertIndex(zoneEl, e.clientX, e.clientY, zone);
-        this.store.moveDimension(dimId, zone, insertIndex);
+        this.store.moveDimension(dimId, zone, insertIndex, this.gid);
       } catch {}
     });
   }
 
   private computeInsertIndex(zoneEl: HTMLElement, x: number, y: number, zone: Zone): number {
-    const chips = Array.from(zoneEl.querySelectorAll(".dim-chip")) as HTMLElement[];
+    const chips = Array.from(zoneEl.querySelectorAll(".dim-chip:not(.dim-chip-ghost)")) as HTMLElement[];
     if (!chips.length) return 0;
     const vertical = zone === "col";
     for (let i = 0; i < chips.length; i++) {
@@ -149,11 +187,11 @@ export class PivotBar {
     const existing = document.querySelector(".chip-dropdown");
     if (existing) existing.remove();
     if (!items.length) return;
-    const curId = this.store.state.activeView?.pageSelections[dimId];
+    const curId = this.store.viewOf(this.gid)?.pageSelections[dimId];
     const dd = el("div", { class: "chip-dropdown" });
     for (const it of items) {
       const item = el("div", { class: "cd-item" + (it.id === curId ? " checked" : "") }, [it.name]);
-      item.addEventListener("click", () => { dd.remove(); this.store.setPageItem(dimId, it.id); });
+      item.addEventListener("click", () => { dd.remove(); this.store.setPageItem(dimId, it.id, this.gid); });
       dd.appendChild(item);
     }
     const r = chip.getBoundingClientRect();

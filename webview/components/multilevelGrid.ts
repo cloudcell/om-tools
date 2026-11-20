@@ -68,9 +68,13 @@ const COLORS = {
  *  outline groups, collapse/expand, aggregate items, and Quantrix-like grouping.
  *  Mirrors lib_gui_elements/matrix_grid.py paintEvent + banding.py. */
 export class MultilevelGrid {
-  constructor(private store: Store) {}
+  /** `gid` binds the grid to one aggregate pane (its own tab list, active tab and
+   *  view state); without it the grid follows the focused group — the legacy use. */
+  constructor(private store: Store, private gid?: string) {}
   root = el("div", { class: "center", tabindex: "0" }) as HTMLElement;
-  private pivot = new PivotBar(this.store);
+  private pivot = new PivotBar(this.store, this.gid);
+  /** The pane this grid belongs to (its own, or the focused one when unscoped). */
+  private effGid() { return this.gid ?? this.store.state.focusedGroup; }
   private gridMount: HTMLElement | null = null;
 
   // Grid state
@@ -200,20 +204,24 @@ export class MultilevelGrid {
     const sl = oldScroll?.scrollLeft ?? 0, stp = oldScroll?.scrollTop ?? 0;
     clear(this.root);
 
-    // tab bar
+    // tab bar — this pane's tabs; a tab is the handle for drag-out to a new pane (S3).
+    const gid = this.effGid();
+    const grpTabs = this.store.groupTabs(gid);
+    const grpActive = this.store.group(gid)?.activeTab;
     const tabbar = el("div", { class: "tabbar" });
-    for (const tab of this.store.state.openTabs) {
-      const t = el("div", { class: "tab" + (tab.viewId === this.store.state.activeTab ? " active" : "") }, [
+    for (const tab of grpTabs) {
+      const t = el("div", { class: "tab" + (tab.viewId === grpActive ? " active" : "") }, [
         document.createTextNode(tab.viewName),
         el("span", { class: "tab-close", title: "Close", onclick: (e: Event) => { e.stopPropagation(); this.closeTab(tab.viewId); } }, ["×"]),
       ]);
-      t.addEventListener("click", () => { this.store.state.activeTab = tab.viewId; this.store.loadView(tab.viewId); });
+      t.addEventListener("click", () => { void this.store.activateViewTab(gid, tab.viewId); });
+      this.onViewTab?.(t, tab.viewId);
       tabbar.appendChild(t);
     }
-    if (this.store.state.openTabs.length === 0) tabbar.appendChild(el("div", { class: "muted", style: { padding: "6px 10px" } }, ["No view open. Click a view in the Model Browser →"]));
+    if (grpTabs.length === 0) tabbar.appendChild(el("div", { class: "muted", style: { padding: "6px 10px" } }, ["No view open. Click a view in the Model Browser →"]));
     this.root.appendChild(tabbar);
 
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) {
       this.root.appendChild(el("div", { class: "grid-empty", style: { flex: "1", display: "flex", alignItems: "center", justifyContent: "center" } }, ["Open a view from the Model Browser to begin."]));
       return;
@@ -514,7 +522,7 @@ export class MultilevelGrid {
   // ---- Band computation (mirrors banding.py) ----
   private computeBands(entries: AxisEntry[], bandLevels: number, axis: "row" | "col"): Band[] {
     const bands: Band[] = [];
-    const isStacked = (axis === "row" ? (this.store.state.activeView?.rowDimIds || []) : (this.store.state.activeView?.colDimIds || [])).length > 1;
+    const isStacked = (axis === "row" ? (this.store.viewOf(this.gid)?.rowDimIds || []) : (this.store.viewOf(this.gid)?.colDimIds || [])).length > 1;
 
     for (let level = 0; level < bandLevels; level++) {
       let curLabel: string | null = null;
@@ -577,7 +585,7 @@ export class MultilevelGrid {
 
   // ---- Rendering ----
   private renderGrid(mount: HTMLElement) {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
     this.rebuildOffsets();
     const rowHeaderW = this.rowHeaderWTotal();
     const colHeaderH = METRICS.colHeaderH * this.colHeaderLevels;
@@ -762,7 +770,7 @@ export class MultilevelGrid {
 
   /** Persist resize results on mouse-up (native mouseReleaseEvent → set_view_*_width). */
   private persistResizedWidths(st: { kind: "col" | "rowLevel"; index: number }) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) return;
     if (st.kind === "col") {
       const isMulti = this.selMode === "col" && this.selIndices.has(st.index) && this.selIndices.size > 1;
@@ -827,13 +835,13 @@ export class MultilevelGrid {
   }
 
   private colDimNames(): string {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
     return v.colDimIds.map((id) => this.store.dimName(id)).join(" / ");
   }
 
   // ---- Column headers (bands + leaf) ----
   private renderColHeaders(layer: HTMLElement, colHeaderH: number) {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
 
     // Render bands (including empty placeholders so grid lines stay continuous)
     for (const band of this.colBands) {
@@ -1029,7 +1037,7 @@ export class MultilevelGrid {
 
   // ---- Row headers (bands + leaf) ----
   private renderRowHeaders(layer: HTMLElement, rowHeaderW: number, colHeaderH: number) {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
 
     // Render bands
     // Render bands (including empty placeholders so grid lines stay continuous)
@@ -1227,7 +1235,7 @@ export class MultilevelGrid {
 
   // ---- Data cells ----
   private renderDataCells(layer: HTMLElement) {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
     if (!this.cells || !this.cells.length) {
       console.warn("[renderDataCells] no cells data", { cells: this.cells, cellRowMap: this.cellRowMap, cellColMap: this.cellColMap });
     }
@@ -1497,7 +1505,7 @@ export class MultilevelGrid {
   private setSelectionFull(row: number, col: number, mode: SelMode, indices: Set<any>, anchorRow?: number, anchorCol?: number) {
     this.selRow = row; this.selCol = col; this.selMode = mode; this.selIndices = indices;
     this.anchorRow = anchorRow ?? row; this.anchorCol = anchorCol ?? col;
-    this.store.setSelectionFull(row, col, mode, indices, this.anchorRow, this.anchorCol);
+    this.store.setSelectionFull(row, col, mode, indices, this.anchorRow, this.anchorCol, this.gid);
     // Re-render just the grid
     this.rerenderGrid();
   }
@@ -1510,7 +1518,7 @@ export class MultilevelGrid {
     const oldScroll = mount.querySelector(".ml-grid-scroll") as HTMLElement | null;
     const sl = oldScroll?.scrollLeft ?? 0, stp = oldScroll?.scrollTop ?? 0;
     clear(mount);
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v || !v.cells) return;
     this.buildGrid(v);
     this.renderGrid(mount);
@@ -1693,7 +1701,7 @@ export class MultilevelGrid {
   // ---- Outline helpers ----
 
   private dimOutlineFor(axis: "row" | "col", dimIdx = 0): any[] {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) return [];
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (!dimIds.length) return [];
@@ -1703,7 +1711,7 @@ export class MultilevelGrid {
 
   // Leaf items live on the LAST dim of a stacked axis; group bands carry band.dim.
   private dimIdFor(axis: "row" | "col", dimIdx?: number): string | null {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) return null;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (!dimIds.length) return null;
@@ -1804,7 +1812,7 @@ export class MultilevelGrid {
   private async executeDrop(axis: "row" | "col", zone: DropZone) {
     const p = this.dragPayload;
     if (!p) return;
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) return;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     const leafDim = Math.max(0, dimIds.length - 1);
@@ -2054,7 +2062,7 @@ export class MultilevelGrid {
   private async pruneEmptyGroups(axis: "row" | "col", dimId: string, dimIdx = 0) {
     // Re-fetch the outline (it may have changed after the move)
     this.store.invalidateDimCache(dimId);
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) return;
     await this.store.ensureDimCache([dimId]);
     const outline = this.dimOutlineFor(axis, dimIdx);
@@ -2146,7 +2154,7 @@ export class MultilevelGrid {
 
   // ---- Keyboard navigation ----
   private onKeyDown(e: KeyboardEvent) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v || !v.cells || v.loading) return;
     const key = e.key;
     const ctrl = e.ctrlKey || e.metaKey;
@@ -2160,7 +2168,7 @@ export class MultilevelGrid {
     if (ctrl && !shift && key === " ") { e.preventDefault(); this.selectCol(this.selCol, false, false); return; }
     if (ctrl && (key === "c" || key === "Insert")) { e.preventDefault(); this.doCopy(); return; }
     if ((ctrl && key === "v") || (shift && key === "Insert")) { e.preventDefault(); this.doPaste(); return; }
-    if (key === "Delete" || key === "Backspace") { e.preventDefault(); this.store.clearSelectedCells(); return; }
+    if (key === "Delete" || key === "Backspace") { e.preventDefault(); this.store.clearSelectedCells(this.gid); return; }
     if (key === "F2") {
       e.preventDefault();
       // Native: F2 on a row/col header selection edits the leaf label; else cell edit
@@ -2259,7 +2267,7 @@ export class MultilevelGrid {
 
   private startEdit(r: number, c: number, initialChar?: string) {
     if (this.editor) this.commitEdit();
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v || !v.cells || r < 0 || c < 0 || r >= this.rows.length || c >= this.cols.length) return;
     const cellR = this.cellRowMap[r];
     const cellC = this.cellColMap[c];
@@ -2319,12 +2327,12 @@ export class MultilevelGrid {
     const { r, c } = this.editorCell;
     this.editor = null;
     this.editorCell = null;
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) { input.remove(); return; }
     const text = input.value;
     input.remove();
     if (text === "") return;
-    this.store.applyInput(text, { row: r, col: c });
+    this.store.applyInput(text, { row: r, col: c }, this.gid);
   }
 
   /** Give the keyboard to the grid, e.g. after Enter or Escape in the rule bar (as in Qt). */
@@ -2452,7 +2460,7 @@ export class MultilevelGrid {
   }
 
   private startHeaderLeafEdit(axis: "row" | "col", index: number) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) return;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     const entries = axis === "row" ? this.rows : this.cols;
@@ -2476,7 +2484,7 @@ export class MultilevelGrid {
   }
 
   private startGroupHeaderEdit(axis: "row" | "col", groupPath: number[], dimIdx = 0) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) return;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     const bands = axis === "row" ? this.rowBands : this.colBands;
@@ -2545,7 +2553,7 @@ export class MultilevelGrid {
 
     close();
     if (renamed) {
-      const v = this.store.state.activeView;
+      const v = this.store.viewOf(this.gid);
       if (v) await this.store.loadView(v.viewId);
     }
 
@@ -2653,7 +2661,7 @@ export class MultilevelGrid {
           this.store.invalidateDimCache(heRef.dimId);
           this.store.markDirty();
           this.store.refreshModel();
-          const v = this.store.state.activeView;
+          const v = this.store.viewOf(this.gid);
           if (v) await this.store.loadView(v.viewId);
         }
       } catch (e: any) {
@@ -2680,7 +2688,7 @@ export class MultilevelGrid {
 
   // Stacked-mode fallback: popup rename dialog (native rename_header_hit)
   private async editHeaderDialog(axis: "row" | "col", index: number) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) return;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     const entries = axis === "row" ? this.rows : this.cols;
@@ -2706,7 +2714,7 @@ export class MultilevelGrid {
   }
 
   private async renameGroupDialog(axis: "row" | "col", groupPath: number[], dimIdx = 0) {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) return;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (!dimIds.length) return;
@@ -2727,14 +2735,14 @@ export class MultilevelGrid {
 
   // ---- Copy/Paste ----
   private async doCopy() {
-    const text = await this.store.copySelectionToClipboard();
+    const text = await this.store.copySelectionToClipboard(this.gid);
     if (text) { try { await navigator.clipboard.writeText(text); } catch { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } }
   }
 
   private async doPaste() {
     let text = "";
     try { text = await navigator.clipboard.readText(); } catch { text = (await inputDialog("Paste", "", "Paste TSV data")) || ""; }
-    if (text) this.store.pasteFromClipboard(text);
+    if (text) this.store.pasteFromClipboard(text, this.gid);
   }
 
   // ---- Context menu (matches native matrix_grid.py contextMenuEvent) ----
@@ -2742,7 +2750,7 @@ export class MultilevelGrid {
     const existing = document.querySelector(".ctx-menu");
     if (existing) existing.remove();
     const menu = el("div", { class: "ctx-menu" });
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) { return; }
 
     const close = (ev: MouseEvent) => { if (!menu.contains(ev.target as Node)) { menu.remove(); document.removeEventListener("mousedown", close); } };
@@ -2843,10 +2851,10 @@ export class MultilevelGrid {
       }
       if (hasRow || hasCol) addSep();
       addItem("Edit Cell", () => this.startEdit(this.selRow, this.selCol));
-      addItem("Clear Override", () => this.store.clearActiveOverride(), this.store.activeCell()?.explain?.source === "override");
+      addItem("Clear Override", () => this.store.clearActiveOverride(this.gid), this.store.activeCell(this.gid)?.explain?.source === "override");
       addItem("Set Rule…", async () => {
         const text = await inputDialog("Set Value or Rule", "", SET_RULE_PLACEHOLDER);
-        if (text) this.store.applyInput(text);
+        if (text) this.store.applyInput(text, undefined, this.gid);
       });
       addSep();
       addItem("Copy", () => this.doCopy());
@@ -2891,7 +2899,7 @@ export class MultilevelGrid {
   }
 
   private async addAggregateItem(axis: "row" | "col", groupPath: number[]) {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (!dimIds.length) return;
     let dimId = dimIds[0];
@@ -2926,7 +2934,7 @@ export class MultilevelGrid {
   }
 
   private async ungroupGroup(axis: "row" | "col", groupPath: number[]) {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (!dimIds.length) return;
     let dimId = dimIds[0];
@@ -2963,7 +2971,7 @@ export class MultilevelGrid {
   }
 
   private async deleteGroup(axis: "row" | "col", groupPath: number[]) {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (!dimIds.length) return;
     let dimId = dimIds[0];
@@ -3022,7 +3030,7 @@ export class MultilevelGrid {
   }
 
   private async insertRelative(axis: "row" | "col", after: boolean) {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (dimIds.length !== 1) { await alertDialog("Multiple Dimensions", "Insert requires exactly one dimension on this axis."); return; }
     const dimId = dimIds[0];
@@ -3113,7 +3121,7 @@ export class MultilevelGrid {
   }
 
   private async addGroupForAxis(axis: "row" | "col") {
-    const v = this.store.state.activeView;
+    const v = this.store.viewOf(this.gid);
     if (!v) { await alertDialog("No Active View", "Open a view first."); return; }
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (!dimIds.length) { await alertDialog("No Dimensions", `No dimensions on the ${axis} axis.`); return; }
@@ -3185,7 +3193,7 @@ export class MultilevelGrid {
   }
 
   private async moveToGroup(axis: "row" | "col") {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (!dimIds.length) { await alertDialog("No Dimensions", `No dimensions on the ${axis} axis.`); return; }
     let dimId = dimIds[0];
@@ -3228,7 +3236,7 @@ export class MultilevelGrid {
   }
 
   private async ungroupItems(axis: "row" | "col") {
-    const v = this.store.state.activeView!;
+    const v = this.store.viewOf(this.gid)!;
     const dimIds = axis === "row" ? v.rowDimIds : v.colDimIds;
     if (!dimIds.length) { await alertDialog("No Dimensions", `No dimensions on the ${axis} axis.`); return; }
     let dimId = dimIds[0];
@@ -3275,15 +3283,10 @@ export class MultilevelGrid {
     return groups;
   }
 
+  /** Optional hook the host sets to make view tabs drag-out-able (aggregate panes). */
+  onViewTab: ((tabEl: HTMLElement, viewId: string) => void) | null = null;
+
   private closeTab(viewId: string) {
-    const tabs = this.store.state.openTabs;
-    const idx = tabs.findIndex((t) => t.viewId === viewId);
-    if (idx < 0) return;
-    tabs.splice(idx, 1);
-    if (this.store.state.activeTab === viewId) {
-      this.store.state.activeTab = tabs.length ? tabs[Math.max(0, idx - 1)].viewId : null;
-      if (this.store.state.activeTab) this.store.loadView(this.store.state.activeTab);
-      else { this.store.state.activeView = null; this.store.notify(); }
-    } else { this.store.notify(); }
+    void this.store.closeViewTab(this.effGid(), viewId);
   }
 }

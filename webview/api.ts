@@ -1,5 +1,5 @@
 import { Transport } from "./transport";
-import type { PickFileParams, UiState } from "../shared/messages";
+import type { FsListResult, PickFileParams, UiState } from "../shared/messages";
 
 /** Typed OM Core API client. Wraps the query/command vocabulary exposed by the
  *  om-core runtime (see lib_command/core/query_service.py + bootstrap.py).
@@ -52,6 +52,8 @@ export class OmApi {
   stopRuntime() { return this.t.request("stopRuntime"); }
   /** Native Open/Save dialog in the host (VS Code only, see AppConfig.nativeFileDialogs). */
   pickFile(params: PickFileParams): Promise<{ path: string | null }> { return this.t.request("pickFile", params as any); }
+  /** Directory listing for the server-side file browser (bridge only, see AppConfig.serverFileBrowse). */
+  fsList(dir: string): Promise<FsListResult> { return this.t.request("fsList", { dir }); }
   /** Editor tab title in VS Code (`panel.title`); a no-op in the bridge, where `document.title` is the tab title. */
   setTitle(title: string) { return this.t.request("setTitle", { title }); }
   /** Saved panel sizes etc. (T-045): synchronous, null when nothing is saved. */

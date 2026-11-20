@@ -1,10 +1,13 @@
 import { OmApi, DimSummary, DimDetail, CubeSummary, ViewSummary, ViewDetail, CellRangeDTO, RuleDTO, WorkspaceSummary, CellDTO } from "./api";
 import { formatCellValue } from "./formatting";
 import { alertDialog } from "./components/dialogs";
-import { DEFAULT_OPTIONS, type UiLayout, type UiOptions } from "../shared/messages";
+import { DEFAULT_DOCK, DEFAULT_OPTIONS, type DockPanelId, type DockZoneId, type UiLayout, type UiOptions } from "../shared/messages";
 
 /** Default panel sizes, px (T-045); same as the CSS variables in styles.css. */
-export const DEFAULT_LAYOUT: Required<UiLayout> = { leftDockWidth: 250, leftCollapsed: false, rulePanelHeight: 200, rulePanelCollapsed: false };
+export const DEFAULT_LAYOUT: Required<UiLayout> = {
+  leftDockWidth: 250, leftCollapsed: false, rightDockWidth: 280, rightCollapsed: false,
+  rulePanelHeight: 200, rulePanelCollapsed: false, dock: DEFAULT_DOCK,
+};
 
 export type SelMode = "cell" | "row" | "col" | "all";
 
@@ -34,6 +37,26 @@ export interface ViewState {
   loading: boolean;
 }
 
+/** One aggregate pane: a view tab strip + grid + optional rules subpane. A view lives
+ *  in exactly one group at a time (dragging it out moves it, like VS Code). */
+export interface ViewGroupState {
+  id: string;
+  tabs: { viewId: string; viewName: string }[];
+  activeTab: string | null;
+  /** The pane's rules subpane is completely hidable — this is that hide flag. */
+  rulesOpen: boolean;
+  /** rules subpane collapsed to just its section strip (pane separator). */
+  rulesCollapsed: boolean;
+}
+
+/** Where a dropped view tab lands relative to its target pane. */
+export type AreaSide = "left" | "right" | "top" | "bottom" | "center";
+
+/** Split tree for the views area: leaves are group panes, inner nodes tile children. */
+export type AreaNode =
+  | { kind: "group"; gid: string }
+  | { kind: "split"; dir: "x" | "y"; sizes: number[]; children: AreaNode[] };
+
 export interface AppState {
   connected: boolean;
   statusMessage: string;
@@ -56,6 +79,8 @@ export interface AppState {
   filePath: string | null;
   /** From the host config: native Open/Save dialogs (VS Code) or a text field (browser). */
   nativeFileDialogs: boolean;
+  /** Host answers `fsList` (bridge): Open/Save use a server-side file-browser dialog. */
+  serverFileBrowse: boolean;
   /** From the host config: absolute folder for default file paths in the text field. */
   defaultDir: string;
   canUndo: boolean;
@@ -66,7 +91,17 @@ export interface AppState {
   depTrackingEnabled: boolean;
   mtEnabled: boolean;
   isRemote: boolean;
-  dockVisible: { browser: boolean; info: boolean; format: boolean; perf: boolean; timeline: boolean };
+  dockVisible: { browser: boolean; info: boolean; format: boolean; perf: boolean; timeline: boolean; rules: boolean };
+  /** Aggregate panes (Quantrix editor groups): each group owns a tab list, an active
+   *  tab and its own rules subpane. `openTabs`/`activeTab`/`activeView` remain the
+   *  FOCUSED group's mirrors — kept in sync by syncViewMirror() so unscoped readers
+   *  (menus, status bar, actions) never need to know about groups. */
+  viewGroups: ViewGroupState[];
+  /** Loaded ViewState keyed by viewId — two panes can show different views at once. */
+  viewStates: Record<string, ViewState>;
+  focusedGroup: string;
+  /** Split tree describing how group panes tile the views area (runtime only). */
+  viewArea: AreaNode;
   /** Left column / bottom panel sizes and collapsed state (T-045). Sizes change without notify() while
    *  dragging; notify() only when a panel collapses or expands. Persisted via api.saveUiState. */
   layout: Required<UiLayout>;
@@ -97,6 +132,7 @@ export class Store {
     dirty: false,
     filePath: null,
     nativeFileDialogs: false,
+    serverFileBrowse: false,
     defaultDir: "",
     canUndo: false,
     canRedo: false,
@@ -107,8 +143,12 @@ export class Store {
     mtEnabled: false,
     isRemote: false,
     // perf/timeline are outside the MVP (their View menu items are disabled), so start hidden.
-    dockVisible: { browser: true, info: false, format: false, perf: false, timeline: false },
-    layout: { ...DEFAULT_LAYOUT },
+    dockVisible: { browser: true, info: false, format: false, perf: false, timeline: false, rules: true },
+    viewGroups: [{ id: "g0", tabs: [], activeTab: null, rulesOpen: true, rulesCollapsed: false }],
+    viewStates: {},
+    focusedGroup: "g0",
+    viewArea: { kind: "group", gid: "g0" },
+    layout: { ...DEFAULT_LAYOUT, dock: structuredClone(DEFAULT_DOCK) },
     options: { ...DEFAULT_OPTIONS },
   };
   api: OmApi;
@@ -130,8 +170,37 @@ export class Store {
     document.dispatchEvent(new CustomEvent("omCore.optionsChanged", { detail: this.state.options }));
   }
 
-  subscribe(fn: Listener): () => void { this.listeners.add(fn); return () => this.listeners.delete(fn); }
-  notify() { for (const l of this.listeners) l(); }
+  subscribe(fn: Listener): () => void {
+    this.listeners.add(fn);
+    const unsub = () => this.listeners.delete(fn);
+    this.capture?.add(unsub);
+    return unsub;
+  }
+  notify() {
+    // A throwing subscriber must not starve the rest — or unwind into a caller
+    // mid-gesture (a drag's update→set→apply→notify chain dies with it).
+    for (const l of [...this.listeners]) {
+      try { l(); } catch (e) { console.error("notify subscriber failed", e); }
+    }
+  }
+
+  /** While set, every subscribe() also lands in this bag. See captureSubscriptions(). */
+  private capture: Set<() => void> | null = null;
+
+  /** Run fn() and collect every subscription it makes (components subscribe inside render());
+   *  `dispose` releases them all at once. Lets the shell rebuild a subtree without leaking
+   *  listeners onto detached DOM (T-dock body swap on the docking option toggle). */
+  captureSubscriptions<T>(fn: () => T): { result: T; dispose: () => void } {
+    const bag = new Set<() => void>();
+    const prev = this.capture;
+    this.capture = bag;
+    try {
+      const result = fn();
+      return { result, dispose: () => { for (const u of bag) u(); bag.clear(); } };
+    } finally {
+      this.capture = prev;
+    }
+  }
 
   set(partial: Partial<AppState>) { Object.assign(this.state, partial); this.notify(); }
 
@@ -211,17 +280,25 @@ export class Store {
    *  its old name. When the active view is gone the first remaining tab opens, or none. */
   private syncTabsWithViews() {
     const byId = new Map(this.state.views.map((v) => [v.id, v.name]));
-    const kept = this.state.openTabs.filter((t) => byId.has(t.viewId));
-    let changed = kept.length !== this.state.openTabs.length;
-    for (const t of kept) { const n = byId.get(t.viewId)!; if (t.viewName !== n) { t.viewName = n; changed = true; } }
-    if (!changed) return;
-    this.state.openTabs = kept;
-    if (this.state.activeTab && !byId.has(this.state.activeTab)) {
-      const next = kept[0];
-      this.state.activeTab = next?.viewId ?? null;
-      if (next) { this.loadView(next.viewId); return; }
-      this.state.activeView = null;
+    let changed = false;
+    const reload: string[] = [];
+    for (const g of this.state.viewGroups) {
+      const kept = g.tabs.filter((t) => byId.has(t.viewId));
+      if (kept.length !== g.tabs.length) changed = true;
+      for (const t of kept) { const n = byId.get(t.viewId)!; if (t.viewName !== n) { t.viewName = n; changed = true; } }
+      g.tabs = kept;
+      if (g.activeTab && !byId.has(g.activeTab)) {
+        g.activeTab = kept[0]?.viewId ?? null;
+        if (g.activeTab) reload.push(g.activeTab);
+        changed = true;
+      }
     }
+    for (const id of Object.keys(this.state.viewStates)) {
+      if (!this.groupForView(id)) { delete this.state.viewStates[id]; changed = true; }
+    }
+    if (!changed) return;
+    this.syncViewMirror();
+    for (const vid of reload) void this.loadView(vid);
     this.notify();
   }
 
@@ -244,20 +321,25 @@ export class Store {
   }
 
   async openView(viewId: string, viewName: string) {
-    if (!this.state.openTabs.find((t) => t.viewId === viewId)) {
-      this.state.openTabs.push({ viewId, viewName });
-    }
-    this.state.activeTab = viewId;
+    // A view already open in another pane gets focused there, not duplicated.
+    const gid = this.groupForView(viewId) ?? this.state.focusedGroup;
+    const g = this.group(gid)!;
+    if (!g.tabs.find((t) => t.viewId === viewId)) g.tabs.push({ viewId, viewName });
+    g.activeTab = viewId;
+    this.state.focusedGroup = gid;
+    this.syncViewMirror();
     this.notify();
     await this.loadView(viewId);
   }
 
   async loadView(viewId: string) {
-    if (!this.state.activeView || this.state.activeView.viewId !== viewId) {
-      this.state.activeView = { viewId, viewName: "", cubeId: "", rowDimIds: [], colDimIds: [], pageDimIds: [], pageSelections: {}, rowKeys: [], colKeys: [], rowHeaders: [], colHeaders: [], cells: null, selectedRow: -1, selectedCol: -1, selMode: "cell", selIndices: new Set(), anchorRow: 0, anchorCol: 0, colWidths: {}, rowHeaderWidths: {}, loading: true };
+    const cur = this.state.viewStates[viewId];
+    if (!cur) {
+      this.state.viewStates[viewId] = { viewId, viewName: "", cubeId: "", rowDimIds: [], colDimIds: [], pageDimIds: [], pageSelections: {}, rowKeys: [], colKeys: [], rowHeaders: [], colHeaders: [], cells: null, selectedRow: -1, selectedCol: -1, selMode: "cell", selIndices: new Set(), anchorRow: 0, anchorCol: 0, colWidths: {}, rowHeaderWidths: {}, loading: true };
     } else {
-      this.state.activeView.loading = true;
+      cur.loading = true;
     }
+    this.syncViewMirror();
     this.notify();
     try {
       const detail = await this.api.viewDetail(viewId);
@@ -280,8 +362,8 @@ export class Store {
       const colHeaders = await Promise.all(ck.map((_, i) => this.api.viewColHeader(viewId, i).then((r) => r.header).catch(() => "")));
       const cells = rk.length && ck.length ? await this.api.cellRange(viewId, rk, ck) : null;
       if (cells) await this.mergeChannelPaints(cells, viewId, rk, ck, pageSel);
-      const prev = this.state.activeView;
-      this.state.activeView = {
+      const prev = this.state.viewStates[viewId];
+      this.state.viewStates[viewId] = {
         viewId, viewName: detail.name, cubeId: detail.cube_id,
         rowDimIds: detail.row_dim_ids, colDimIds: detail.col_dim_ids, pageDimIds: detail.page_dim_ids,
         pageSelections: pageSel,
@@ -298,16 +380,162 @@ export class Store {
         rowHeaderWidths: Object.fromEntries(Object.entries(detail.row_header_widths ?? {}).map(([k, w]) => [Number(k), w as number])),
         loading: false,
       };
-      this.state.focusPath = `OM Core View: ${detail.name}`;
+      // The rule bar / window title describe the focused pane — a background pane
+      // reloading its view must not retitle the app.
+      if (this.viewOf(this.state.focusedGroup)?.viewId === viewId) this.state.focusPath = `OM Core View: ${detail.name}`;
+      this.syncViewMirror();
       this.notify();
       await this.refreshRules();
       await this.updateSelectionStats();
       await this.refreshUndoState();
     } catch (e: any) {
-      this.state.activeView = { ...this.state.activeView!, loading: false };
+      this.state.viewStates[viewId] = { ...this.state.viewStates[viewId]!, loading: false };
+      this.syncViewMirror();
       this.notify();
       console.error("loadView failed", e);
     }
+  }
+
+  // ---- Aggregate panes (Quantrix editor groups) ----
+  // `openTabs`/`activeTab`/`activeView` are mirrors of the focused group so legacy
+  // unscoped readers keep working; group-aware code uses the helpers below.
+
+  group(gid: string): ViewGroupState | undefined {
+    return this.state.viewGroups.find((g) => g.id === gid);
+  }
+
+  groupTabs(gid: string) { return this.group(gid)?.tabs ?? []; }
+
+  /** The view a pane shows. Without `gid` — the focused group's (same as state.activeView). */
+  viewOf(gid?: string): ViewState | null {
+    if (gid === undefined) return this.state.activeView;
+    const g = this.group(gid);
+    return g?.activeTab ? this.state.viewStates[g.activeTab] ?? null : null;
+  }
+
+  /** Which group a view's tab lives in (a view is in at most one group), or null. */
+  groupForView(viewId: string): string | null {
+    for (const g of this.state.viewGroups) if (g.tabs.some((t) => t.viewId === viewId)) return g.id;
+    return null;
+  }
+
+  /** Re-derive the focused-group mirrors. Call after every group/viewStates mutation. */
+  private syncViewMirror() {
+    const g = this.group(this.state.focusedGroup);
+    this.state.openTabs = this.state.viewGroups.flatMap((x) => x.tabs);
+    this.state.activeTab = g?.activeTab ?? null;
+    this.state.activeView = g?.activeTab ? this.state.viewStates[g.activeTab] ?? null : null;
+  }
+
+  /** Menus, the rule bar and keyboard commands act on the focused pane; clicking
+   *  anywhere inside a pane (tab, grid, rules) focuses it first. */
+  focusGroup(gid: string) {
+    if (this.state.focusedGroup === gid || !this.group(gid)) return;
+    this.state.focusedGroup = gid;
+    this.syncViewMirror();
+    this.notify();
+  }
+
+  /** Tab click in a pane: show that view there and focus the pane. */
+  async activateViewTab(gid: string, viewId: string) {
+    const g = this.group(gid);
+    if (!g || !g.tabs.some((t) => t.viewId === viewId)) return;
+    g.activeTab = viewId;
+    this.state.focusedGroup = gid;
+    this.syncViewMirror();
+    this.notify();
+    await this.loadView(viewId);
+  }
+
+  /** × on a tab: remove it; an emptied pane collapses out of the split tree. */
+  async closeViewTab(gid: string, viewId: string) {
+    const g = this.group(gid);
+    if (!g) return;
+    const idx = g.tabs.findIndex((t) => t.viewId === viewId);
+    if (idx < 0) return;
+    g.tabs.splice(idx, 1);
+    if (g.activeTab === viewId) g.activeTab = g.tabs[Math.max(0, idx - 1)]?.viewId ?? null;
+    if (!this.groupForView(viewId)) delete this.state.viewStates[viewId];
+    const emptied = g.tabs.length === 0 && this.state.viewGroups.length > 1;
+    if (emptied) this.removeGroup(gid);
+    this.syncViewMirror();
+    this.notify();
+    if (!emptied && g.activeTab) await this.loadView(g.activeTab);
+  }
+
+  /** Drop a view tab: `center` merges it into the target pane; an edge splits that
+   *  pane and the moved view opens in the new sibling. */
+  moveTab(viewId: string, targetGid: string, side: AreaSide) {
+    const tgt = this.group(targetGid);
+    if (!tgt) return;
+    const srcGid = this.groupForView(viewId);
+    const src = srcGid ? this.group(srcGid) : undefined;
+    const name = src?.tabs.find((t) => t.viewId === viewId)?.viewName
+      ?? this.state.views.find((v) => v.id === viewId)?.name ?? "View";
+    if (srcGid === targetGid && side === "center") { void this.activateViewTab(targetGid, viewId); return; }
+    if (src) {
+      src.tabs = src.tabs.filter((t) => t.viewId !== viewId);
+      if (src.activeTab === viewId) src.activeTab = src.tabs[0]?.viewId ?? null;
+    }
+    if (side === "center") {
+      tgt.tabs.push({ viewId, viewName: name });
+      tgt.activeTab = viewId;
+      this.state.focusedGroup = targetGid;
+    } else {
+      const ng: ViewGroupState = { id: `g${++Store.gidSeq}`, tabs: [{ viewId, viewName: name }], activeTab: viewId, rulesOpen: true, rulesCollapsed: false };
+      this.state.viewGroups.push(ng);
+      this.splitGroupNode(targetGid, side, ng.id);
+      this.state.focusedGroup = ng.id;
+    }
+    if (src && src.tabs.length === 0 && this.state.viewGroups.length > 1) this.removeGroup(src.id);
+    this.syncViewMirror();
+    this.notify();
+    void this.loadView(viewId);
+  }
+
+  private static gidSeq = 0;
+
+  /** Wrap the target group node in a split; `side` picks the new pane's direction/position. */
+  private splitGroupNode(targetGid: string, side: AreaSide, newGid: string) {
+    const dir = side === "left" || side === "right" ? "x" : "y";
+    const wrap = (node: AreaNode): AreaNode => {
+      if (node.kind === "group") {
+        if (node.gid !== targetGid) return node;
+        const fresh: AreaNode = { kind: "group", gid: newGid };
+        const first = side === "left" || side === "top";
+        return { kind: "split", dir, sizes: [50, 50], children: first ? [fresh, node] : [node, fresh] };
+      }
+      return { ...node, children: node.children.map(wrap) };
+    };
+    this.state.viewArea = wrap(this.state.viewArea);
+  }
+
+  /** Collapse a group leaf out of the split tree (its split sibling takes the space). */
+  private removeGroup(gid: string) {
+    this.state.viewGroups = this.state.viewGroups.filter((g) => g.id !== gid);
+    const prune = (node: AreaNode): AreaNode | null => {
+      if (node.kind === "group") return node.gid === gid ? null : node;
+      const children = node.children.map(prune).filter((c): c is AreaNode => c !== null);
+      if (children.length === 0) return null;
+      if (children.length === 1) return children[0];
+      return { ...node, children };
+    };
+    const pruned = prune(this.state.viewArea);
+    // The last group can never leave (there is always one pane).
+    this.state.viewArea = pruned ?? { kind: "group", gid: this.state.viewGroups[0]?.id ?? "g0" };
+    if (!this.group(this.state.focusedGroup)) this.state.focusedGroup = this.state.viewGroups[0]?.id ?? "g0";
+  }
+
+  /** Hide/show a pane's rules subpane (View → Rule Panel acts on the focused pane). */
+  toggleGroupRules(gid?: string) {
+    const g = this.group(gid ?? this.state.focusedGroup);
+    if (!g) return;
+    g.rulesOpen = !g.rulesOpen;
+    this.notify();
+  }
+
+  groupRulesOpen(gid?: string): boolean {
+    return this.group(gid ?? this.state.focusedGroup)?.rulesOpen ?? false;
   }
 
   /** `@`-channel paints (fill/font_color rules) for the loaded tile — engine-side
@@ -332,8 +560,8 @@ export class Store {
     } catch { /* channels are cosmetic — the grid still renders without them */ }
   }
 
-  async moveDimension(dimId: string, dest: "row" | "col" | "page", index?: number) {
-    const v = this.state.activeView;
+  async moveDimension(dimId: string, dest: "row" | "col" | "page", index?: number, gid?: string) {
+    const v = this.viewOf(gid);
     if (!v) return;
     try {
       await this.api.moveViewDimension(v.viewId, dimId, dest, index);
@@ -342,8 +570,8 @@ export class Store {
     } catch (e: any) { console.error("moveDimension failed", e); await alertDialog("Move dimension failed", e?.message || String(e)); }
   }
 
-  async setPageItem(dimId: string, itemId: string) {
-    const v = this.state.activeView;
+  async setPageItem(dimId: string, itemId: string, gid?: string) {
+    const v = this.viewOf(gid);
     if (!v) return;
     try {
       await this.api.setPageItemId(v.viewId, dimId, itemId);
@@ -391,8 +619,8 @@ export class Store {
     }
   }
 
-  *iterSelectedCells(): Generator<[number, number]> {
-    const v = this.state.activeView;
+  *iterSelectedCells(gid?: string): Generator<[number, number]> {
+    const v = this.viewOf(gid);
     if (!v || !v.cells) return;
     if (v.selMode === "all") {
       for (let r = 0; r < v.rowKeys.length; r++) for (let c = 0; c < v.colKeys.length; c++) yield [r, c];
@@ -412,17 +640,18 @@ export class Store {
     }
   }
 
-  setSelection(row: number, col: number) {
-    if (!this.state.activeView) return;
-    this.state.activeView.selectedRow = row;
-    this.state.activeView.selectedCol = col;
+  setSelection(row: number, col: number, gid?: string) {
+    const v = this.viewOf(gid);
+    if (!v) return;
+    v.selectedRow = row;
+    v.selectedCol = col;
     this.notify();
     this.updateSelectionStats();
   }
 
-  setSelectionFull(row: number, col: number, mode: SelMode, indices: Set<any>, anchorRow?: number, anchorCol?: number) {
-    if (!this.state.activeView) return;
-    const v = this.state.activeView;
+  setSelectionFull(row: number, col: number, mode: SelMode, indices: Set<any>, anchorRow?: number, anchorCol?: number, gid?: string) {
+    const v = this.viewOf(gid);
+    if (!v) return;
     v.selectedRow = row;
     v.selectedCol = col;
     v.selMode = mode;
@@ -437,8 +666,8 @@ export class Store {
   /** Apply text the user typed into a cell editor, the rule bar or the Set Rule dialog.
    *  Grammar is parseCellInput(). `at` is the target cell for the grid editor; without it the
    *  active cell is used and, as in Qt, a multi-cell selection is refused for cell entries. */
-  async applyInput(raw: string, at?: { row: number; col: number }) {
-    const v = this.state.activeView;
+  async applyInput(raw: string, at?: { row: number; col: number }, gid?: string) {
+    const v = this.viewOf(gid);
     if (!v || !v.cells) return;
     const input = parseCellInput(raw);
     if (!input) return;
@@ -450,7 +679,7 @@ export class Store {
         }
         await this.api.setRule(v.cubeId, resolved.targets, input.expr, input.anchored);
       } else {
-        if (!at && this.hasMultiCellSelection()) {
+        if (!at && this.hasMultiCellSelection(gid)) {
           await alertDialog("Single cell only", "Several cells are selected. A value or =expression applies to one cell. Select a single cell and try again.");
           return;
         }
@@ -473,9 +702,9 @@ export class Store {
     }
   }
 
-  private hasMultiCellSelection(): boolean {
+  private hasMultiCellSelection(gid?: string): boolean {
     let n = 0;
-    for (const _ of this.iterSelectedCells()) if (++n > 1) return true;
+    for (const _ of this.iterSelectedCells(gid)) if (++n > 1) return true;
     return false;
   }
 
@@ -483,29 +712,28 @@ export class Store {
    *  (clipboard.clear_selection). Cells that only a rule computes, or that are empty, hold
    *  nothing to clear: they are skipped, so no empty undo steps and no false "unsaved" flag.
    *  A cell's own rule (=expr) is not removed — neither does Qt; delete it in the Rules tab. */
-  async clearSelectedCells() {
-    const v = this.state.activeView;
+  async clearSelectedCells(gid?: string) {
+    const v = this.viewOf(gid);
     if (!v || !v.cells) return;
-    const cells = [...this.iterSelectedCells()]
+    const cells = [...this.iterSelectedCells(gid)]
       .map(([r, c]) => v.cells!.cells[r * v.colKeys.length + c])
       .filter((cell) => cell?.addr && !["rule", "empty"].includes(cell.explain?.source));
-    await this.clearHardvalues(cells);
+    await this.clearHardvalues(cells, v);
   }
 
   /** Edit → Clear Override: the active cell only, and only when it holds an override (Qt _on_clear_override). */
-  async clearActiveOverride() {
-    const cell = this.activeCell();
-    if (cell?.explain?.source === "override") await this.clearHardvalues([cell]);
+  async clearActiveOverride(gid?: string) {
+    const cell = this.activeCell(gid);
+    if (cell?.explain?.source === "override") await this.clearHardvalues([cell], this.viewOf(gid)!);
   }
 
-  activeCell(): CellDTO | undefined {
-    const v = this.state.activeView;
+  activeCell(gid?: string): CellDTO | undefined {
+    const v = this.viewOf(gid);
     if (!v || !v.cells || v.selectedRow < 0 || v.selectedCol < 0) return undefined;
     return v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol];
   }
 
-  private async clearHardvalues(cells: CellDTO[]) {
-    const v = this.state.activeView;
+  private async clearHardvalues(cells: CellDTO[], v: ViewState) {
     if (!v || !cells.length) return;
     try {
       for (const cell of cells) await this.api.clearCellHardvalue(v.viewId, { kind: "ids", row_key: cell.row_key, col_key: cell.col_key });
@@ -515,10 +743,10 @@ export class Store {
     } catch (e: any) { await alertDialog("Clear failed", e?.message || String(e)); }
   }
 
-  async copySelectionToClipboard(): Promise<string> {
-    const v = this.state.activeView;
+  async copySelectionToClipboard(gid?: string): Promise<string> {
+    const v = this.viewOf(gid);
     if (!v || !v.cells) return "";
-    const cells = [...this.iterSelectedCells()];
+    const cells = [...this.iterSelectedCells(gid)];
     if (!cells.length) return "";
     const rows = new Map<number, Map<number, string>>();
     for (const [r, c] of cells) {
@@ -534,8 +762,8 @@ export class Store {
     }).join("\n");
   }
 
-  async pasteFromClipboard(text: string) {
-    const v = this.state.activeView;
+  async pasteFromClipboard(text: string, gid?: string) {
+    const v = this.viewOf(gid);
     if (!v || !v.cells) return;
     const lines = text.split("\n").filter((l) => l !== "");
     const grid = lines.map((l) => l.split("\t"));
@@ -574,7 +802,7 @@ export class Store {
       this.markDirty();
       await this.refreshModel();
       await this.refreshUndoState();
-      if (this.state.activeView) await this.loadView(this.state.activeView.viewId);
+      await this.reloadOpenViews();
       await this.refreshRules();
     } catch (e: any) { await alertDialog(kind === "undo" ? "Undo failed" : "Redo failed", e?.message || String(e)); }
   }
@@ -586,13 +814,18 @@ export class Store {
     this.markDirty();
     try {
       await this.api.recalc(scope);
-      if (this.state.activeView) await this.loadView(this.state.activeView.viewId);
+      await this.reloadOpenViews();
     } catch (e: any) { await alertDialog("Recalc failed", e?.message || String(e)); }
     await this.refreshRules();
   }
 
   async recalc(scope = "all") {
-    try { await this.api.recalc(scope); if (this.state.activeView) await this.loadView(this.state.activeView.viewId); } catch (e: any) { await alertDialog("Recalc failed", e?.message || String(e)); }
+    try { await this.api.recalc(scope); await this.reloadOpenViews(); } catch (e: any) { await alertDialog("Recalc failed", e?.message || String(e)); }
+  }
+
+  /** Every pane refreshes after model data changes, not only the focused one. */
+  private async reloadOpenViews() {
+    for (const g of this.state.viewGroups) if (g.activeTab) await this.loadView(g.activeTab);
   }
 
   /** File → New. Like Qt (`_on_new`), the runtime creates its demo workspace (dims A, B, cube C, view C). */
@@ -632,7 +865,12 @@ export class Store {
   private async resetWorkspaceUi(filePath: string | null, ensureView: boolean) {
     this.dimCache.clear();
     this.cubeCache.clear();
-    Object.assign(this.state, { openTabs: [], activeTab: null, activeView: null, selectionStats: {}, filePath, dirty: false });
+    Object.assign(this.state, {
+      selectionStats: {}, filePath, dirty: false,
+      viewGroups: [{ id: "g0", tabs: [], activeTab: null, rulesOpen: true, rulesCollapsed: false }],
+      viewStates: {}, focusedGroup: "g0", viewArea: { kind: "group", gid: "g0" } as AreaNode,
+    });
+    this.syncViewMirror();
     this.notify();
     try {
       await this.refreshModel();
@@ -662,6 +900,74 @@ export class Store {
   toggleDock(name: keyof AppState["dockVisible"]) {
     this.state.dockVisible[name] = !this.state.dockVisible[name];
     this.notify();
+  }
+
+  // ---- Dock-zone layout (T-dock) ----
+  // Presentation state only: these mutate state.layout.dock and persist, never notify()
+  // (same convention as splitter sizes — the caller reconciles the zone DOM directly).
+
+  /** Persist the whole layout blob (sizes + dock) to the host's UiState store. */
+  saveLayout() {
+    this.api.updateUiState({ layout: { ...this.state.layout } });
+  }
+
+  /** Zone a panel currently sits in, or null when it is not a member anywhere. */
+  dockPanelZone(panel: DockPanelId): DockZoneId | null {
+    const d = this.state.layout.dock;
+    for (const z of ["left", "right", "bottom"] as DockZoneId[]) if (d[z].panels.includes(panel)) return z;
+    return null;
+  }
+
+  /** Move a panel into a zone (appended as a tab, made active). No-op to the same zone. */
+  moveDockPanel(panel: DockPanelId, zone: DockZoneId) {
+    const d = this.state.layout.dock;
+    const from = this.dockPanelZone(panel);
+    if (from === zone) return;
+    if (from) {
+      const z = d[from];
+      z.panels = z.panels.filter((p) => p !== panel);
+      if (z.active === panel) z.active = z.panels[0] ?? null;
+    }
+    d[zone].panels.push(panel);
+    d[zone].active = panel;
+    d.lastZone[panel] = zone;
+    this.saveLayout();
+  }
+
+  /** Show a zone member's tab. */
+  activateDockTab(zone: DockZoneId, panel: DockPanelId) {
+    if (!this.state.layout.dock[zone].panels.includes(panel)) return;
+    this.state.layout.dock[zone].active = panel;
+    this.saveLayout();
+  }
+
+  /** dockVisible flag → dock membership. Hide records the panel's zone in lastZone;
+   *  show re-docks it there. Includes `"rules"` — the View menu can hide the Rule
+   *  Panel like any other tool window.
+   *  Returns true when membership changed — callers reconcile the zone DOM only then,
+   *  so a notify() during a tab drag cannot rebuild the strip mid-gesture. */
+  syncDockMembership(): boolean {
+    const s = this.state;
+    const d = s.layout.dock;
+    let changed = false;
+    for (const name of Object.keys(s.dockVisible) as (keyof AppState["dockVisible"])[]) {
+      if (name === "rules") continue;   // rules is a subpane of each view group, not a dock-zone member
+      const zone = this.dockPanelZone(name);
+      if (s.dockVisible[name] && !zone) {
+        const target = d.lastZone[name] ?? "left";
+        d[target].panels.push(name);
+        d[target].active = name;
+        changed = true;
+      } else if (!s.dockVisible[name] && zone) {
+        const z = d[zone];
+        d.lastZone[name] = zone;
+        z.panels = z.panels.filter((p) => p !== name);
+        if (z.active === name) z.active = z.panels[0] ?? null;
+        changed = true;
+      }
+    }
+    if (changed) this.saveLayout();
+    return changed;
   }
 }
 
