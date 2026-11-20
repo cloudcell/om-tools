@@ -10,7 +10,7 @@ import { StatusBar } from "./statusBar";
 import { InfoToolbox } from "./infoToolbox";
 import { FormatToolbox } from "./formatToolbox";
 import { PerformanceWatch } from "./performanceWatch";
-import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog } from "./dialogs";
+import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog, optionsDialog } from "./dialogs";
 import { Timeline } from "./timeline";
 import { ModelActions } from "./modelActions";
 import { Splitter } from "./splitter";
@@ -424,8 +424,13 @@ export class AppShell {
         { label: "Remote", checked: s.engineType === "remote", fn: () => this.store.api.setEngine("remote").then(() => { this.store.set({ engineType: "remote", isRemote: true }); }) },
       ], ...NOT_IN_MVP },
       { sep: true },
-      { icon: msym("settings"), label: "Options…", fn: () => alertDialog("Options", "Options dialog — GUI configuration pending."), ...NOT_IN_MVP },
+      { icon: msym("settings"), label: "Options…", fn: () => this.openOptions() },
     ];
+  }
+
+  private async openOptions() {
+    const result = await optionsDialog(this.store.state.options);
+    if (result) this.store.setOptions(result);
   }
 
   private windowMenuItems(): MenuItem[] {

@@ -259,11 +259,11 @@ export class RulePanel {
   // (trace_calculation_flow) returns a breadth-first list of nodes: each has
   // depth, source, expression, precedents/precedent_targets and
   // dependents/dependent_targets.
-  private calcFlowDepth = 2;
+  private calcFlowDepth = 1;
   /** Last trace. Store notifies on every change (selection stats, status, …);
    *  re-query only when the cell, depth, rules or cell data change, or on Refresh. */
   private calcFlowCache: CalcFlowCache | null = null;
-  private calcFlowMode: "list" | "graph" = "list";
+  private calcFlowMode: "list" | "graph" = "graph";
   /** Graph canvas of the latest render: a pan that started before a re-render keeps moving the new one. */
   private cfCanvas: HTMLElement | null = null;
 
@@ -277,7 +277,7 @@ export class RulePanel {
     controls.appendChild(el("label", {}, ["Depth: "]));
     const depthInput = el("input", { type: "number", value: String(this.calcFlowDepth), min: "1", max: "10", style: { width: "40px" } }) as HTMLInputElement;
     depthInput.addEventListener("change", () => {
-      this.calcFlowDepth = Math.min(10, Math.max(1, parseInt(depthInput.value) || 2));
+      this.calcFlowDepth = Math.min(10, Math.max(1, parseInt(depthInput.value) || 1));
       this.refresh(panel);
     });
     controls.appendChild(depthInput);
@@ -473,27 +473,27 @@ export class RulePanel {
       edgeEls.push({ from: e.from, to: e.to, g });
     }
 
-    // 4. Pan / zoom. Start with the traced cell in view; Fit and 100% buttons in the corner.
+    // 4. Pan / zoom. Start with the whole graph fitted and centred in the pane;
+    //    Fit and 100% buttons in the corner (100% re-centres on the traced cell).
     const root = rects.get(nodes.find((n) => n.root)!.key)!;
+    const fit = (): GraphView => {
+      const bw = box.clientWidth, bh = box.clientHeight;
+      const s = Math.max(GRAPH_MIN_ZOOM, Math.min(1, (bw - 8) / width, (bh - 8) / height));
+      return { x: Math.max(0, (bw - width * s) / 2), y: Math.max(0, (bh - height * s) / 2), s };
+    };
     const initial = (): GraphView => {
       const bw = box.clientWidth, bh = box.clientHeight;
       const clampPos = (want: number, size: number, avail: number) => size <= avail ? 0 : Math.min(0, Math.max(avail - size, want));
       return { x: clampPos(bw / 2 - (root.x + root.w / 2), width, bw), y: clampPos(bh / 2 - (root.y + root.h / 2), height, bh), s: 1 };
     };
-    const view = entry.view ?? (entry.view = initial());
+    const view = entry.view ?? (entry.view = fit());
     this.cfCanvas = canvas;
     const apply = () => { if (this.calcFlowCache === entry && this.cfCanvas) this.cfCanvas.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.s})`; };
     apply();
 
     const tools = el("div", { class: "cf-graph-tools" });
     const fitBtn = el("button", { class: "tb-btn", title: "Fit the whole graph into the panel" }, ["Fit"]);
-    fitBtn.addEventListener("click", () => {
-      const bw = box.clientWidth, bh = box.clientHeight;
-      view.s = Math.max(GRAPH_MIN_ZOOM, Math.min(1, (bw - 8) / width, (bh - 8) / height));
-      view.x = Math.max(0, (bw - width * view.s) / 2);
-      view.y = Math.max(0, (bh - height * view.s) / 2);
-      apply();
-    });
+    fitBtn.addEventListener("click", () => { Object.assign(view, fit()); apply(); });
     const resetBtn = el("button", { class: "tb-btn", title: "Actual size, centred on the selected cell" }, ["100%"]);
     resetBtn.addEventListener("click", () => { Object.assign(view, initial()); apply(); });
     tools.appendChild(fitBtn);

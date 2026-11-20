@@ -81,10 +81,35 @@ export interface UiLayout {
 /** Colour theme (T-039). Chosen by hand with the switch in the menu bar; dark when nothing is saved. */
 export type UiTheme = "light" | "dark";
 
+/** Display options, shown and edited in Tools → Options. All fields optional in the
+ *  persisted state; DEFAULT_OPTIONS fills the gaps. */
+export interface UiOptions {
+  /** Pale-yellow fill + red corner triangle on hardvalue cells (Qt "hardnumber" style). */
+  markHardvalues?: boolean;
+  /** Sign marking aggregate items in row/column headers, e.g. "Σ". */
+  aggregateSign?: string;
+}
+
+/** What a fresh install uses — shown next to each control in the Options dialog. */
+export const DEFAULT_OPTIONS: Required<UiOptions> = {
+  markHardvalues: true,
+  aggregateSign: "Σ",
+};
+
+/** Aggregate-sign choices offered in Tools → Options. The first entry is the default. */
+export const AGGREGATE_SIGN_CHOICES: { value: string; label: string }[] = [
+  { value: "Σ", label: "Σ  Sigma" },
+  { value: "+", label: "+  Plus" },
+  { value: "≡", label: "≡  Identical" },
+  { value: "T", label: "T  Total" },
+  { value: "#", label: "#  Hash" },
+];
+
 /** Everything the webview persists. `saveUiState` params: `{ state: UiState }`. */
 export interface UiState {
   layout?: UiLayout;
   theme?: UiTheme;
+  options?: UiOptions;
 }
 
 /** Name of the `<meta>` tag through which the VS Code host hands the saved UiState to a new webview
