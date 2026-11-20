@@ -27,6 +27,10 @@ export interface ViewState {
   selIndices: Set<any>;
   anchorRow: number;
   anchorCol: number;
+  /** Per-view column pixel widths (col_index → px), persisted by the engine. */
+  colWidths: Record<number, number>;
+  /** Per-view row-header level pixel widths (depth_or_index → px). */
+  rowHeaderWidths: Record<number, number>;
   loading: boolean;
 }
 
@@ -121,6 +125,9 @@ export class Store {
   setOptions(patch: UiOptions) {
     this.set({ options: { ...this.state.options, ...patch } });
     this.api.updateUiState({ options: this.state.options });
+    // App-level listeners outside the webview bundle (om-tools-web Assistant
+    // panel) get a DOM event — it is a no-op where nothing listens.
+    document.dispatchEvent(new CustomEvent("omCore.optionsChanged", { detail: this.state.options }));
   }
 
   subscribe(fn: Listener): () => void { this.listeners.add(fn); return () => this.listeners.delete(fn); }
@@ -247,7 +254,7 @@ export class Store {
 
   async loadView(viewId: string) {
     if (!this.state.activeView || this.state.activeView.viewId !== viewId) {
-      this.state.activeView = { viewId, viewName: "", cubeId: "", rowDimIds: [], colDimIds: [], pageDimIds: [], pageSelections: {}, rowKeys: [], colKeys: [], rowHeaders: [], colHeaders: [], cells: null, selectedRow: -1, selectedCol: -1, selMode: "cell", selIndices: new Set(), anchorRow: 0, anchorCol: 0, loading: true };
+      this.state.activeView = { viewId, viewName: "", cubeId: "", rowDimIds: [], colDimIds: [], pageDimIds: [], pageSelections: {}, rowKeys: [], colKeys: [], rowHeaders: [], colHeaders: [], cells: null, selectedRow: -1, selectedCol: -1, selMode: "cell", selIndices: new Set(), anchorRow: 0, anchorCol: 0, colWidths: {}, rowHeaderWidths: {}, loading: true };
     } else {
       this.state.activeView.loading = true;
     }
@@ -286,6 +293,9 @@ export class Store {
         selIndices: prev && prev.viewId === viewId ? prev.selIndices : new Set(),
         anchorRow: prev && prev.viewId === viewId ? prev.anchorRow : 0,
         anchorCol: prev && prev.viewId === viewId ? prev.anchorCol : 0,
+        // Native: engine-emitted col_widths/row_header_widths use string keys.
+        colWidths: Object.fromEntries(Object.entries(detail.col_widths ?? {}).map(([k, w]) => [Number(k), w as number])),
+        rowHeaderWidths: Object.fromEntries(Object.entries(detail.row_header_widths ?? {}).map(([k, w]) => [Number(k), w as number])),
         loading: false,
       };
       this.state.focusPath = `OM Core View: ${detail.name}`;

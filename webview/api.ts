@@ -13,6 +13,8 @@ export interface ViewDetail {
   id: string; name: string; cube_id: string;
   row_dim_ids: string[]; col_dim_ids: string[]; page_dim_ids: string[];
   layout: { rows: string[]; cols: string[]; page: string[] };
+  /** Saved column/row-header widths, string keys (engine-emitted, like the Qt GUI). */
+  col_widths?: Record<string, number>; row_header_widths?: Record<string, number>;
 }
 export interface CellExplain { source: string; rule_body: string | null; error: string | null; depends: any }
 export interface CellDTO {

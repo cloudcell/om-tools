@@ -240,7 +240,7 @@ export class MultilevelGrid {
   // ---- Build grid entries from view data ----
   private widthsViewId: string | null = null;
   private buildGrid(v: any) {
-    if (this.widthsViewId !== v.viewId) { this.widthsViewId = v.viewId; this.colWidths = {}; this.rowLevelWidths = {}; }
+    if (this.widthsViewId !== v.viewId) { this.widthsViewId = v.viewId; this.colWidths = { ...v.colWidths }; this.rowLevelWidths = { ...v.rowHeaderWidths }; }
     this.rowKeys = v.rowKeys;
     this.colKeys = v.colKeys;
     this.cells = v.cells.cells;
@@ -745,7 +745,10 @@ export class MultilevelGrid {
         this.resizeState = null;
         scroll.classList.remove("resizing", "resize-hover");
         document.body.classList.remove("ml-resizing");
-        if (st?.moved) this.suppressClickOnce = true;
+        if (st?.moved) {
+          this.suppressClickOnce = true;
+          this.persistResizedWidths(st);
+        }
       };
       document.addEventListener("mousemove", move);
       document.addEventListener("mouseup", up);
@@ -755,6 +758,28 @@ export class MultilevelGrid {
     scroll.addEventListener("click", (e) => {
       if (this.suppressClickOnce) { this.suppressClickOnce = false; e.stopPropagation(); e.preventDefault(); }
     }, true);
+  }
+
+  /** Persist resize results on mouse-up (native mouseReleaseEvent → set_view_*_width). */
+  private persistResizedWidths(st: { kind: "col" | "rowLevel"; index: number }) {
+    const v = this.store.state.activeView;
+    if (!v) return;
+    if (st.kind === "col") {
+      const isMulti = this.selMode === "col" && this.selIndices.has(st.index) && this.selIndices.size > 1;
+      const targets = isMulti ? [...(this.selIndices as Set<number>)] : [st.index];
+      for (const i of targets) {
+        const w = this.colWidths[i];
+        if (w == null) continue;
+        v.colWidths[i] = w;
+        this.store.api.setViewColWidth(v.viewId, i, w).catch((e) => console.error("set_view_col_width failed", e));
+      }
+    } else {
+      const w = this.rowLevelWidths[st.index];
+      if (w == null) return;
+      v.rowHeaderWidths[st.index] = w;
+      this.store.api.setViewRowHeaderWidth(v.viewId, st.index, w).catch((e) => console.error("set_view_row_header_width failed", e));
+    }
+    this.store.markDirty();
   }
 
   private onResizeMove(e: MouseEvent, scroll: HTMLElement) {

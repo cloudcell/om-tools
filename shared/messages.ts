@@ -88,12 +88,15 @@ export interface UiOptions {
   markHardvalues?: boolean;
   /** Sign marking aggregate items in row/column headers, e.g. "Σ". */
   aggregateSign?: string;
+  /** Show the AI Assistant panel toggle (om-tools-web). */
+  assistant?: boolean;
 }
 
 /** What a fresh install uses — shown next to each control in the Options dialog. */
 export const DEFAULT_OPTIONS: Required<UiOptions> = {
   markHardvalues: true,
   aggregateSign: "Σ",
+  assistant: true,
 };
 
 /** Aggregate-sign choices offered in Tools → Options. The first entry is the default. */
