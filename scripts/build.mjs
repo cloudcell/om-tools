@@ -5,7 +5,7 @@
 
 import { build } from "esbuild";
 import { execSync } from "node:child_process";
-import { copyFileSync, readFileSync, chmodSync } from "node:fs";
+import { copyFileSync, readFileSync, chmodSync, existsSync } from "node:fs";
 
 const version = JSON.parse(readFileSync("package.json", "utf8")).version;
 let commit = "nogit";
@@ -28,16 +28,33 @@ await build({
 });
 // TS runtime (canonical source: a sibling ts_runtime checkout). Bundled into dist/ so
 // the vsix ships self-contained; OM_TS_RUNTIME_DIR overrides the checkout.
+// Absent on machines without the checkout (e.g. CI): build a socket-only
+// extension — embedded mode then needs omCore.tsRuntimePath at runtime.
 const tsRuntimeDir = process.env.OM_TS_RUNTIME_DIR || "../ts_runtime";
-await build({
-  entryPoints: [`${tsRuntimeDir}/src/engineWorker.ts`], bundle: true, platform: "node", format: "cjs",
-  outfile: "dist/engineWorker.cjs",
-});
-await build({
-  entryPoints: [`${tsRuntimeDir}/src/tsEngineServer.ts`], bundle: true, platform: "node", format: "cjs",
-  banner: { js: "#!/usr/bin/env node" }, outfile: "dist/tsEngineServer.cjs",
-});
-chmodSync("dist/tsEngineServer.cjs", 0o755);
-try { copyFileSync(`${tsRuntimeDir}/assets/om_engine.wasm`, "dist/om_engine.wasm"); }
-catch { console.warn(`${tsRuntimeDir}/assets/om_engine.wasm missing — run its tools/sync-wasm.sh`); }
-console.log(`build: ${buildInfo}  ts_runtime: ${tsRuntimeDir}`);
+const wasmSrc = [`${tsRuntimeDir}/assets/om_engine.wasm`, `${tsRuntimeDir}/dist/om_engine.wasm`].find(existsSync);
+let tsBundled = false;
+if (existsSync(`${tsRuntimeDir}/src/engineWorker.ts`)) {
+  await build({
+    entryPoints: [`${tsRuntimeDir}/src/engineWorker.ts`], bundle: true, platform: "node", format: "cjs",
+    outfile: "dist/engineWorker.cjs",
+  });
+  await build({
+    entryPoints: [`${tsRuntimeDir}/src/tsEngineServer.ts`], bundle: true, platform: "node", format: "cjs",
+    banner: { js: "#!/usr/bin/env node" }, outfile: "dist/tsEngineServer.cjs",
+  });
+  chmodSync("dist/tsEngineServer.cjs", 0o755);
+  tsBundled = true;
+} else if (existsSync(`${tsRuntimeDir}/dist/engineWorker.cjs`)) {
+  // Checkout without sources — reuse its prebuilt artifacts.
+  copyFileSync(`${tsRuntimeDir}/dist/engineWorker.cjs`, "dist/engineWorker.cjs");
+  if (existsSync(`${tsRuntimeDir}/dist/tsEngineServer.cjs`)) {
+    copyFileSync(`${tsRuntimeDir}/dist/tsEngineServer.cjs`, "dist/tsEngineServer.cjs");
+    chmodSync("dist/tsEngineServer.cjs", 0o755);
+  }
+  tsBundled = true;
+} else {
+  console.warn(`ts_runtime not found at ${tsRuntimeDir} — socket-only build (embedded mode will need omCore.tsRuntimePath)`);
+}
+if (wasmSrc) copyFileSync(wasmSrc, "dist/om_engine.wasm");
+else if (tsBundled) console.warn("om_engine.wasm not found — embedded engine unavailable in this build");
+console.log(`build: ${buildInfo}  ts_runtime: ${tsBundled ? tsRuntimeDir : "not bundled"}`);
