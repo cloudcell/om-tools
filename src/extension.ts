@@ -2,10 +2,9 @@ import * as vscode from "vscode";
 import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString, topicMatches } from "./engineClient";
 import { EngineProcess } from "./engineProcess";
 import { HostRequest, HostToWebview, AppConfig, PickFileParams, UiState, UI_STATE_META } from "../shared/messages";
-import { autoStartBlockedReason, installBlockedReason, isRemoteEndpoint } from "./runtimePolicy";
+import { autoStartBlockedReason, isRemoteEndpoint } from "./runtimePolicy";
 import { sanitizeUiState } from "./uiState";
-import { GUI_BUTTON_KEY, INSTALL_BUTTON_KEY, RUNTIME_BUTTON_KEY, StatusSnapshot, UV_INSTALL_URL, buttonStates, describeOmCorePath, findUv, hasVenv, looksLikeOmCore, missingOmCoreParts, readGitCommit } from "./engineStatus";
-import { gitOnPath, installOmCore, managedCoreDir } from "./omCoreInstaller";
+import { GUI_BUTTON_KEY, RUNTIME_BUTTON_KEY, StatusSnapshot, UV_INSTALL_URL, buttonStates, describeOmCorePath, findUv, hasVenv, looksLikeOmCore, missingOmCoreParts, readGitCommit } from "./engineStatus";
 import { StatusPanel } from "./statusPanel";
 import { OmMcpServer, startOmMcpServer } from "./mcpServer";
 import { EmbeddedBackend, resolveTsRuntime } from "./backend";
@@ -180,94 +179,30 @@ async function pickOmCoreFolder(): Promise<string | null> {
   return dir;
 }
 
-/** Start Runtime reached the end of the resolution chain: offer a managed download before asking for a folder. */
+/** Start Runtime reached the end of the resolution chain: explain, then ask for a folder. */
 async function pickAndPersistOmCorePath(): Promise<string> {
   try {
-    const download = "Download om-core from GitHub (recommended)";
-    const choose = "Choose existing folder…";
-    const pick = await vscode.window.showQuickPick(
-      [{ label: download, description: "OM Tools clones cloudcell/om-core at a tested commit and runs uv sync" },
-       { label: choose, description: "use an om-core checkout already on this computer" }],
-      { title: "No om-core engine found", placeHolder: "How should OM Tools get the om-core engine?" });
-    if (pick?.label === download) {
-      const dir = await installEngine();
-      if (dir) return dir;
-      throw new Error("om-core path is not set. Use Install Engine in the OM Core side panel, set 'omCore.omCorePath', or set OM_CORE_PATH.");
+    const choose = "Choose om-core folder…";
+    const pick = await vscode.window.showWarningMessage(
+      "No om-core engine found. Starting the Python runtime needs an om-core checkout — choose its folder, or switch to the bundled engine (omCore.engineMode: embedded).",
+      { modal: true }, choose);
+    if (pick !== choose) throw new Error("om-core path is not set. Set 'omCore.omCorePath' or OM_CORE_PATH.");
+    const dir = await pickOmCoreFolder();
+    if (dir) {
+      await vscode.workspace.getConfiguration("omCore").update("omCorePath", dir, vscode.ConfigurationTarget.Global);
+      return dir;
     }
-    if (pick?.label === choose) {
-      const dir = await pickOmCoreFolder();
-      if (dir) {
-        await vscode.workspace.getConfiguration("omCore").update("omCorePath", dir, vscode.ConfigurationTarget.Global);
-        return dir;
-      }
-    }
-    throw new Error("om-core path is not set. Use Install Engine in the OM Core side panel, set 'omCore.omCorePath', or set OM_CORE_PATH.");
+    throw new Error("om-core path is not set. Set 'omCore.omCorePath' or OM_CORE_PATH.");
   } finally {
     omCorePathPrompt = null;
   }
 }
 
-/** The managed clone Install Engine downloaded (globalState), so describeOmCorePath can show it as `managed`. */
-const MANAGED_CORE_KEY = "omCore.managedCorePath";
-
-function managedCorePath(): string {
-  return extContext?.globalState.get<string>(MANAGED_CORE_KEY, "") ?? "";
-}
-
-/** Where Install Engine's output goes: git fetch and uv sync can take minutes and their progress matters. */
+/** The extension's output channel (engine/MCP logs). */
 let engineOutput: vscode.OutputChannel | null = null;
 function outputChannel(): vscode.OutputChannel {
   if (!engineOutput) engineOutput = vscode.window.createOutputChannel("OM Core");
   return engineOutput;
-}
-
-/** One install at a time: the path row, the quick-pick, and the Install Engine button all reach the same promise,
- *  like startingRuntime/connecting dedupe double clicks. Resolves to the managed folder, null when cancelled. */
-let installingCore: Promise<string | null> | null = null;
-
-function installEngine(): Promise<string | null> {
-  if (!installingCore) installingCore = doInstallEngine().finally(() => { installingCore = null; void statusPanel?.refresh(); });
-  return installingCore;
-}
-
-async function doInstallEngine(): Promise<string | null> {
-  if (!extContext) throw new Error("extension not activated");
-  // Installing runs uv sync, which executes package build scripts: not in Restricted Mode (Workspace Trust).
-  const blocked = installBlockedReason(vscode.workspace.isTrusted);
-  if (blocked) throw new Error(blocked);
-  if (!gitOnPath()) throw new Error("git is needed to download om-core but was not found on PATH. Install git, or install om-core manually and set omCore.omCorePath (see the OM Tools README).");
-  const uv = findUv();
-  if (!uv.onPath) throw new Error(uv.elsewhere
-    ? `uv is installed at ${uv.elsewhere} but not on this PATH. Close all VS Code windows and start VS Code again (Reload Window is not enough), then try Install Engine again.`
-    : `uv is needed to install om-core's dependencies. Install it (${UV_INSTALL_URL}), restart VS Code, then try again.`);
-  // Install Engine never silently replaces an engine that already resolves: the managed tier is implicit,
-  // so a configured env/workspace path would keep losing to the new copy without a word. Ask first.
-  const existing = currentCorePath();
-  if (existing.path && !existing.missingParts.length && existing.source !== "managed") {
-    const yes = "Install anyway";
-    const pick = await vscode.window.showWarningMessage(
-      `om-core is already set up at ${existing.path} and OM Tools is using it. Download a separate managed copy anyway?`,
-      { modal: true }, yes);
-    if (pick !== yes) return null;
-  }
-  const dest = managedCoreDir(extContext.globalStorageUri.fsPath);
-  const ch = outputChannel();
-  ch.show(true);
-  ch.appendLine(`Installing om-core to ${dest}`);
-  try {
-    await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: "Installing om-core…", cancellable: false },
-      async () => installOmCore(dest, { onOutput: (s) => ch.append(s) }),
-    );
-  } catch (e) {
-    // A download that failed at uv sync still leaves a valid checkout: record it so the side panel shows the
-    // path and the ".venv missing" row (and Install Engine can repair it) instead of looking like nothing happened.
-    if (looksLikeOmCore(dest)) await extContext.globalState.update(MANAGED_CORE_KEY, dest);
-    throw e;
-  }
-  await extContext.globalState.update(MANAGED_CORE_KEY, dest);
-  ch.appendLine("Install finished.");
-  return dest;
 }
 
 /** Side panel button "Choose om-core Folder…": saves to User settings and says when that does not take effect. */
@@ -297,7 +232,7 @@ function currentCorePath(): ReturnType<typeof describeOmCorePath> {
     setting,
     settingScope: omCorePathScope(cfg, setting.trim()),
     env: process.env.OM_CORE_PATH || process.env.OPENM_CORE_PATH || "",
-    managed: managedCorePath(),
+
     workspaceFolders: (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath),
     approvedFolders: extContext?.globalState.get<string[]>(APPROVED_CORE_KEY, []) ?? [],
   });
@@ -325,10 +260,8 @@ async function approveWorkspaceCore(dir: string): Promise<boolean> {
   return true;
 }
 
-/** Where the runtime lives, for auto-start: omCore.omCorePath > OM_CORE_PATH env > the managed clone Install
- *  Engine downloaded > a workspace folder that is an om-core checkout (after the user approves it) > a
- *  download-or-pick prompt (pick persisted to global settings). The managed tier is implicit — nothing is written
- *  to omCore.omCorePath — so an explicit user choice always outranks it.
+/** Where the runtime lives, for auto-start: omCore.omCorePath > OM_CORE_PATH env > a workspace folder that is an
+ *  om-core checkout (after the user approves it) > a folder-pick prompt (pick persisted to global settings).
  *  The side panel shows the same choice without asking anything: describeOmCorePath in engineStatus.ts. Keep the two in step. */
 async function resolveOmCorePath(): Promise<string> {
   const cfg = vscode.workspace.getConfiguration("omCore");
@@ -338,9 +271,6 @@ async function resolveOmCorePath(): Promise<string> {
 
   const fromEnv = (process.env.OM_CORE_PATH || process.env.OPENM_CORE_PATH || "").trim();
   if (fromEnv && looksLikeOmCore(fromEnv)) return fromEnv;
-
-  const managed = managedCorePath().trim();
-  if (managed && looksLikeOmCore(managed)) return managed;
 
   for (const folder of vscode.workspace.workspaceFolders ?? []) {
     const dir = folder.uri.fsPath;
@@ -382,7 +312,15 @@ async function restartMcpServer(): Promise<void> {
   if (cfg.get<boolean>("mcp.enabled", true)) {
     try {
       mcpServer = await startOmMcpServer({
-        getClient: () => activeConn(),
+        // Embedded mode can spawn the engine on first use — there is no
+        // external runtime to wait for. Socket mode stays explicit: we
+        // never auto-start a user's runtime from an agent call.
+        getConn: async () => {
+          if (useEmbedded() && !activeConn()?.isConnected) {
+            try { await connect(); } catch { /* report via null below */ }
+          }
+          return activeConn();
+        },
         resolveFileDir: () => defaultDirUri().fsPath,
         port: cfg.get<number>("mcp.port", 0),
         log: (m) => outputChannel().appendLine(`[mcp] ${m}`),
@@ -490,18 +428,28 @@ async function openConnection(): Promise<void> {
     const isRespawn = !!embedded;
     if (embedded) { try { await embedded.dispose(); } catch {} embedded = null; }
     const cfg = vscode.workspace.getConfiguration("omCore");
-    const tsPaths = resolveTsRuntime(
-      extContext!.extensionPath,
-      cfg.get<string>("tsRuntimePath") || process.env.OM_TS_RUNTIME_DIR || null,
-    );
+    // Restricted Mode: an external ts_runtime path is arbitrary Node code —
+    // ignore it when untrusted and fall back to the bundled dist/ copy.
+    const runtimeDir = vscode.workspace.isTrusted
+      ? (cfg.get<string>("tsRuntimePath") || process.env.OM_TS_RUNTIME_DIR || null)
+      : null;
+    const tsPaths = resolveTsRuntime(extContext!.extensionPath, runtimeDir);
     const eb = new EmbeddedBackend({
       ...tsPaths,
       stateBytes: cfg.get<number>("engineStateBytes") || undefined,
       scratchBytes: cfg.get<number>("engineScratchBytes") || undefined,
     });
     eb.onWorkerExit = (code) => {
-      if (embedded === eb) { embedded = null; currentSessionId = null; }
-      sendStatus("error", `Embedded engine stopped (code ${code}) — unsaved workspace was lost. Press Start Runtime to start a fresh engine.`);
+      // Keep `embedded`: the backend respawns on next request (freshRuntime
+      // surfaces to the webview). Nulling it would strand the GUI with a
+      // dead conn and no recovery path.
+      if (embedded === eb) currentSessionId = null;
+      sendStatus("error", `Embedded engine stopped (code ${code}) — unsaved workspace was lost. It respawns on next action or Start Runtime.`);
+    };
+    eb.onRespawn = () => {
+      currentSessionId = eb.session;
+      runtimeReplaced = false;
+      sendStatus("connected", "Embedded engine restarted — workspace is fresh", { freshRuntime: true });
     };
     eb.onAnyEvent = (env) => postToWebview({ type: "event", envelope: env });
     await eb.connect();
@@ -554,6 +502,20 @@ function omCorePathScope(cfg: vscode.WorkspaceConfiguration, value: string): str
 
 /** Everything the side panel shows. Only looks: no dialogs, no warnings, nothing started. */
 async function statusSnapshot(): Promise<StatusSnapshot> {
+  const gui = { open: !!panel, connected: !!activeConn()?.isConnected, connecting: connecting !== null, session: currentSessionId };
+  if (useEmbedded()) {
+    // Embedded mode has no external runtime to probe — the worker IS the
+    // runtime, and it is always ours. Skip every socket/fs probe: there is
+    // no om-core checkout, no venv, no uv to validate.
+    return {
+      trusted: vscode.workspace.isTrusted,
+      mode: "embedded",
+      runtime: { endpoint: "wasm://embedded", endpointError: null, running: !!embedded, startedByUs: !!embedded, starting: connecting !== null },
+      gui, lastStatus,
+      corePath: { source: "none", path: null, settingScope: null, missingParts: [], needsApproval: false, ignored: [] },
+      venv: null, commit: null, uv: { onPath: null, elsewhere: null },
+    };
+  }
   const corePath = currentCorePath();
   const usable = corePath.path && corePath.missingParts.length === 0 ? corePath.path : null;
 
@@ -569,11 +531,10 @@ async function statusSnapshot(): Promise<StatusSnapshot> {
 
   return {
     trusted: vscode.workspace.isTrusted,
+    mode: "socket",
     runtime: { endpoint, endpointError, running, startedByUs, starting: launching },
-    gui: { open: !!panel, connected: !!activeConn()?.isConnected, connecting: connecting !== null, session: currentSessionId },
-    lastStatus,
+    gui, lastStatus,
     corePath,
-    installingCore: installingCore !== null,
     venv: usable ? hasVenv(usable) : null,
     commit: usable ? readGitCommit(usable) : null,
     uv: findUv(),
@@ -585,7 +546,6 @@ function applyButtonContext(s: StatusSnapshot): void {
   const b = buttonStates(s);
   void vscode.commands.executeCommand("setContext", RUNTIME_BUTTON_KEY, b.runtime);
   void vscode.commands.executeCommand("setContext", GUI_BUTTON_KEY, b.gui);
-  void vscode.commands.executeCommand("setContext", INSTALL_BUTTON_KEY, b.install);
 }
 
 function updateStatusBar(status: string, message?: string) {
@@ -735,18 +695,26 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("omCore.closeGui", () => { panel?.dispose(); }),
     vscode.commands.registerCommand("omCore.startRuntime", async () => {
       try {
-        await startRuntimeProcess();
-        // A GUI tab that is open but not connected (the runtime was stopped or died) comes back to life,
-        // instead of showing "disconnected" next to a runtime that is running.
-        if (panel && !activeConn()?.isConnected) await connect();
-        vscode.window.showInformationMessage("OM Core runtime started.");
+        if (useEmbedded()) {
+          // There is nothing to launch: "starting" the embedded engine IS
+          // opening the connection — it spawns the wasm worker on demand.
+          await openConnection();
+          vscode.window.showInformationMessage("OM Core embedded engine started.");
+        } else {
+          await startRuntimeProcess();
+          // A GUI tab that is open but not connected (the runtime was stopped or died) comes back to life,
+          // instead of showing "disconnected" next to a runtime that is running.
+          if (panel && !activeConn()?.isConnected) await connect();
+          vscode.window.showInformationMessage("OM Core runtime started.");
+        }
       } catch (e: any) { vscode.window.showErrorMessage(`Failed to start runtime: ${e?.message || e}`); }
       refreshPanel();
     }),
     vscode.commands.registerCommand("omCore.stopRuntime", async () => {
       // Only a runtime this extension started can be stopped; another one (Qt GUI, a terminal) is only disconnected from.
       // `runtime` stays set after a failed start (to stop a process that did not get ready in time), so ask whether it runs.
-      const ours = !!runtime?.isRunning;
+      const hadEmbedded = !!embedded;
+      const ours = !!runtime?.isRunning || hadEmbedded;
       if (ours) {
         // One click on the side panel would otherwise drop the model: the runtime holds it, the GUI does not.
         const stop = "Stop Runtime";
@@ -754,12 +722,12 @@ export function activate(context: vscode.ExtensionContext) {
           { modal: true, detail: "The model lives in the runtime: changes that are not saved with File → Save are lost." }, stop);
         if (pick !== stop) return;
       }
-      if (embedded) { await embedded.dispose(); embedded = null; currentSessionId = null; runtimeReplaced = true; }
+      if (embedded) { await embedded.dispose(); embedded = null; currentSessionId = null; }
       if (runtime) { await runtime.stop(); runtime = null; }
       if (client) { client.close(); client = null; currentSessionId = null; }
       if (ours) runtimeReplaced = true;   // whatever runs next is not the runtime the open GUI page was showing
-      sendStatus("disconnected", ours || !useEmbedded() ? "Runtime stopped" : "Embedded engine stopped", { hint: DISCONNECTED_HINT });
-      vscode.window.showInformationMessage(embedded || useEmbedded()
+      sendStatus("disconnected", hadEmbedded ? "Embedded engine stopped" : "Runtime stopped", { hint: DISCONNECTED_HINT });
+      vscode.window.showInformationMessage(hadEmbedded
         ? "OM Core embedded engine stopped."
         : (ours
           ? "OM Core runtime stopped."
@@ -772,11 +740,6 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("omCore.refreshStatus", () => statusPanel?.refresh()),
     // Side panel row actions (T-062, step 2). Inline buttons pass the row as the argument.
     vscode.commands.registerCommand("omCore.choosePath", () => chooseOmCorePath()),
-    vscode.commands.registerCommand("omCore.downloadCore", async () => {
-      try { if (await installEngine()) vscode.window.showInformationMessage("om-core engine installed."); }
-      catch (e: any) { vscode.window.showErrorMessage(`Failed to install om-core: ${e?.message || e}`); }
-      refreshPanel();
-    }),
     vscode.commands.registerCommand("omCore.openSettings", (row?: unknown) => vscode.commands.executeCommand("workbench.action.openSettings", settingForRow(row))),
     vscode.commands.registerCommand("omCore.revealPath", async () => {
       const dir = currentCorePath().path;
@@ -801,6 +764,21 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("omCore")) refreshPanel();
       if (e.affectsConfiguration("omCore.mcp")) void restartMcpServer();
+      // Mode flip: a live conn belongs to the old mode — drop it and
+      // reconnect under the new one (same semantics as Reconnect).
+      if (e.affectsConfiguration("omCore.engineMode") || e.affectsConfiguration("omCore.runtimeEndpoint")) {
+        if (activeConn()) {
+          if (embedded) { void embedded.dispose(); embedded = null; }
+          if (client) { client.close(); client = null; }
+          currentSessionId = null;
+          void connect().catch(() => {});
+        }
+      }
+      // Arena sizes / worker path are fixed at spawn — a live embedded
+      // engine can't pick them up. Warn once; they apply on next Start.
+      if (embedded && (e.affectsConfiguration("omCore.engineStateBytes") || e.affectsConfiguration("omCore.engineScratchBytes") || e.affectsConfiguration("omCore.tsRuntimePath"))) {
+        vscode.window.showWarningMessage("Engine memory/path settings apply on next Start Runtime — the running embedded engine keeps its current values.");
+      }
     }),
     vscode.workspace.onDidGrantWorkspaceTrust(refreshPanel),
     vscode.workspace.onDidChangeWorkspaceFolders(refreshPanel),
@@ -810,6 +788,13 @@ export function activate(context: vscode.ExtensionContext) {
   registerMcpProvider(context);
   context.subscriptions.push(mcpDefChange);
   void restartMcpServer();
+
+  // Optional warm start: engine spawns on first need by default (every
+  // editor window activates this extension — don't tax ones that never
+  // open OM Core). enginePreload opts into spawn-on-activate.
+  if (useEmbedded() && vscode.workspace.getConfiguration("omCore").get<boolean>("enginePreload", false)) {
+    void connect().catch(() => {});
+  }
 }
 
 async function openGui(context: vscode.ExtensionContext) {

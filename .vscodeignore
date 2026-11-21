@@ -22,6 +22,7 @@ test-harness.ts
 **/*.vsix
 dist/bridge.js
 dist/test-harness.js
+dist/respawn-check.js
 dist/_selftest.js
 examples/**
 .github/**

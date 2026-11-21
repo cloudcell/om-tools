@@ -31,8 +31,9 @@ export interface EngineClientLike {
 }
 
 export interface OmMcpServerOptions {
-  /** The extension's live engine connection; null while the runtime is disconnected. */
-  getClient: () => EngineClientLike | null;
+  /** The extension's live engine connection; null while the runtime is
+   *  disconnected. May lazily connect (embedded mode spawns on demand). */
+  getConn: () => Promise<EngineClientLike | null>;
   /** Base dir for relative save_workspace / load_workspace paths (workspace folder). */
   resolveFileDir: () => string;
   /** TCP port; 0 = ephemeral (default). */
@@ -80,7 +81,7 @@ function buildMcpServer(opts: OmMcpServerOptions): McpServer {
   mcp.tool("om_query", QUERY_TOOL_DESC,
     { query_id: z.string(), params: z.record(z.string(), z.any()).optional() },
     async ({ query_id, params }) => {
-      const client = opts.getClient();
+      const client = await opts.getConn();
       if (!client?.isConnected) return toolError("om-core runtime not connected — run 'OM Core: Start Runtime' or 'OM Core: Reconnect', then retry.");
       try {
         return toolOk(await client.query(query_id, params ?? {}));
@@ -92,7 +93,7 @@ function buildMcpServer(opts: OmMcpServerOptions): McpServer {
   mcp.tool("om_command", COMMAND_TOOL_DESC,
     { command_id: z.string(), params: z.record(z.string(), z.any()).optional() },
     async ({ command_id, params }) => {
-      const client = opts.getClient();
+      const client = await opts.getConn();
       if (!client?.isConnected) return toolError("om-core runtime not connected — run 'OM Core: Start Runtime' or 'OM Core: Reconnect', then retry.");
       try {
         const p = resolveFileParams(command_id, params ?? {}, opts.resolveFileDir());

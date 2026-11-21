@@ -22,6 +22,17 @@ over its newline-delimited JSON envelope socket protocol.
   self-contained.
 - `omCore.engineMode`: `auto` (default — socket if an endpoint is configured, else embedded),
   `embedded`, `socket`. `omCore.engineStateBytes`/`engineScratchBytes` bound wasm arenas.
+  `omCore.enginePreload` (default off) spawns on activate instead of first need.
+- Lifecycle: the worker spawns lazily (first GUI/MCP/Start need — never on activate, every
+  window activates this extension), survives GUI-tab close, dies on `deactivate()` or Stop.
+  Crash → `send`/`query` auto-respawn: queries get `fresh_runtime: true` in the reply, a
+  mutation errors "engine restarted — workspace empty" (never replayed), the status path
+  emits `freshRuntime` so the webview reloads. Restricted Mode ignores external
+  `omCore.tsRuntimePath`/`OM_TS_RUNTIME_DIR` (arbitrary code) — bundled worker only.
+- Side panel is mode-adaptive (`StatusSnapshot.mode` → `buildStatusRows`): embedded shows
+  Runtime+GUI only and skips all socket/fs probes; socket shows Runtime/GUI/Engine
+  path/Dependencies/uv.
+- `npm run test:respawn` — worker-kill/respawn smoke (needs a built ts_runtime).
 - `webview/` — pure HTML/CSS/TS UI (no framework). `transport.ts` is the only VSCode coupling
   point; swap `VsCodeTransport` for a `WebSocketTransport` to run the same UI in a browser.
 - `shared/messages.ts` — host<->webview message protocol.
@@ -39,16 +50,8 @@ over its newline-delimited JSON envelope socket protocol.
   Start Runtime finishes. Stopping kills the whole process tree (`killProcessTree`): on Windows `uv run` is
   uv.exe → venv launcher → python.exe and `proc.kill()` ends only the first.
 - `omCore.omCorePath` resolution (`resolveOmCorePath`): setting > `OM_CORE_PATH` env >
-  managed clone (Install Engine's download, recorded in globalState as
-  `omCore.managedCorePath`; nothing is written to `omCorePath`) > workspace folder
-  containing `main.py` + `lib_runtime/` + `lib_openm/` > download-or-pick prompt
-  (folder choice persisted to the setting). Required only for Start Runtime.
-- **Install Engine** (`omCore.downloadCore`): clones cloudcell/om-core at the
-  latest `main` commit — resolved via `git ls-remote` (`OM_CORE_BRANCH`,
-  `omCoreInstaller.ts`, vscode-free), then fetched by hash — into `globalStorage`,
-  verifies the checkout, runs `uv sync`. Blocked in Restricted Mode like Start
-  Runtime (`installBlockedReason`). Entry points: Actions-section button, `path-none`
-  row, the prompt above. One install at a time (`installingCore` dedupe).
+  workspace folder containing `main.py` + `lib_runtime/` + `lib_openm/` > folder-pick
+  prompt (choice persisted to the setting). Required only for socket-mode Start Runtime.
 - Start runtime manually: `cd <om-core root> && uv run python -O main.py --runtime`
   (binds `/tmp/openm-<user>.sock`), or set `OPENM_TRANSPORT_*` for TCP.
 - Protocol: newline-delimited JSON envelopes. Topics: `request.transport.ping`,

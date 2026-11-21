@@ -23,13 +23,6 @@ export function checkUnixEndpointPath(p: string | undefined): string | null {
   return null;
 }
 
-/** Workspace Trust: installing om-core runs `uv sync`, which executes package build scripts — code runs.
- *  Not in Restricted Mode, same as runtime start. */
-export function installBlockedReason(isTrusted: boolean): string | null {
-  return isTrusted ? null : "This workspace is not trusted (Restricted Mode), so OM Tools will not download and install om-core. "
-    + "Trust the workspace, or install om-core yourself (see the OM Tools README) and set omCore.omCorePath.";
-}
-
 /** Workspace Trust: the runtime is started with `uv run python main.py` in a folder, i.e. code runs. Not in Restricted Mode. */
 export function autoStartBlockedReason(isTrusted: boolean): string | null {
   return isTrusted ? null : "This workspace is not trusted (Restricted Mode), so OM Tools will not start the om-core runtime. "
