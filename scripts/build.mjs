@@ -5,7 +5,7 @@
 
 import { build } from "esbuild";
 import { execSync } from "node:child_process";
-import { copyFileSync, readFileSync } from "node:fs";
+import { copyFileSync, readFileSync, chmodSync } from "node:fs";
 
 const version = JSON.parse(readFileSync("package.json", "utf8")).version;
 let commit = "nogit";
@@ -26,4 +26,18 @@ await build({
   entryPoints: ["bridge/server.ts"], bundle: true, platform: "node", format: "cjs",
   external: ["ws"], outfile: "dist/bridge.js",
 });
-console.log(`build: ${buildInfo}`);
+// TS runtime (canonical source: a sibling ts_runtime checkout). Bundled into dist/ so
+// the vsix ships self-contained; OM_TS_RUNTIME_DIR overrides the checkout.
+const tsRuntimeDir = process.env.OM_TS_RUNTIME_DIR || "../ts_runtime";
+await build({
+  entryPoints: [`${tsRuntimeDir}/src/engineWorker.ts`], bundle: true, platform: "node", format: "cjs",
+  outfile: "dist/engineWorker.cjs",
+});
+await build({
+  entryPoints: [`${tsRuntimeDir}/src/tsEngineServer.ts`], bundle: true, platform: "node", format: "cjs",
+  banner: { js: "#!/usr/bin/env node" }, outfile: "dist/tsEngineServer.cjs",
+});
+chmodSync("dist/tsEngineServer.cjs", 0o755);
+try { copyFileSync(`${tsRuntimeDir}/assets/om_engine.wasm`, "dist/om_engine.wasm"); }
+catch { console.warn(`${tsRuntimeDir}/assets/om_engine.wasm missing — run its tools/sync-wasm.sh`); }
+console.log(`build: ${buildInfo}  ts_runtime: ${tsRuntimeDir}`);

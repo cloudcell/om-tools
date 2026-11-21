@@ -8,6 +8,7 @@ import { GUI_BUTTON_KEY, INSTALL_BUTTON_KEY, RUNTIME_BUTTON_KEY, StatusSnapshot,
 import { gitOnPath, installOmCore, managedCoreDir } from "./omCoreInstaller";
 import { StatusPanel } from "./statusPanel";
 import { OmMcpServer, startOmMcpServer } from "./mcpServer";
+import { EmbeddedBackend, resolveTsRuntime } from "./backend";
 import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
@@ -15,6 +16,8 @@ import * as crypto from "crypto";
 
 let panel: vscode.WebviewPanel | null = null;
 let client: EngineClient | null = null;
+/** Embedded engine backend (wasm worker) — mutually exclusive with `client`. */
+let embedded: EmbeddedBackend | null = null;
 let runtime: EngineProcess | null = null;
 let currentSessionId: string | null = null;
 let statusEmitter: ((s: { status: string; message?: string }) => void) | null = null;
@@ -72,6 +75,29 @@ function configuredEndpoint(): TransportEndpoint | null {
   try { return configuredEndpointStrict(); } catch { return null; }
 }
 
+// ── engine mode: socket runtime vs embedded wasm ──────────────────────────
+// omCore.engineMode: "auto" (default) | "embedded" | "socket".
+//   auto: explicit runtimeEndpoint or OPENM_TRANSPORT_* → socket; otherwise
+//         embedded. No /tmp/openm-*.sock probing in auto — silently
+//         connecting to someone else's runtime is the DEV-10 failure.
+type EngineMode = "auto" | "embedded" | "socket";
+function engineMode(): EngineMode {
+  const m = vscode.workspace.getConfiguration("omCore").get<string>("engineMode", "auto");
+  return m === "embedded" || m === "socket" ? m : "auto";
+}
+function useEmbedded(): boolean {
+  const m = engineMode();
+  if (m === "embedded") return true;
+  if (m === "socket") return false;
+  return !configuredEndpoint();
+}
+/** The live connection, whichever backend owns it. handleRequest works on
+ *  this union: EngineClient (socket) and EmbeddedBackend share the same
+ *  send/query/subscribe/openSession/ping/close surface. */
+function activeConn(): EngineClient | EmbeddedBackend | null {
+  return embedded ?? client;
+}
+
 /** Where auto-detect looks for a live runtime, in order. */
 function autoDetectCandidates(): TransportEndpoint[] {
   const candidates: TransportEndpoint[] = [];
@@ -101,7 +127,7 @@ function getConfig(): AppConfig {
   const cfg = vscode.workspace.getConfiguration("omCore");
   return {
     showSystemElements: cfg.get<boolean>("showSystemElements", false),
-    endpoint: endpointToString(defaultEndpoint()),
+    endpoint: useEmbedded() ? "wasm://embedded" : endpointToString(defaultEndpoint()),
     nativeFileDialogs: true,
     defaultDir: defaultDirUri().fsPath,
   };
@@ -356,7 +382,7 @@ async function restartMcpServer(): Promise<void> {
   if (cfg.get<boolean>("mcp.enabled", true)) {
     try {
       mcpServer = await startOmMcpServer({
-        getClient: () => client,
+        getClient: () => activeConn(),
         resolveFileDir: () => defaultDirUri().fsPath,
         port: cfg.get<number>("mcp.port", 0),
         log: (m) => outputChannel().appendLine(`[mcp] ${m}`),
@@ -445,7 +471,7 @@ function connect(): Promise<void> {
         // Otherwise the last status stays "connecting": a failure before the connection is made never reports one.
         if (lastStatus?.status === "connecting") {
           // A failure that came before the old connection was touched leaves that connection working: say so.
-          if (client?.isConnected && currentSessionId) sendStatus("connected", `Connected · session ${currentSessionId.slice(0, 8)}`);
+          if (activeConn()?.isConnected && currentSessionId) sendStatus("connected", `Connected · session ${currentSessionId.slice(0, 8)}`);
           else if (e instanceof RuntimeNotRunningError) sendStatus("disconnected", "Runtime is not running", { hint: DISCONNECTED_HINT });
           else sendStatus("error", `Connection failed: ${e?.message || e}`);
         }
@@ -458,8 +484,37 @@ function connect(): Promise<void> {
 
 async function openConnection(): Promise<void> {
   sendStatus("connecting", "Connecting to om-core runtime…");
+  if (useEmbedded()) {
+    // Embedded wasm engine in a worker thread. A respawn loses the
+    // in-memory workspace — signal freshRuntime so the webview reloads.
+    const isRespawn = !!embedded;
+    if (embedded) { try { await embedded.dispose(); } catch {} embedded = null; }
+    const cfg = vscode.workspace.getConfiguration("omCore");
+    const tsPaths = resolveTsRuntime(
+      extContext!.extensionPath,
+      cfg.get<string>("tsRuntimePath") || process.env.OM_TS_RUNTIME_DIR || null,
+    );
+    const eb = new EmbeddedBackend({
+      ...tsPaths,
+      stateBytes: cfg.get<number>("engineStateBytes") || undefined,
+      scratchBytes: cfg.get<number>("engineScratchBytes") || undefined,
+    });
+    eb.onWorkerExit = (code) => {
+      if (embedded === eb) { embedded = null; currentSessionId = null; }
+      sendStatus("error", `Embedded engine stopped (code ${code}) — unsaved workspace was lost. Press Start Runtime to start a fresh engine.`);
+    };
+    eb.onAnyEvent = (env) => postToWebview({ type: "event", envelope: env });
+    await eb.connect();
+    embedded = eb;
+    currentSessionId = await eb.openSession("repl");
+    const freshRuntime = runtimeReplaced || isRespawn;
+    runtimeReplaced = false;
+    sendStatus("connected", `Connected · embedded engine (session ${currentSessionId.slice(0, 13)})`, { freshRuntime });
+    return;
+  }
   const ep = await findRuntimeEndpoint();
   if (client) { try { client.close(); } catch {} }
+  if (embedded) { try { await embedded.dispose(); } catch {} embedded = null; }
   client = new EngineClient(ep);
   const thisClient = client;
   client.on("disconnect", () => {
@@ -515,7 +570,7 @@ async function statusSnapshot(): Promise<StatusSnapshot> {
   return {
     trusted: vscode.workspace.isTrusted,
     runtime: { endpoint, endpointError, running, startedByUs, starting: launching },
-    gui: { open: !!panel, connected: !!client?.isConnected, connecting: connecting !== null, session: currentSessionId },
+    gui: { open: !!panel, connected: !!activeConn()?.isConnected, connecting: connecting !== null, session: currentSessionId },
     lastStatus,
     corePath,
     installingCore: installingCore !== null,
@@ -560,25 +615,26 @@ function postToWebview(msg: HostToWebview) {
 
 async function handleRequest(req: HostRequest): Promise<HostToWebview> {
   try {
-    if (!client && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState"].includes(req.method)) {
+    const conn = activeConn();
+    if (!conn && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState"].includes(req.method)) {
       return { type: "response", id: req.id, ok: false, error: "not connected" };
     }
     switch (req.method) {
       case "ping": {
-        const ok = await client!.ping();
+        const ok = await conn!.ping();
         return { type: "response", id: req.id, ok, data: { pong: ok } };
       }
       case "openSession": {
-        const sid = await client!.openSession(req.params?.client_type || "repl");
+        const sid = await conn!.openSession(req.params?.client_type || "repl");
         currentSessionId = sid;
         return { type: "response", id: req.id, ok: true, data: { session_id: sid } };
       }
       case "command": {
-        const r = await client!.send(req.params!.command_id, req.params!.params || {});
+        const r = await conn!.send(req.params!.command_id, req.params!.params || {});
         return { type: "response", id: req.id, ok: r.ok, data: r.data, error: r.error };
       }
       case "query": {
-        const data = await client!.query(req.params!.query_id, req.params!.params || {});
+        const data = await conn!.query(req.params!.query_id, req.params!.params || {});
         return { type: "response", id: req.id, ok: true, data };
       }
       case "subscribe": {
@@ -586,28 +642,33 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         const cb = (env: any) => postToWebview({ type: "event", envelope: env });
         // One host-side callback per topic: the webview re-subscribes on every (re)load
         // ("Developer: Reload Webviews"); appending would deliver each event N times.
-        client!.unsubscribe(topic);
-        client!.subscribe(topic, cb);
+        conn!.unsubscribe(topic);
+        conn!.subscribe(topic, cb);
         return { type: "response", id: req.id, ok: true, data: { topic } };
       }
       case "unsubscribe": {
-        client!.unsubscribe(req.params!.topic);
+        conn!.unsubscribe(req.params!.topic);
         return { type: "response", id: req.id, ok: true };
       }
       case "getConfig": {
         // The webview asks for config on every (re)load. Status is otherwise pushed only when the host connects or
         // loses the connection, and what was sent before the page had loaded is gone: a reloaded or just opened page
         // would stay "disconnected" with a live connection, or show no hint when there is no runtime.
-        if (client && currentSessionId) sendStatus("connected", `Connected · session ${currentSessionId.slice(0, 8)}`);
+        if (conn && currentSessionId) sendStatus("connected", `Connected · session ${currentSessionId.slice(0, 8)}`);
         else if (lastStatus?.status === "disconnected") sendStatus("disconnected", lastStatus.message, { hint: DISCONNECTED_HINT });
         else if (lastStatus?.status === "error") sendStatus("error", lastStatus.message);
         return { type: "response", id: req.id, ok: true, data: getConfig() };
       }
       case "startRuntime": {
+        if (useEmbedded()) {
+          if (!embedded) await openConnection();
+          return { type: "response", id: req.id, ok: true, data: { endpoint: "wasm://embedded" } };
+        }
         const ep = await startRuntimeProcess();
         return { type: "response", id: req.id, ok: true, data: { endpoint: endpointToString(ep) } };
       }
       case "stopRuntime": {
+        if (embedded) { await embedded.dispose(); embedded = null; currentSessionId = null; sendStatus("disconnected", "Embedded engine stopped", { hint: DISCONNECTED_HINT }); }
         if (runtime) { const wasRunning = runtime.isRunning; await runtime.stop(); runtime = null; if (wasRunning) runtimeReplaced = true; }
         if (client) { client.close(); client = null; currentSessionId = null; sendStatus("disconnected", "Runtime stopped", { hint: DISCONNECTED_HINT }); }
         return { type: "response", id: req.id, ok: true };
@@ -631,6 +692,19 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
       case "pickFile": {
         const p = await pickFile((req.params || {}) as PickFileParams);
         return { type: "response", id: req.id, ok: true, data: { path: p } };
+      }
+      case "fsList": {
+        // Server-side file browser for hosts where native pickFile can't run
+        // (remote/SSH UI). Same shape as bridge/server.ts's handler.
+        const dir = typeof req.params?.dir === "string" && req.params.dir
+          ? path.resolve(req.params.dir)
+          : defaultDirUri().fsPath;
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        const visible = (e: fs.Dirent) => !e.name.startsWith(".");
+        const dirs = entries.filter((e) => e.isDirectory() && visible(e)).map((e) => e.name).sort();
+        const files = entries.filter((e) => e.isFile() && visible(e)).map((e) => e.name).sort();
+        const parent = path.dirname(dir);
+        return { type: "response", id: req.id, ok: true, data: { dir, parent: parent === dir ? null : parent, dirs, files } };
       }
       default:
         return { type: "response", id: req.id, ok: false, error: `unknown method: ${req.method}` };
@@ -664,7 +738,7 @@ export function activate(context: vscode.ExtensionContext) {
         await startRuntimeProcess();
         // A GUI tab that is open but not connected (the runtime was stopped or died) comes back to life,
         // instead of showing "disconnected" next to a runtime that is running.
-        if (panel && !client?.isConnected) await connect();
+        if (panel && !activeConn()?.isConnected) await connect();
         vscode.window.showInformationMessage("OM Core runtime started.");
       } catch (e: any) { vscode.window.showErrorMessage(`Failed to start runtime: ${e?.message || e}`); }
       refreshPanel();
@@ -680,13 +754,16 @@ export function activate(context: vscode.ExtensionContext) {
           { modal: true, detail: "The model lives in the runtime: changes that are not saved with File → Save are lost." }, stop);
         if (pick !== stop) return;
       }
+      if (embedded) { await embedded.dispose(); embedded = null; currentSessionId = null; runtimeReplaced = true; }
       if (runtime) { await runtime.stop(); runtime = null; }
       if (client) { client.close(); client = null; currentSessionId = null; }
       if (ours) runtimeReplaced = true;   // whatever runs next is not the runtime the open GUI page was showing
-      sendStatus("disconnected", ours ? "Runtime stopped" : "Disconnected", { hint: DISCONNECTED_HINT });
-      vscode.window.showInformationMessage(ours
-        ? "OM Core runtime stopped."
-        : "OM Tools did not start the running om-core runtime, so it was not stopped; the GUI is disconnected from it.");
+      sendStatus("disconnected", ours || !useEmbedded() ? "Runtime stopped" : "Embedded engine stopped", { hint: DISCONNECTED_HINT });
+      vscode.window.showInformationMessage(embedded || useEmbedded()
+        ? "OM Core embedded engine stopped."
+        : (ours
+          ? "OM Core runtime stopped."
+          : "OM Tools did not start the running om-core runtime, so it was not stopped; the GUI is disconnected from it."));
     }),
     vscode.commands.registerCommand("omCore.reconnect", async () => {
       try { await connect(); vscode.window.showInformationMessage("OM Core reconnected."); } catch (e: any) { vscode.window.showErrorMessage(`Reconnect failed: ${e?.message || e}`); }
@@ -807,6 +884,7 @@ function getNonce(): string {
 export function deactivate() {
   if (mcpServer) { try { mcpServer.close(); } catch {} mcpServer = null; }
   if (client) { client.close(); client = null; }
+  if (embedded) { void embedded.dispose(); embedded = null; }
   if (runtime) { runtime.stop(); runtime = null; }
   panel = null;
 }

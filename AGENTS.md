@@ -9,6 +9,19 @@ over its newline-delimited JSON envelope socket protocol.
 - `src/` — extension host (Node). `engineClient.ts` speaks the wire protocol over `net.Socket`
   (Unix or TCP). `engineProcess.ts` launches `uv run python -O main.py --runtime`.
   `extension.ts` bridges webview postMessage <-> engine client.
+- `src/backend.ts` — `EngineBackend` iface, `SocketBackend` (wraps `EngineClient`),
+  `EmbeddedBackend` (spawns a `worker_threads` worker). `resolveTsRuntime()` finds the
+  worker + wasm: `omCore.tsRuntimePath` setting > `OM_TS_RUNTIME_DIR` env > bundled dist/.
+- TS runtime lives in a sibling `ts_runtime/` checkout (canonical source, the wasm/TS port of the engine): `omEngine.ts` hosts
+  `om_engine.wasm`, `engineSession.ts` translates webview vocabulary to zig RPCs (port of
+  om-tools-web's `om-web-backend.js`), `engineWorker.ts` is the worker host (sync `omz_rpc`
+  must not block the extension thread), `tsEngineServer.ts` is the same engine behind the
+  framed-RPC socket protocol — drop-in `OM_ENGINE_SERVER_BIN` for the remote test path
+  (`./run_engine_tests.sh --ts-remote`). om-tools' build.mjs bundles it from
+  `../ts_runtime` (`OM_TS_RUNTIME_DIR` override) into `dist/`, so the vsix ships
+  self-contained.
+- `omCore.engineMode`: `auto` (default — socket if an endpoint is configured, else embedded),
+  `embedded`, `socket`. `omCore.engineStateBytes`/`engineScratchBytes` bound wasm arenas.
 - `webview/` — pure HTML/CSS/TS UI (no framework). `transport.ts` is the only VSCode coupling
   point; swap `VsCodeTransport` for a `WebSocketTransport` to run the same UI in a browser.
 - `shared/messages.ts` — host<->webview message protocol.

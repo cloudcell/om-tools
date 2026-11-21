@@ -318,15 +318,120 @@ For a standard three-statement model:
 
 - WACC
 - TerminalGrowth
+- DiscountFactor
+- PVOfAnnualUFCF
 - PVOfUFCF
 - PVOfTerminalValue
 - EnterpriseValue
 - Debt
 - Cash
 - EquityValue
-- DownsideEV
-- BaseEV
-- UpsideEV
+
+## DCF completeness
+
+A DCF valuation table must not stop at terminal value and enterprise value.
+Populate a complete annual discounted-cash-flow schedule:
+
+- WACC for every forecast year and applicable scenario
+- TerminalGrowth at the terminal-year forecast, normally 2030E
+- DiscountFactor for every forecast year
+- Annual UFCF from the CashFlowStatement
+- PVOfAnnualUFCF for every forecast year
+- PVOfUFCF as the sum of 2026E–2030E present values
+- PVOfTerminalValue at 2030E
+- EnterpriseValue, debt, cash, and equity value
+- One `EquityValue` metric evaluated across the `Scenario` dimension. Keep
+  `Base`, `Upside`, and `Downside` as scenario members; do not create separate
+  `BaseEV`, `UpsideEV`, or `DownsideEV` metrics or repeat them under each
+  scenario.
+
+Use an intuitive DCF row order:
+
+1. WACC
+2. TerminalGrowth
+3. EBITMargin
+4. RevenueGrowth
+5. TerminalRevenueMargin
+6. UFCF
+7. DiscountFactor
+8. PVOfAnnualUFCF
+9. PVOfUFCF
+10. PVOfTerminalValue
+11. EnterpriseValue
+12. Debt
+13. Cash
+14. EquityValue
+
+Financial cash-flow and valuation lines are in USD millions. Format them with
+one decimal and thousands grouping, not as per-share or whole-dollar values:
+
+```text
+'preset:number(decimals=1; group=true; negative=parentheses; zero=dash)'
+```
+
+Format WACC, TerminalGrowth, RevenueGrowth, TerminalRevenueMargin,
+EBITMargin, and DiscountFactor as percentages:
+
+```text
+'preset:percent(decimals=1)'
+```
+
+Use recurrence only for the discount-factor chain:
+
+```text
+rule DCFValuation::DCFMetric.DiscountFactor:Year.2026E =
+  1 / (1 + DCFValuation::[DCFMetric.WACC])
+
+rule DCFValuation::DCFMetric.DiscountFactor:Year.2027E =
+  DCFValuation::DCFMetric.DiscountFactor:Year[PREV] /
+  (1 + DCFValuation::[DCFMetric.WACC])
+```
+
+Every recurrence rule that may evaluate before the first valid predecessor
+must guard `PREV`, `NEXT`, `FIRST`, or `LAST` with `POS(...)` and `IF(...)`.
+Do not allow a recurrence to escape to 2024A or 2025A unless those periods
+are explicitly seeded.
+
+```text
+IF(POS(Year)=1,929,
+  IF(POS(Year)=2,3141,
+     CashFlowStatement::CashFlowItem.EndingCash:Year[PREV]))
+```
+
+For discount factors:
+
+```text
+IF(POS(Year)<3,0,
+  IF(POS(Year)=3,
+     1/(1+DCFValuation::[DCFMetric.WACC]),
+     DCFValuation::DCFMetric.DiscountFactor:Year[PREV]/(1+DCFValuation::[DCFMetric.WACC])))
+```
+
+`POS(Year)` is 1-based. Use it to return a seed or omit the recurrence branch
+before evaluating `[PREV]`. This prevents `#REF!` at the beginning of an
+ordered dimension.
+
+Then calculate annual present value as:
+
+```text
+rule DCFValuation::DCFMetric.PVOfAnnualUFCF =
+  CashFlowStatement::[CashFlowItem.UFCF] *
+  DCFValuation::[DCFMetric.DiscountFactor]
+```
+
+At 2030E:
+
+```text
+rule DCFValuation::DCFMetric.PVOfUFCF:Year.2030E =
+  SUM(DCFValuation::DCFMetric.PVOfAnnualUFCF:Year.2026E..2030E)
+
+rule DCFValuation::DCFMetric.PVOfTerminalValue:Year.2030E =
+  CashFlowStatement::CashFlowItem.UFCF:Year.2030E *
+  (1 + DCFValuation::[DCFMetric.TerminalGrowth]) /
+  (DCFValuation::[DCFMetric.WACC] -
+   DCFValuation::[DCFMetric.TerminalGrowth]) *
+  DCFValuation::[DCFMetric.DiscountFactor]
+```
 
 Do not claim a statement is linked or reconciled unless the relevant values were
 actually queried and verified.

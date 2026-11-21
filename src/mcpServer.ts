@@ -20,12 +20,19 @@ import * as http from "http";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
-import type { EngineClient } from "./engineClient";
 import { resolveFileParams } from "./fileParams";
+
+/** Minimal connection surface the tools use — EngineClient (socket) and
+ *  EmbeddedBackend (wasm worker) both satisfy it. */
+export interface EngineClientLike {
+  readonly isConnected: boolean;
+  query(queryId: string, params: Record<string, any>): Promise<any>;
+  send(commandId: string, params: Record<string, any>): Promise<{ ok: boolean; data?: any; error?: string }>;
+}
 
 export interface OmMcpServerOptions {
   /** The extension's live engine connection; null while the runtime is disconnected. */
-  getClient: () => EngineClient | null;
+  getClient: () => EngineClientLike | null;
   /** Base dir for relative save_workspace / load_workspace paths (workspace folder). */
   resolveFileDir: () => string;
   /** TCP port; 0 = ephemeral (default). */
