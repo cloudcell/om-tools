@@ -47,10 +47,10 @@ async function main() {
   }).catch(() => {});
 
   // Engine bus events → refresh model/rules on structural changes.
-  api.subscribe("event.dimension.*", () => store.refreshModel());
+  api.subscribe("event.dimension.*", () => { store.invalidateDimCache(); store.refreshModel(); });
   api.subscribe("event.cube.*", () => store.refreshModel());
   api.subscribe("event.view.*", () => store.refreshModel());
-  api.subscribe("event.workspace.*", () => store.refreshModel());
+  api.subscribe("event.workspace.*", () => { store.invalidateDimCache(); store.refreshModel(); });
   api.subscribe("command.*.succeeded", () => { store.refreshModel(); store.refreshRules(); });
 
   // If already connected by the time we mount (host auto-connects), load model.

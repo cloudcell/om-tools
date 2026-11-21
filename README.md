@@ -175,6 +175,7 @@ All of these are in the command palette (`Ctrl+Shift+P`).
 | `OM Core: Choose om-core Folder…` | Picks the om-core folder and saves it to `omCore.omCorePath` in User settings. |
 | `OM Core: Open Settings` | Opens the OM Core settings. |
 | `OM Core: Reveal om-core Folder in File Explorer` | Shows the om-core folder in your file manager. |
+| `OM Core: MCP Server Info` | Shows the MCP server URL and copies a `mcp.json` registration snippet for external clients. |
 
 ## Settings
 
@@ -183,6 +184,25 @@ All of these are in the command palette (`Ctrl+Shift+P`).
 | `omCore.omCorePath` | empty | Folder of the om-core clone (the one with `main.py`). Required by **Start Runtime**; when empty, it asks for the folder once. |
 | `omCore.runtimeEndpoint` | empty | Address of the engine, e.g. `tcp://127.0.0.1:17391`. Empty means the default: local TCP port 17391 on Windows, the socket `/tmp/openm-<user>.sock` on macOS and Linux. |
 | `omCore.showSystemElements` | `false` | Show system elements (names starting with `%`) in the Model Browser, tabs and selectors. |
+| `omCore.mcp.enabled` | `true` | Run an MCP server that lets AI agents query and edit the connected workspace (see below). |
+| `omCore.mcp.port` | `0` | Port for the MCP server. `0` picks a free port automatically — recommended. Set a fixed port only if a client needs a stable URL. |
+
+## MCP server (AI agents)
+
+When `omCore.mcp.enabled` is on (the default), the extension serves an [MCP](https://modelcontextprotocol.io) server over Streamable HTTP at `http://127.0.0.1:<port>/mcp`. An AI agent connected to it shares the live workspace with the GUI: anything it changes appears in your open views, and anything you do is visible to it.
+
+Two tools:
+
+- `om_query({query_id, params})` — any om-core query (`dimension_list`, `view_list`, `cell_range`, `selection_stats`, `rule_target_resolve`, …).
+- `om_command({command_id, params})` — any om-core command (`create_dimension`, `set_cell_hardvalue_by_addr`, `set_rule`, `run_recalculation`, `undo`, …). The tool description lists required-parameter gotchas.
+
+On VS Code ≥ 1.102 the extension registers the server automatically — Copilot agent mode sees the `om_query`/`om_command` tools after the one-time consent prompt. On older versions or other clients, run **OM Core: MCP Server Info** to copy the URL or a `.vscode/mcp.json` snippet:
+
+```json
+{ "servers": { "om-core": { "type": "http", "url": "http://127.0.0.1:<port>/mcp" } } }
+```
+
+The server binds localhost only, on an ephemeral port by default, and answers only `POST /mcp` — the same local-only/no-auth exposure class as the runtime's own socket. While no runtime is connected, the tools return a "not connected" error rather than failing calls. `omCore.mcp.enabled: false` closes the listener.
 
 ## Not available in this preview
 
@@ -254,9 +274,10 @@ npm install
 npm run build
 npm run compile
 npm test
+npm run test:mcp   # MCP server end-to-end check — spawns its own throwaway runtime
 ```
 
-`npm test` talks to a running OM Core runtime and changes the model in it: use a throwaway runtime, not one with your own model.
+`npm test` talks to a running OM Core runtime and changes the model in it: use a throwaway runtime, not one with your own model. `npm run test:mcp` spawns a private runtime on a temporary socket (needs `OM_CORE_PATH` or a `../om-core` checkout) and leaves nothing running.
 
 The runtime configuration and integration notes are in [AGENTS.md](AGENTS.md). To use the extension, a compatible OM Core runtime is required.
 

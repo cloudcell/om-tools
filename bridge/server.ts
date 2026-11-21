@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { execFile, spawnSync } from "child_process";
 import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString } from "../src/engineClient";
+import { resolveFileParams } from "../src/fileParams";
 
 /** Bridge server — the future browser deployment piece.
  *
@@ -99,20 +100,13 @@ function runPicker(mode: PickerMode, start: string, title: string): Promise<stri
 }
 
 const config = () => ({ showSystemElements: false, endpoint: endpointToString(endpoint), nativeFileDialogs: !!picker, serverFileBrowse: !picker, defaultDir });
-const FILE_COMMANDS = new Set(["save_workspace", "load_workspace"]);
-
-/** Relative `path` of save_workspace / load_workspace → absolute against defaultDir. */
-function resolveFileParams(commandId: string, params: Record<string, any>): Record<string, any> {
-  if (!FILE_COMMANDS.has(commandId) || typeof params.path !== "string" || !params.path || path.isAbsolute(params.path)) return params;
-  return { ...params, path: path.resolve(defaultDir, params.path) };
-}
 
 async function handle(req: HostRequest, client: EngineClient, sessionId: () => string | null, setSession: (s: string) => void, send: (msg: any) => void): Promise<any> {
   const p = req.params || {};
   switch (req.method) {
     case "ping": return { ok: await client.ping(), data: { pong: true } };
     case "openSession": { const sid = await client.openSession(p.client_type || "repl"); setSession(sid); return { ok: true, data: { session_id: sid } }; }
-    case "command": { const r = await client.send(p.command_id, resolveFileParams(p.command_id, p.params || {})); return { ok: r.ok, data: r.data, error: r.error }; }
+    case "command": { const r = await client.send(p.command_id, resolveFileParams(p.command_id, p.params || {}, defaultDir)); return { ok: r.ok, data: r.data, error: r.error }; }
     case "query": { const data = await client.query(p.query_id, p.params || {}); return { ok: true, data }; }
     case "subscribe": { client.subscribe(p.topic, (env) => send({ type: "event", envelope: env })); return { ok: true, data: { topic: p.topic } }; }
     case "unsubscribe": { client.unsubscribe(p.topic); return { ok: true }; }

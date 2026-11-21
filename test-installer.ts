@@ -10,7 +10,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { spawnSync } from "child_process";
-import { installOmCore, managedCoreDir, OM_CORE_PINNED_COMMIT } from "./src/omCoreInstaller";
+import { installOmCore, managedCoreDir, OM_CORE_BRANCH } from "./src/omCoreInstaller";
 import { describeOmCorePath, looksLikeOmCore } from "./src/engineStatus";
 import { installBlockedReason } from "./src/runtimePolicy";
 
@@ -39,7 +39,7 @@ function makeFixtureRepo(root: string, tag = ""): { remote: string; pin: string 
   fs.writeFileSync(path.join(remote, "lib_runtime", "x.py"), "# fixture\n");
   fs.writeFileSync(path.join(remote, "lib_openm", "x.py"), "# fixture\n");
   fs.writeFileSync(path.join(remote, "main.py"), "# fixture " + tag + "\n");
-  git(["init", "--quiet"], remote);
+  git(["init", "--quiet", "--initial-branch=main"], remote);
   git(["add", "-A"], remote);
   git(["-c", "user.name=t", "-c", "user.email=t@t", "commit", "--quiet", "-m", "fixture " + tag], remote);
   const pin = spawnSync("git", ["rev-parse", "HEAD"], { cwd: remote }).stdout.toString().trim();
@@ -95,6 +95,14 @@ async function main(): Promise<void> {
     } else {
       const { remote, pin } = makeFixtureRepo(root);
       const dest = path.join(root, "store", "om-core");
+      await test("installOmCore resolves the branch head and verifies it", async () => {
+        let out = "";
+        const branchDest = path.join(root, "store-branch", "om-core");
+        await installOmCore(branchDest, { repo: remote, skipUvSync: true, onOutput: (s) => { out += s; } });
+        assert(looksLikeOmCore(branchDest), "installed dir must look like om-core");
+        const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: branchDest }).stdout.toString().trim();
+        assert(head === pin, `HEAD ${head} must equal the resolved branch head ${pin}`);
+      });
       await test("installOmCore clones the pinned commit and verifies it", async () => {
         let out = "";
         await installOmCore(dest, { repo: remote, pin, skipUvSync: true, onOutput: (s) => { out += s; } });
@@ -120,8 +128,8 @@ async function main(): Promise<void> {
         assert(!fs.existsSync(path.join(dest, "stale-marker")), "old install replaced, not merged");
         assert(fs.readdirSync(path.dirname(dest)).every((n) => !n.includes(".tmp-")), "stale tmp dirs cleaned");
       });
-      await test("pin constant is a full 40-char hash (never a ref)", () => {
-        assert(/^[0-9a-f]{40}$/.test(OM_CORE_PINNED_COMMIT), "OM_CORE_PINNED_COMMIT must be a full commit hash");
+      await test("tracked branch is main", () => {
+        assert(OM_CORE_BRANCH === "main", "managed install must track the main branch");
       });
     }
   } finally {
