@@ -24,6 +24,12 @@ export interface ViewState {
   rowHeaders: string[];
   colHeaders: string[];
   cells: CellRangeDTO | null;
+  /** Visual grid row/col index -> cell-data index, published by MultilevelGrid.buildGrid.
+   *  -1 = group/placeholder entry with no cell data. Selection state below is in VISUAL
+   *  grid coordinates; translate through these maps before indexing cells/rowKeys/colKeys
+   *  (Qt does the same via _leaf_row_index). Absent on flat grids -> identity map. */
+  cellRowMap?: number[];
+  cellColMap?: number[];
   selectedRow: number;
   selectedCol: number;
   selMode: SelMode;
@@ -47,6 +53,8 @@ export interface ViewGroupState {
   rulesOpen: boolean;
   /** rules subpane collapsed to just its section strip (pane separator). */
   rulesCollapsed: boolean;
+  /** rules subpane height in px (session state — each pane owns its own, like split sizes). */
+  rulesH?: number;
 }
 
 /** Where a dropped view tab lands relative to its target pane. */
@@ -153,6 +161,12 @@ export class Store {
   };
   api: OmApi;
   private listeners = new Set<Listener>();
+  /** Why the in-flight notify() is running — a subscriber whose rebuild is expensive,
+   *  or whose DOM may be the target of a press in progress, can skip a reason that
+   *  cannot change what it renders. "focus" = only focusedGroup moved. Rebuilding
+   *  the press target mid-gesture makes browsers retarget the rest of the gesture
+   *  (mousedown/click) to a live ancestor, losing the cell/header hit. */
+  notifyReason: string | null = null;
   dimCache = new Map<string, DimDetail>();
   cubeCache = new Map<string, any>();
 
@@ -176,12 +190,14 @@ export class Store {
     this.capture?.add(unsub);
     return unsub;
   }
-  notify() {
+  notify(reason?: string) {
+    this.notifyReason = reason ?? null;
     // A throwing subscriber must not starve the rest — or unwind into a caller
     // mid-gesture (a drag's update→set→apply→notify chain dies with it).
     for (const l of [...this.listeners]) {
       try { l(); } catch (e) { console.error("notify subscriber failed", e); }
     }
+    this.notifyReason = null;
   }
 
   /** While set, every subscribe() also lands in this bag. See captureSubscriptions(). */
@@ -363,14 +379,23 @@ export class Store {
       const cells = rk.length && ck.length ? await this.api.cellRange(viewId, rk, ck) : null;
       if (cells) await this.mergeChannelPaints(cells, viewId, rk, ck, pageSel);
       const prev = this.state.viewStates[viewId];
+      // Visual->data maps survive a reload only while the key space is identical;
+      // a regrouped/reordered axis rebuilds them on the grid's next render.
+      const sameKeys = (a: string[][] | undefined, b: string[][] | undefined) =>
+        !!a && !!b && a.length === b.length && a.every((k, i) => k.length === b[i].length && k.every((p, j) => p === b[i][j]));
+      const keepMaps = !!(prev && prev.viewId === viewId && sameKeys(rk, prev.rowKeys) && sameKeys(ck, prev.colKeys));
+      const visRows = keepMaps ? (prev!.cellRowMap?.length ?? rk.length) : rk.length;
+      const visCols = keepMaps ? (prev!.cellColMap?.length ?? ck.length) : ck.length;
       this.state.viewStates[viewId] = {
         viewId, viewName: detail.name, cubeId: detail.cube_id,
         rowDimIds: detail.row_dim_ids, colDimIds: detail.col_dim_ids, pageDimIds: detail.page_dim_ids,
         pageSelections: pageSel,
         rowKeys: rk, colKeys: ck, rowHeaders, colHeaders,
         cells,
-        selectedRow: prev && prev.viewId === viewId && prev.selectedRow >= 0 && prev.selectedRow < rk.length ? prev.selectedRow : (rk.length ? 0 : -1),
-        selectedCol: prev && prev.viewId === viewId && prev.selectedCol >= 0 && prev.selectedCol < ck.length ? prev.selectedCol : (ck.length ? 0 : -1),
+        cellRowMap: keepMaps ? prev!.cellRowMap : undefined,
+        cellColMap: keepMaps ? prev!.cellColMap : undefined,
+        selectedRow: prev && prev.viewId === viewId && prev.selectedRow >= 0 && prev.selectedRow < visRows ? prev.selectedRow : (rk.length ? 0 : -1),
+        selectedCol: prev && prev.viewId === viewId && prev.selectedCol >= 0 && prev.selectedCol < visCols ? prev.selectedCol : (ck.length ? 0 : -1),
         selMode: prev && prev.viewId === viewId ? prev.selMode : "cell",
         selIndices: prev && prev.viewId === viewId ? prev.selIndices : new Set(),
         anchorRow: prev && prev.viewId === viewId ? prev.anchorRow : 0,
@@ -433,7 +458,7 @@ export class Store {
     if (this.state.focusedGroup === gid || !this.group(gid)) return;
     this.state.focusedGroup = gid;
     this.syncViewMirror();
-    this.notify();
+    this.notify("focus");
   }
 
   /** Tab click in a pane: show that view there and focus the pane. */
@@ -588,6 +613,31 @@ export class Store {
     } catch {}
   }
 
+  /** Visual grid index -> cell-data index, via the maps MultilevelGrid publishes
+   *  (-1 for group/placeholder entries). Identity when no map exists (flat grids). */
+  dataRowIndex(v: ViewState, visRow: number): number {
+    return v.cellRowMap ? v.cellRowMap[visRow] ?? -1 : (visRow < v.rowKeys.length ? visRow : -1);
+  }
+  dataColIndex(v: ViewState, visCol: number): number {
+    return v.cellColMap ? v.cellColMap[visCol] ?? -1 : (visCol < v.colKeys.length ? visCol : -1);
+  }
+  /** Cell-data index -> visual grid index (selection coordinates). -1 when the
+   *  data row/col has no visible entry (shouldn't happen for leaf keys). */
+  visualRowIndex(v: ViewState, dataRow: number): number {
+    return v.cellRowMap ? v.cellRowMap.indexOf(dataRow) : (dataRow < v.rowKeys.length ? dataRow : -1);
+  }
+  visualColIndex(v: ViewState, dataCol: number): number {
+    return v.cellColMap ? v.cellColMap.indexOf(dataCol) : (dataCol < v.colKeys.length ? dataCol : -1);
+  }
+  /** Look up the cell under a VISUAL grid coordinate. Selection state is visual;
+   *  v.cells is indexed by data coordinates. */
+  cellAtVisual(v: ViewState, visRow: number, visCol: number): CellDTO | undefined {
+    if (!v.cells) return undefined;
+    const dr = this.dataRowIndex(v, visRow);
+    const dc = this.dataColIndex(v, visCol);
+    return dr >= 0 && dc >= 0 ? v.cells.cells[dr * v.colKeys.length + dc] : undefined;
+  }
+
   async updateSelectionStats() {
     const v = this.state.activeView;
     if (!v || !v.cells || v.selectedRow < 0 || v.selectedCol < 0) {
@@ -596,21 +646,36 @@ export class Store {
       return;
     }
     try {
-      const stats = await this.api.selectionStats({
-        view_id: v.viewId,
-        mode: v.selMode,
-        page_selections: v.pageSelections,
-        row: v.selectedRow,
-        col: v.selectedCol,
-      });
+      // Engine wants key tuples, like Qt's _build_selection_stats_payload
+      // (which translates visual rows through _leaf_row_index the same way).
+      const MAX_KEYS = 10_000;
+      const params: any = { view_id: v.viewId, mode: v.selMode, page_selections: v.pageSelections };
+      if (v.selMode === "cell") {
+        const keys: any[] = [];
+        for (const [r, c] of this.iterSelectedCells()) {
+          const dr = this.dataRowIndex(v, r), dc = this.dataColIndex(v, c);
+          if (dr < 0 || dc < 0) continue;
+          keys.push([v.rowKeys[dr], v.colKeys[dc]]);
+          if (keys.length >= MAX_KEYS) break;
+        }
+        params.cell_keys = keys;
+      } else if (v.selMode === "row") {
+        params.row_keys = [...(v.selIndices as Set<number>)]
+          .map((i) => this.dataRowIndex(v, i)).filter((i) => i >= 0 && i < v.rowKeys.length)
+          .slice(0, MAX_KEYS).map((i) => v.rowKeys[i]);
+      } else if (v.selMode === "col") {
+        params.col_keys = [...(v.selIndices as Set<number>)]
+          .map((i) => this.dataColIndex(v, i)).filter((i) => i >= 0 && i < v.colKeys.length)
+          .slice(0, MAX_KEYS).map((i) => v.colKeys[i]);
+      }
+      const stats = await this.api.selectionStats(params);
       this.state.selectionStats = stats;
       this.notify();
     } catch {
       // fallback: compute locally
       const nums: number[] = [];
-      const cells = this.iterSelectedCells();
-      for (const [r, c] of cells) {
-        const cell = v.cells.cells[r * v.colKeys.length + c];
+      for (const [r, c] of this.iterSelectedCells()) {
+        const cell = this.cellAtVisual(v, r, c);
         if (cell && typeof cell.value === "number") nums.push(cell.value);
       }
       const sum = nums.reduce((a, b) => a + b, 0);
@@ -622,12 +687,15 @@ export class Store {
   *iterSelectedCells(gid?: string): Generator<[number, number]> {
     const v = this.viewOf(gid);
     if (!v || !v.cells) return;
+    // Yields VISUAL grid coordinates — translate via dataRowIndex/cellAtVisual at use.
+    const visRows = v.cellRowMap?.length ?? v.rowKeys.length;
+    const visCols = v.cellColMap?.length ?? v.colKeys.length;
     if (v.selMode === "all") {
-      for (let r = 0; r < v.rowKeys.length; r++) for (let c = 0; c < v.colKeys.length; c++) yield [r, c];
+      for (let r = 0; r < visRows; r++) for (let c = 0; c < visCols; c++) yield [r, c];
     } else if (v.selMode === "row") {
-      for (const idx of v.selIndices as Set<number>) for (let c = 0; c < v.colKeys.length; c++) yield [idx, c];
+      for (const idx of v.selIndices as Set<number>) for (let c = 0; c < visCols; c++) yield [idx, c];
     } else if (v.selMode === "col") {
-      for (const idx of v.selIndices as Set<number>) for (let r = 0; r < v.rowKeys.length; r++) yield [r, idx];
+      for (const idx of v.selIndices as Set<number>) for (let r = 0; r < visRows; r++) yield [r, idx];
     } else if (v.selMode === "cell") {
       if ((v.selIndices as Set<string>).size === 0) {
         if (v.selectedRow >= 0 && v.selectedCol >= 0) yield [v.selectedRow, v.selectedCol];
@@ -664,9 +732,11 @@ export class Store {
   }
 
   /** Apply text the user typed into a cell editor, the rule bar or the Set Rule dialog.
-   *  Grammar is parseCellInput(). `at` is the target cell for the grid editor; without it the
-   *  active cell is used and, as in Qt, a multi-cell selection is refused for cell entries. */
-  async applyInput(raw: string, at?: { row: number; col: number }, gid?: string) {
+   *  Grammar is parseCellInput(). `at` is the target for the grid editor: either the
+   *  resolved cell (preferred — immune to visual/data index drift) or a VISUAL grid
+   *  coordinate; without it the active cell is used and, as in Qt, a multi-cell
+   *  selection is refused for cell entries. */
+  async applyInput(raw: string, at?: { row?: number; col?: number; cell?: CellDTO }, gid?: string) {
     const v = this.viewOf(gid);
     if (!v || !v.cells) return;
     const input = parseCellInput(raw);
@@ -683,9 +753,7 @@ export class Store {
           await alertDialog("Single cell only", "Several cells are selected. A value or =expression applies to one cell. Select a single cell and try again.");
           return;
         }
-        const row = at ? at.row : v.selectedRow;
-        const col = at ? at.col : v.selectedCol;
-        const cell = row >= 0 && col >= 0 ? v.cells.cells[row * v.colKeys.length + col] : undefined;
+        const cell = at?.cell ?? this.cellAtVisual(v, at?.row ?? v.selectedRow, at?.col ?? v.selectedCol);
         if (!cell?.addr) { await alertDialog("No cell selected", "Select a cell and try again."); return; }
         if (input.kind === "cellRule") {
           await this.api.setRuleAnchored(v.viewId, { kind: "ids", row_key: cell.row_key, col_key: cell.col_key }, input.expr);
@@ -695,7 +763,7 @@ export class Store {
       }
       this.markDirty();
       await this.api.recalc("dirty");
-      await this.loadView(v.viewId);
+      await this.reloadOpenViews();   // dependents in other panes (PL_View) change too — not only the edited view
       if (input.kind !== "value") await this.refreshRules();
     } catch (e: any) {
       await alertDialog(input.kind === "value" ? "Set cell failed" : "Rule error", e?.message || String(e));
@@ -716,8 +784,8 @@ export class Store {
     const v = this.viewOf(gid);
     if (!v || !v.cells) return;
     const cells = [...this.iterSelectedCells(gid)]
-      .map(([r, c]) => v.cells!.cells[r * v.colKeys.length + c])
-      .filter((cell) => cell?.addr && !["rule", "empty"].includes(cell.explain?.source));
+      .map(([r, c]) => this.cellAtVisual(v, r, c))
+      .filter((cell): cell is CellDTO => !!cell?.addr && !["rule", "empty"].includes(cell.explain?.source));
     await this.clearHardvalues(cells, v);
   }
 
@@ -730,7 +798,7 @@ export class Store {
   activeCell(gid?: string): CellDTO | undefined {
     const v = this.viewOf(gid);
     if (!v || !v.cells || v.selectedRow < 0 || v.selectedCol < 0) return undefined;
-    return v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol];
+    return this.cellAtVisual(v, v.selectedRow, v.selectedCol);
   }
 
   private async clearHardvalues(cells: CellDTO[], v: ViewState) {
@@ -739,7 +807,7 @@ export class Store {
       for (const cell of cells) await this.api.clearCellHardvalue(v.viewId, { kind: "ids", row_key: cell.row_key, col_key: cell.col_key });
       this.markDirty();
       await this.api.recalc("dirty");
-      await this.loadView(v.viewId);
+      await this.reloadOpenViews();
     } catch (e: any) { await alertDialog("Clear failed", e?.message || String(e)); }
   }
 
@@ -750,7 +818,7 @@ export class Store {
     if (!cells.length) return "";
     const rows = new Map<number, Map<number, string>>();
     for (const [r, c] of cells) {
-      const cell = v.cells.cells[r * v.colKeys.length + c];
+      const cell = this.cellAtVisual(v, r, c);
       const val = cell?.display_value ?? (cell?.value != null ? String(cell.value) : "");
       if (!rows.has(r)) rows.set(r, new Map());
       rows.get(r)!.set(c, val);
@@ -772,8 +840,7 @@ export class Store {
       for (let dc = 0; dc < grid[dr].length; dc++) {
         const r = v.selectedRow + dr;
         const c = v.selectedCol + dc;
-        if (r >= v.rowKeys.length || c >= v.colKeys.length) continue;
-        const cell = v.cells.cells[r * v.colKeys.length + c];
+        const cell = this.cellAtVisual(v, r, c);   // paste block walks VISUAL rows/cols
         if (!cell?.addr) continue;
         const raw = grid[dr][dc];
         const val = raw === "" ? "" : (isNaN(Number(raw)) ? raw : Number(raw));
@@ -785,7 +852,7 @@ export class Store {
       await this.api.setCellHardvaluesBatchByAddr(v.cubeId, entries);
       this.markDirty();
       await this.api.recalc("dirty");
-      await this.loadView(v.viewId);
+      await this.reloadOpenViews();
     } catch (e: any) { await alertDialog("Paste failed", e?.message || String(e)); }
   }
 

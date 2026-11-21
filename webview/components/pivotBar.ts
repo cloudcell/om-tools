@@ -73,7 +73,7 @@ export class PivotBar {
     this.zones = { topLeft, pageRight, bottom };
     if (!this.subscribed) {
       this.subscribed = true;
-      this.store.subscribe(() => { if (this.zones) this.refresh(this.zones.topLeft, this.zones.pageRight, this.zones.bottom); });
+      this.store.subscribe(() => { if (this.zones && this.store.notifyReason !== "focus") this.refresh(this.zones.topLeft, this.zones.pageRight, this.zones.bottom); });
     }
     this.refresh(topLeft, pageRight, bottom);
 

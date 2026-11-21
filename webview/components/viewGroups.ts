@@ -144,10 +144,16 @@ export class ViewArea {
         axis: "y", grow: -1, min: 60, collapsedSize: 28,
         max: () => Math.max(60, pane.clientHeight - 160),
         defaultSize: 200, label: "the rules pane",
-        get: () => ({ size: layout.rulePanelHeight, collapsed: g.rulesCollapsed }),
+        // Rendered height while expanded: the stored value can disagree with what is on
+        // screen (CSS max-height cap, a stale share) and a wrong start size makes the
+        // sash jump on the first move — the "leads/lags the pointer" symptom.
+        get: () => ({
+          size: g.rulesCollapsed ? (g.rulesH ?? layout.rulePanelHeight) : (rules.offsetHeight || g.rulesH || layout.rulePanelHeight),
+          collapsed: g.rulesCollapsed,
+        }),
         apply: (size, collapsed) => {
           const changed = collapsed !== g.rulesCollapsed;
-          layout.rulePanelHeight = size;
+          g.rulesH = size;
           g.rulesCollapsed = collapsed;
           rules.style.height = collapsed ? "28px" : `${size}px`;
           rules.classList.toggle("collapsed", collapsed);
@@ -162,7 +168,7 @@ export class ViewArea {
       tabRow?.addEventListener("pointerdown", (e) => {
         if (g.rulesCollapsed && !(e.target as HTMLElement).closest(".lower-tab")) sep.beginDrag(e, tabRow);
       });
-      rules.style.height = g.rulesCollapsed ? "28px" : `${layout.rulePanelHeight}px`;
+      rules.style.height = g.rulesCollapsed ? "28px" : `${g.rulesH ?? layout.rulePanelHeight}px`;
       rules.classList.toggle("collapsed", g.rulesCollapsed);
       pane.appendChild(sep.el);
       pane.appendChild(rules);

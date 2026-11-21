@@ -169,6 +169,10 @@ export class MultilevelGrid {
   private editor: HTMLInputElement | null = null;
   // Cell the open editor belongs to — selection can move while it is open
   private editorCell: { r: number; c: number } | null = null;
+  /** The data-space cell resolved at startEdit — the commit target. editorCell stays
+   *  visual (editor placement); committing on visual indices would mis-write cells in
+   *  views whose visual rows/cols diverge from v.cells (group/placeholder entries). */
+  private editorTarget: CellDTO | null = null;
 
   // Header label editor (native: inline QLineEdit over leaf header / group band)
   private headerEdit: {
@@ -185,7 +189,7 @@ export class MultilevelGrid {
   } | null = null;
 
   render(): HTMLElement {
-    this.store.subscribe(() => this.refresh());
+    this.store.subscribe(() => { if (this.store.notifyReason !== "focus") this.refresh(); });
     this.refresh();
     // Keydown is handled on the scroll element (inside renderGrid) to avoid
     // double-firing: root contains scroll, so a root-level listener would
@@ -279,6 +283,10 @@ export class MultilevelGrid {
       !e.is_leaf ? -1 : keyIndex(v.rowKeys, e.key ?? (e.item_id !== null ? [e.item_id] : [])));
     this.cellColMap = this.cols.map((e) =>
       !e.is_leaf ? -1 : keyIndex(v.colKeys, e.key ?? (e.item_id !== null ? [e.item_id] : [])));
+    // Publish so the store can translate visual selection indices -> cell data
+    // (v.selectedRow & co. are grid coordinates; v.cells is data-coordinates).
+    v.cellRowMap = this.cellRowMap;
+    v.cellColMap = this.cellColMap;
     // console.log("[buildGrid] rowKeys:", v.rowKeys, "colKeys:", v.colKeys, "rows:", this.rows.length, "cols:", this.cols.length, "cellRowMap:", this.cellRowMap, "cellColMap:", this.cellColMap);
 
     // Compute bands
@@ -681,7 +689,11 @@ export class MultilevelGrid {
     scroll.tabIndex = 0;
     scroll.addEventListener("keydown", (e) => this.onKeyDown(e));
     const active = document.activeElement;
-    const focusIsFree = !active || active === document.body || mount.contains(active);
+    // Focus may be reclaimed by this pane (its old scroll was inside mount, or nothing
+    // is focused and this IS the focused pane). A background pane must never grab DOM
+    // focus on a data refresh — the focused group's grid is the only one that may.
+    const focusIsFree = !active || mount.contains(active)
+      || (active === document.body && this.effGid() === this.store.state.focusedGroup);
     if (!this.editor && !this.headerEdit && focusIsFree) scroll.focus({ preventScroll: true });
     // Cell and header mousedown handlers call preventDefault (no native focus change), so a
     // click inside the grid takes focus explicitly — e.g. coming back from the rule bar.
@@ -2303,6 +2315,7 @@ export class MultilevelGrid {
     }, 0);
     this.editor = input;
     this.editorCell = { r, c };
+    this.editorTarget = cell ?? null;
 
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === "Return") { e.preventDefault(); this.commitEdit(); this.moveSel(1, 0); }
@@ -2325,14 +2338,16 @@ export class MultilevelGrid {
     if (!this.editor || !this.editorCell) return;
     const input = this.editor;
     const { r, c } = this.editorCell;
+    const target = this.editorTarget;
     this.editor = null;
     this.editorCell = null;
+    this.editorTarget = null;
     const v = this.store.viewOf(this.gid);
     if (!v) { input.remove(); return; }
     const text = input.value;
     input.remove();
     if (text === "") return;
-    this.store.applyInput(text, { row: r, col: c }, this.gid);
+    this.store.applyInput(text, target ? { cell: target } : { row: r, col: c }, this.gid);
   }
 
   /** Give the keyboard to the grid, e.g. after Enter or Escape in the rule bar (as in Qt). */
@@ -2347,6 +2362,7 @@ export class MultilevelGrid {
     // synchronously, and the blur handler would otherwise commit the edit.
     this.editor = null;
     this.editorCell = null;
+    this.editorTarget = null;
     input.remove();
     // Native _hide_editor(restore_grid_focus=True)
     (this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement | null)?.focus({ preventScroll: true });
