@@ -83,6 +83,10 @@ export interface AppState {
   activeTab: string | null;
   focusPath: string;
   selectionStats: Record<string, any>;
+  /** Status-bar stats widget: which metrics render (Qt _selection_stats_actions).
+   *  In-memory like Qt; empty set == "None" checked. */
+  statsMetrics: Set<"selcount" | "count" | "counta" | "sum" | "avg" | "min" | "max">;
+  statsSci: boolean;
   dirty: boolean;
   filePath: string | null;
   /** From the host config: native Open/Save dialogs (VS Code) or a text field (browser). */
@@ -137,6 +141,8 @@ export class Store {
     activeTab: null,
     focusPath: "OM Core",
     selectionStats: {},
+    statsMetrics: new Set(["avg", "sum"]),   // Qt default: Average and Sum enabled
+    statsSci: false,
     dirty: false,
     filePath: null,
     nativeFileDialogs: false,
@@ -411,7 +417,7 @@ export class Store {
       this.syncViewMirror();
       this.notify();
       await this.refreshRules();
-      await this.updateSelectionStats();
+      this.updateSelectionStats();
       await this.refreshUndoState();
     } catch (e: any) {
       this.state.viewStates[viewId] = { ...this.state.viewStates[viewId]!, loading: false };
@@ -638,11 +644,22 @@ export class Store {
     return dr >= 0 && dc >= 0 ? v.cells.cells[dr * v.colKeys.length + dc] : undefined;
   }
 
-  async updateSelectionStats() {
+  private statsTimer: any = null;
+  private statsGen = 0;
+
+  /** Qt debounces 100ms (_stats_debounce_timer) so arrow-key sweeps and drags
+   *  don't flood the engine with stats queries; a generation counter drops
+   *  stale replies the same way Qt's _generation does. */
+  updateSelectionStats() {
+    const gen = ++this.statsGen;
+    if (this.statsTimer) clearTimeout(this.statsTimer);
+    this.statsTimer = setTimeout(() => { void this.doSelectionStats(gen); }, 100);
+  }
+
+  private async doSelectionStats(gen: number) {
     const v = this.state.activeView;
     if (!v || !v.cells || v.selectedRow < 0 || v.selectedCol < 0) {
-      this.state.selectionStats = {};
-      this.notify();
+      if (gen === this.statsGen) { this.state.selectionStats = {}; this.notify(); }
       return;
     }
     try {
@@ -669,17 +686,28 @@ export class Store {
           .slice(0, MAX_KEYS).map((i) => v.colKeys[i]);
       }
       const stats = await this.api.selectionStats(params);
+      if (gen !== this.statsGen) return;
       this.state.selectionStats = stats;
       this.notify();
     } catch {
-      // fallback: compute locally
-      const nums: number[] = [];
+      // fallback: compute locally — counta counts every non-empty value, count only numerics
+      // (cmd_selection_stats semantics; cell.value == engine.get_cell_by_addr)
+      let count = 0, counta = 0, sum = 0, min: number | null = null, max: number | null = null, total = 0;
       for (const [r, c] of this.iterSelectedCells()) {
         const cell = this.cellAtVisual(v, r, c);
-        if (cell && typeof cell.value === "number") nums.push(cell.value);
+        if (!cell) continue;
+        total++;
+        if (cell.value === null || cell.value === undefined || cell.value === "") continue;
+        counta++;
+        const num = Number(cell.value);
+        if (!isNaN(num)) {
+          count++; sum += num;
+          if (min === null || num < min) min = num;
+          if (max === null || num > max) max = num;
+        }
       }
-      const sum = nums.reduce((a, b) => a + b, 0);
-      this.state.selectionStats = { sum, avg: nums.length ? sum / nums.length : 0, count: nums.length, counta: nums.length };
+      if (gen !== this.statsGen) return;
+      this.state.selectionStats = { total_count: total, count, counta, sum, avg: count ? sum / count : 0, min, max, sampled: false };
       this.notify();
     }
   }

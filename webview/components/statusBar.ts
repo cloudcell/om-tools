@@ -1,10 +1,81 @@
 import { Store } from "../state";
-import { el, clear } from "../dom";
+import { el } from "../dom";
 
 /** StatusBar — bottom bar showing focus path, cell address, nav mode, selection stats.
- *  Mirrors lib_gui/app.py status bar. */
+ *  Mirrors lib_gui/app.py status bar. The stats widget is the Qt dropdown button
+ *  (_StatsDropdownButton): click toggles which metrics render, like the menubar
+ *  checkable actions (Average, CountA, Count, Maximum, Minimum, Sum, Selection
+ *  count — plus Scientific format and None). Qt defaults: Average + Sum. */
 export class StatusBar {
   constructor(private store: Store) {}
+
+  /** Qt _render_stats_from_dto._fmt: None -> "0", ints bare, else %.6f trimmed,
+   *  or %.6e with a two-digit exponent when scientific is on. */
+  private fmt(v: any, sci: boolean): string {
+    if (v == null || isNaN(Number(v))) return "0";
+    if (sci) return Number(v).toExponential(6).replace(/e([+-])(\d)$/, "e$10$2");
+    if (Number.isInteger(v)) return String(v);
+    return Number(v).toFixed(6).replace(/\.?0+$/, "");
+  }
+
+  private statsText(): string {
+    const s = this.store.state;
+    const st = s.selectionStats;
+    const m = s.statsMetrics;
+    if (m.size === 0) return "";   // "None"
+    const chunks: string[] = [];
+    if (m.has("selcount")) chunks.push(`Selection count: ${st.total_count ?? 0}`);
+    if (m.has("count")) chunks.push(`Count: ${st.count ?? 0}`);
+    if (m.has("counta")) chunks.push(`CountA: ${st.counta ?? 0}`);
+    if (m.has("sum")) chunks.push(`Sum: ${this.fmt(st.sum, s.statsSci)}`);
+    if (m.has("avg")) chunks.push(`Average: ${this.fmt(st.avg, s.statsSci)}`);
+    if (m.has("min")) chunks.push(`Min: ${this.fmt(st.min, s.statsSci)}`);
+    if (m.has("max")) chunks.push(`Max: ${this.fmt(st.max, s.statsSci)}`);
+    return chunks.join("  ");
+  }
+
+  private showStatsMenu(anchor: HTMLElement) {
+    document.querySelector(".ctx-menu")?.remove();
+    const s = this.store.state;
+    const menu = el("div", { class: "ctx-menu" });
+    const close = (ev: MouseEvent) => { if (!menu.contains(ev.target as Node)) { menu.remove(); document.removeEventListener("mousedown", close); } };
+    const closeMenu = () => { menu.remove(); document.removeEventListener("mousedown", close); };
+
+    const addCheck = (label: string, checked: boolean, fn: () => void, title = label) => {
+      const item = el("div", { class: "ctx-item", title }, [
+        el("span", { class: "ctx-checkmark" }, [checked ? "✓" : ""]),
+        label,
+      ]);
+      item.addEventListener("mousedown", (e) => { e.preventDefault(); e.stopPropagation(); });
+      item.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeMenu(); fn(); });
+      menu.appendChild(item);
+    };
+    const addSep = () => menu.appendChild(el("div", { class: "ctx-sep" }));
+
+    // Qt stat_defs menu order.
+    const defs: [string, string][] = [
+      ["avg", "Average"], ["counta", "CountA"], ["count", "Count"],
+      ["max", "Maximum"], ["min", "Minimum"], ["sum", "Sum"], ["selcount", "Selection count"],
+    ];
+    for (const [key, label] of defs) {
+      addCheck(label, s.statsMetrics.has(key as any), () => {
+        const m = s.statsMetrics as Set<any>;
+        if (m.has(key)) m.delete(key); else m.add(key);
+        this.store.notify();
+      });
+    }
+    addSep();
+    addCheck("Scientific format", s.statsSci, () => { s.statsSci = !s.statsSci; this.store.notify(); });
+    addSep();
+    addCheck("None", s.statsMetrics.size === 0, () => { s.statsMetrics.clear(); this.store.notify(); });
+
+    // Status bar sits at the window bottom — the menu opens upward.
+    document.body.appendChild(menu);
+    const r = anchor.getBoundingClientRect();
+    menu.style.left = Math.min(r.left, window.innerWidth - menu.offsetWidth - 4) + "px";
+    menu.style.top = (r.top - menu.offsetHeight - 4) + "px";
+    document.addEventListener("mousedown", close);
+  }
 
   render(): HTMLElement {
     const bar = el("div", { class: "statusbar" });
@@ -14,12 +85,18 @@ export class StatusBar {
     const sep2 = el("span", { class: "sb-sep" }, ["|"]);
     const navMode = el("span", { class: "sb-section" }, ["nav: cell"]);
     const sep3 = el("span", { class: "sb-sep" }, ["|"]);
-    const stats = el("span", { class: "sb-section" }, [""]);
+    const stats = el("span", { class: "sb-section sb-stats", tabindex: "0", role: "button", title: "Selection statistics — click to choose metrics" }, [""]);
     const sep4 = el("span", { class: "sb-sep" }, ["|"]);
     // Workspace file: the name, the full path on hover. In VS Code this and the editor tab are the only
     // places that show which file is open (document.title is not visible there).
     const file = el("span", { class: "sb-section sb-file" }, [""]);
     const dirty = el("span", { class: "sb-section dirty-marker" }, [""]);
+
+    stats.addEventListener("click", () => this.showStatsMenu(stats));
+    stats.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.showStatsMenu(stats); }
+      else if (e.key === "Escape") document.querySelector(".ctx-menu")?.remove();
+    });
 
     bar.appendChild(focusPath);
     bar.appendChild(sep1);
@@ -48,15 +125,7 @@ export class StatusBar {
         cellAddr.textContent = "—";
         navMode.textContent = "nav: —";
       }
-      const st = s.selectionStats;
-      const parts: string[] = [];
-      if (st.count != null) parts.push(`count: ${st.count}`);
-      if (st.counta != null) parts.push(`counta: ${st.counta}`);
-      if (st.sum != null) parts.push(`sum: ${typeof st.sum === "number" ? st.sum.toFixed(2) : st.sum}`);
-      if (st.avg != null) parts.push(`avg: ${typeof st.avg === "number" ? st.avg.toFixed(2) : st.avg}`);
-      if (st.min != null) parts.push(`min: ${st.min}`);
-      if (st.max != null) parts.push(`max: ${st.max}`);
-      stats.textContent = parts.join("  ");
+      stats.textContent = this.statsText();
       file.textContent = this.store.fileName();
       file.title = s.filePath || "Not saved to a file yet";
       dirty.textContent = s.dirty ? "● unsaved" : "";

@@ -1185,8 +1185,15 @@ table.matrix td.cell.rule-marker::before { content: ""; }
 .statusbar .sb-focus { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--focus-indicator); }
 .statusbar .sb-cell { font-family: ui-monospace, monospace; }
 .statusbar .sb-mode { color: var(--text-muted); }
-.statusbar .sb-stats { font-family: ui-monospace, monospace; }
+.statusbar .sb-stats { font-family: ui-monospace, monospace; padding: 1px 4px; border-radius: 3px; user-select: none; }
+.statusbar .sb-stats:hover { background: var(--menu-item-hover); }
+.statusbar .sb-stats:focus-visible { outline: 1px solid var(--selection); outline-offset: -1px; }
 .statusbar .sb-stats .warn { color: var(--truncation-warning); }
+
+/* Checkmark column for toggleable items in plain .ctx-menu popups (e.g. the
+ * status-bar stats menu): keeps labels aligned like the menubar icon column. */
+.ctx-menu .ctx-item { display: flex; align-items: center; }
+.ctx-menu .ctx-checkmark { flex: 0 0 14px; color: var(--text); }
 
 /* ---- Misc ---- */
 .btn { padding: 3px 10px; border: 1px solid var(--border-strong); border-radius: 3px; background: #fff; cursor: default; font-size: 12px; }
