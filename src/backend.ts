@@ -75,6 +75,9 @@ export class EmbeddedBackend implements EngineBackend {
     private dead = false;
     /** Called when the worker exits unexpectedly — host surfaces the loss. */
     onWorkerExit?: (code: number | null) => void;
+    /** Called after an automatic respawn completes — the fresh engine has an
+     *  EMPTY workspace; consumers must treat it as a new runtime. */
+    onRespawn?: () => void;
     /** Every session event, before topic filtering — mirrors EngineClient's
      *  "event" emit so the webview sees the same envelope stream on both
      *  transports. */
@@ -131,6 +134,21 @@ export class EmbeddedBackend implements EngineBackend {
         return this.ready;
     }
 
+    /** Respawn the worker if it died unexpectedly; returns true when a fresh
+     *  (empty-workspace) engine came up. No-op while alive, or after an
+     *  intentional dispose() — a stopped engine stays stopped.
+     *  Topic subs persist across respawn (the message handler reads the map
+     *  on every event), so nothing else needs re-arming. */
+    private async ensureRespawned(): Promise<boolean> {
+        if (this.worker || this.dead) return false;
+        await this.connect();
+        const s = await this.req("openSession", {});
+        this.sessionId = s.session_id;
+        this.onRespawn?.();
+        this.onAnyEvent?.({ topic: "event.engine.restarted", data: { fresh_runtime: true } });
+        return true;
+    }
+
     private req(kind: string, params: Record<string, any>): Promise<any> {
         const id = `e${this.seq++}`;
         return new Promise((resolve, reject) => {
@@ -144,12 +162,18 @@ export class EmbeddedBackend implements EngineBackend {
         try { await this.req("ping", {}); return true; } catch { return false; }
     }
     async openSession(_clientType: string) {
+        await this.ensureRespawned();
         const r = await this.req("openSession", {});
         this.sessionId = r.session_id;
         return this.sessionId as string;
     }
     async send(commandId: string, params: Record<string, any>) {
         try {
+            if (await this.ensureRespawned()) {
+                // The new engine is empty — never silently replay a mutation
+                // into it. The caller decides whether to retry deliberately.
+                return { ok: false as const, error: "engine restarted — workspace is empty; re-issue the command if intended" };
+            }
             const data = await this.req("command", { command_id: commandId, params });
             return { ok: true as const, data };
         } catch (e: any) {
@@ -157,7 +181,13 @@ export class EmbeddedBackend implements EngineBackend {
         }
     }
     async query(queryId: string, params: Record<string, any>) {
-        return this.req("query", { query_id: queryId, params });
+        const fresh = await this.ensureRespawned();
+        const data = await this.req("query", { query_id: queryId, params });
+        // Marker is additive-only: array/primitive payloads can't carry it —
+        // the engine.restarted event + freshRuntime status cover those.
+        return fresh && data && typeof data === "object" && !Array.isArray(data)
+            ? { ...data, fresh_runtime: true }
+            : data;
     }
     subscribe(topic: string, cb: (env: EngineEvent) => void) {
         (this.subs.get(topic) || this.subs.set(topic, []).get(topic)!).push(cb);

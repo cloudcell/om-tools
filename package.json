@@ -77,12 +77,6 @@
         "icon": "$(edit)"
       },
       {
-        "command": "omCore.downloadCore",
-        "title": "OM Core: Install Engine",
-        "category": "OM Core",
-        "icon": "$(cloud-download)"
-      },
-      {
         "command": "omCore.openSettings",
         "title": "OM Core: Open Settings",
         "category": "OM Core",
@@ -180,21 +174,6 @@
       {
         "view": "omCore.actions",
         "contents": "[Settings](command:omCore.openSettings \"Open the OM Core settings\")"
-      },
-      {
-        "view": "omCore.actions",
-        "contents": "[Install Engine](command:omCore.downloadCore \"Download and install the om-core engine\")\nDownloads om-core from GitHub and installs its dependencies (one-time setup).",
-        "when": "omCore.installButton == install"
-      },
-      {
-        "view": "omCore.actions",
-        "contents": "Installing om-core…\nDetails are in the OM Core output channel.",
-        "when": "omCore.installButton == installing"
-      },
-      {
-        "view": "omCore.actions",
-        "contents": "Install Engine requires a trusted workspace.\n[Manage Workspace Trust](command:omCore.manageTrust \"Trust this workspace to install the engine\")",
-        "when": "omCore.installButton == restricted"
       }
     ],
     "configuration": {
@@ -229,7 +208,7 @@
           "type": "string",
           "enum": ["auto", "embedded", "socket"],
           "default": "auto",
-          "description": "Which engine the GUI talks to. 'embedded' = the bundled zig/wasm engine in a worker (zero dependencies, no runtime to start). 'socket' = an external om-core/om-runtime over unix/TCP. 'auto' = socket when omCore.runtimeEndpoint or OPENM_TRANSPORT_* is explicitly set, embedded otherwise."
+          "description": "Which engine the GUI talks to. 'embedded' = the bundled zig/wasm engine in a worker (zero dependencies — opens the GUI and it just works). 'socket' = an external om-core/om-runtime over unix/TCP (scripts, solver, shared workspaces). 'auto' = socket when omCore.runtimeEndpoint or OPENM_TRANSPORT_* is explicitly set, embedded otherwise. Changing this reconnects under the new mode."
         },
         "omCore.engineStateBytes": {
           "type": "number",
@@ -240,6 +219,11 @@
           "type": "number",
           "default": 0,
           "description": "Embedded engine scratch-arena size in bytes (0 = engine default, 2 MiB)."
+        },
+        "omCore.enginePreload": {
+          "type": "boolean",
+          "default": false,
+          "description": "Start the embedded engine when VS Code finishes startup instead of on first use. Off by default — every window activates this extension; only enable if you always want a warm engine."
         },
         "omCore.tsRuntimePath": {
           "type": "string",
@@ -346,11 +330,6 @@
           "command": "omCore.uvInstallHelp",
           "when": "view == omCore.launchPad && viewItem =~ /^uv-(missing|elsewhere)$/",
           "group": "1_actions@1"
-        },
-        {
-          "command": "omCore.downloadCore",
-          "when": "view == omCore.launchPad && viewItem =~ /^path-(none|not-om-core)$/",
-          "group": "1_actions@0"
         }
       ],
       "commandPalette": [
@@ -412,10 +391,10 @@
     "package": "vsce package --no-dependencies",
     "check:sensitive": "node scripts/check-sensitive.js --all",
     "prepare": "simple-git-hooks",
-    "test:installer": "esbuild ./test-installer.ts --bundle --platform=node --format=cjs --outfile=dist/test-installer.js && node dist/test-installer.js",
     "test:mcp": "node tools/mcp-check.mjs",
     "audit:gate": "node scripts/npm-audit.mjs",
-    "test:dimcache": "esbuild ./tools/dimcache-check.ts --bundle --platform=node --format=cjs --outfile=dist/dimcache-check.js && node dist/dimcache-check.js"
+    "test:dimcache": "esbuild ./tools/dimcache-check.ts --bundle --platform=node --format=cjs --outfile=dist/dimcache-check.js && node dist/dimcache-check.js",
+    "test:respawn": "esbuild ./tools/respawn-check.ts --bundle --platform=node --format=cjs --outfile=dist/respawn-check.js && node dist/respawn-check.js"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
