@@ -7,6 +7,7 @@ import { sanitizeUiState } from "./uiState";
 import { GUI_BUTTON_KEY, INSTALL_BUTTON_KEY, RUNTIME_BUTTON_KEY, StatusSnapshot, UV_INSTALL_URL, buttonStates, describeOmCorePath, findUv, hasVenv, looksLikeOmCore, missingOmCoreParts, readGitCommit } from "./engineStatus";
 import { gitOnPath, installOmCore, managedCoreDir } from "./omCoreInstaller";
 import { StatusPanel } from "./statusPanel";
+import { OmMcpServer, startOmMcpServer } from "./mcpServer";
 import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
@@ -341,6 +342,44 @@ let launching = false;
  *  A runtime restarted by somebody else is not noticed (the extension cannot tell it from the old one). */
 let runtimeReplaced = false;
 
+// ── MCP server (Streamable HTTP at 127.0.0.1:<port>/mcp) ──────────────────
+// Independent of the runtime connection: the listener lifecycle follows
+// omCore.mcp.enabled / mcp.port so the URL is stable across runtime restarts;
+// tools report "not connected" while client is null. Registered with VS Code's
+// lm API when present (≥ ~1.102); otherwise the URL is used manually.
+let mcpServer: OmMcpServer | null = null;
+const mcpDefChange = new vscode.EventEmitter<void>();
+
+async function restartMcpServer(): Promise<void> {
+  if (mcpServer) { try { mcpServer.close(); } catch {} mcpServer = null; }
+  const cfg = vscode.workspace.getConfiguration("omCore");
+  if (cfg.get<boolean>("mcp.enabled", true)) {
+    try {
+      mcpServer = await startOmMcpServer({
+        getClient: () => client,
+        resolveFileDir: () => defaultDirUri().fsPath,
+        port: cfg.get<number>("mcp.port", 0),
+        log: (m) => outputChannel().appendLine(`[mcp] ${m}`),
+      });
+    } catch (e: any) {
+      outputChannel().appendLine(`[mcp] server failed to start: ${e?.message || e}`);
+    }
+  }
+  mcpDefChange.fire();
+}
+
+/** Register the MCP server definition provider when the host has the lm API. */
+function registerMcpProvider(context: vscode.ExtensionContext): void {
+  const lm: any = (vscode as any).lm;
+  const Def: any = (vscode as any).McpHttpServerDefinition;
+  if (typeof lm?.registerMcpServerDefinitionProvider !== "function" || typeof Def !== "function") return;
+  context.subscriptions.push(lm.registerMcpServerDefinitionProvider("omCore", {
+    onDidChangeMcpServerDefinitions: mcpDefChange.event,
+    provideMcpServerDefinitions: () =>
+      mcpServer ? [new Def("OM Core", vscode.Uri.parse(mcpServer.url))] : [],
+  }));
+}
+
 /** Nothing answers where the GUI would connect. Not a failure: the way out is the Start Runtime button. */
 class RuntimeNotRunningError extends Error {}
 
@@ -669,11 +708,31 @@ export function activate(context: vscode.ExtensionContext) {
     }),
     vscode.commands.registerCommand("omCore.manageTrust", () => vscode.commands.executeCommand("workbench.trust.manage")),
     vscode.commands.registerCommand("omCore.uvInstallHelp", () => vscode.env.openExternal(vscode.Uri.parse(UV_INSTALL_URL))),
-    vscode.workspace.onDidChangeConfiguration((e) => { if (e.affectsConfiguration("omCore")) refreshPanel(); }),
+    vscode.commands.registerCommand("omCore.showMcpServerInfo", async () => {
+      if (!mcpServer) {
+        vscode.window.showWarningMessage("The OM Core MCP server is not running. Enable it with the 'omCore.mcp.enabled' setting.");
+        return;
+      }
+      const snippet = JSON.stringify({ servers: { "om-core": { type: "http", url: mcpServer.url } } }, null, 2);
+      const pick = await vscode.window.showInformationMessage(
+        `OM Core MCP server: ${mcpServer.url}`,
+        { modal: false, detail: "Register this URL in your MCP client — e.g. .vscode/mcp.json, or: claude mcp add --transport http om-core " + mcpServer.url },
+        "Copy URL", "Copy mcp.json snippet");
+      if (pick === "Copy URL") await vscode.env.clipboard.writeText(mcpServer.url);
+      else if (pick === "Copy mcp.json snippet") await vscode.env.clipboard.writeText(snippet);
+    }),
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("omCore")) refreshPanel();
+      if (e.affectsConfiguration("omCore.mcp")) void restartMcpServer();
+    }),
     vscode.workspace.onDidGrantWorkspaceTrust(refreshPanel),
     vscode.workspace.onDidChangeWorkspaceFolders(refreshPanel),
     { dispose: () => { engineOutput?.dispose(); engineOutput = null; } },
   );
+
+  registerMcpProvider(context);
+  context.subscriptions.push(mcpDefChange);
+  void restartMcpServer();
 }
 
 async function openGui(context: vscode.ExtensionContext) {
@@ -746,6 +805,7 @@ function getNonce(): string {
 }
 
 export function deactivate() {
+  if (mcpServer) { try { mcpServer.close(); } catch {} mcpServer = null; }
   if (client) { client.close(); client = null; }
   if (runtime) { runtime.stop(); runtime = null; }
   panel = null;

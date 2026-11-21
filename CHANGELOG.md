@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+- **MCP server**: the extension now exposes the connected om-core runtime to AI
+  agents over MCP Streamable HTTP at `http://127.0.0.1:<port>/mcp`. Two tools —
+  `om_query` and `om_command` — forward any om-core query/command through the
+  same session the GUI uses, so an agent's edits refresh open views and its
+  reads see your live workspace. VS Code ≥ 1.102 picks the server up
+  automatically via the MCP definition provider; other clients register the URL
+  manually — **OM Core: MCP Server Info** copies the URL or a `mcp.json`
+  snippet. Localhost-only on an ephemeral port; the tools return a clean
+  "not connected" error while the runtime is down. Settings: `omCore.mcp.enabled`
+  (default on) and `omCore.mcp.port` (default `0` = ephemeral). Relative paths in
+  `save_workspace`/`load_workspace` resolve against the workspace folder.
+  End-to-end check: `npm run test:mcp` spawns a throwaway runtime and drives the
+  tools through the real MCP client transport.
+- **Fixed: raw `item_…` ids on stacked axes after external edits.** Item adds,
+  renames, or recreations made by another client (an MCP agent, a second GUI)
+  only re-ran `refreshModel`, which never re-fetched a cached dimension — so
+  stacked row/column headers fell back to truncated item ids. `refreshModel`
+  now reconciles the dimension cache against `dimension_list` (dropping stale
+  or deleted entries), `event.dimension.*`/`event.workspace.*` invalidate the
+  cache outright, and the stacked-axis renderer falls back to the
+  server-resolved `view_*_header` labels. Check: `npm run test:dimcache`.
+
 ## 0.1.4
 
 - **Install Engine**: the extension can now download and install om-core itself —

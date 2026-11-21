@@ -30,8 +30,9 @@ over its newline-delimited JSON envelope socket protocol.
   `omCore.managedCorePath`; nothing is written to `omCorePath`) > workspace folder
   containing `main.py` + `lib_runtime/` + `lib_openm/` > download-or-pick prompt
   (folder choice persisted to the setting). Required only for Start Runtime.
-- **Install Engine** (`omCore.downloadCore`): clones cloudcell/om-core at
-  `OM_CORE_PINNED_COMMIT` (`omCoreInstaller.ts`, vscode-free) into `globalStorage`,
+- **Install Engine** (`omCore.downloadCore`): clones cloudcell/om-core at the
+  latest `main` commit — resolved via `git ls-remote` (`OM_CORE_BRANCH`,
+  `omCoreInstaller.ts`, vscode-free), then fetched by hash — into `globalStorage`,
   verifies the checkout, runs `uv sync`. Blocked in Restricted Mode like Start
   Runtime (`installBlockedReason`). Entry points: Actions-section button, `path-none`
   row, the prompt above. One install at a time (`installingCore` dedupe).
@@ -67,6 +68,10 @@ Press F5 in VSCode (needs a launch config) or run the Extension Development Host
 Build conventions derived from the om-core source (`lib_gui`, `lib_gui_elements`,
 `lib_contracts`, `lib_command`).
 GUI layout/colors from `om-core/om-gui.conf`.
+
+## Financial model requests
+When a user asks to create, rebuild, repair, or extend a financial model in OM Core,
+use `.devin/skills/financial-model/SKILL.md` before running any OM Core commands.
 
 ## Design guidelines
 All GUI work must follow `docs/design-guidelines.md` (derived from Apple HIG).

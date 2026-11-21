@@ -292,6 +292,21 @@ export class Store {
     ]);
     this.set({ dimensions: dims.dimensions, cubes: cubes.cubes, views: views.views, workspaceSummary: ws });
     this.syncTabsWithViews();
+    // Externally-driven changes (MCP agent, second client) re-run refreshModel via
+    // event.* subscriptions but never invalidateDimCache — a dim cached before its
+    // items existed stays stale and stacked axes render raw item_ids. dimension_list
+    // already returns item_list; drop entries that no longer match it.
+    const freshIds = new Set(dims.dimensions.map((d) => d.id));
+    for (const id of [...this.dimCache.keys()]) if (!freshIds.has(id)) this.dimCache.delete(id);
+    for (const s of dims.dimensions) {
+      const c = this.dimCache.get(s.id);
+      if (!c) continue;
+      const list = s.item_list;
+      const sameItems = list
+        ? c.items.length === list.length && c.items.every((it, i) => it.id === list[i].id && it.name === list[i].name)
+        : c.items.length === s.items;
+      if (c.name !== s.name || !sameItems) this.dimCache.delete(s.id);
+    }
     // dimension_list has no dim_type, so the Model Browser knew "sequential" only for dimensions of an opened view.
     // Fetch the missing details once (the cache lives until the next model load), then redraw (issue #2).
     const missing = dims.dimensions.some((d) => !this.dimCache.has(d.id));

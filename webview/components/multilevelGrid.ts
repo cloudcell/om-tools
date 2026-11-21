@@ -390,6 +390,9 @@ export class MultilevelGrid {
       const labels: string[] = [];
       const labelPaths: (number[] | null)[] = [];
       const labelDims: (number | null)[] = [];
+      // view_*_header resolves leaf names server-side (" | "-joined per dim) —
+      // covers items the (possibly stale) dimCache doesn't know yet.
+      const headerParts = (headers[i] || "").split(" | ");
       for (let d = 0; d < dimIds.length; d++) {
         const iid = k[d];
         const g = dimInfos[d].info.get(iid);
@@ -399,7 +402,7 @@ export class MultilevelGrid {
           else { labels.push(""); labelPaths.push(null); }
           labelDims.push(d);
         }
-        labels.push(dimNameMaps[d].get(iid) || (typeof iid === "string" ? iid.slice(0, 8) : ""));
+        labels.push(dimNameMaps[d].get(iid) || headerParts[d] || (typeof iid === "string" ? iid.slice(0, 8) : ""));
         labelPaths.push(null);  // leaf level is not a group
         labelDims.push(d);
       }
