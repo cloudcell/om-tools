@@ -352,6 +352,19 @@ Checks should verify:
 Checks are formulas or hardcodes only after the underlying statements are
 verified. Never return "PASS" while leaving hardcoded or unchecked values.
 
+When repairing checks, trace the filing's own roll-forward arithmetic rather
+than suppressing a non-zero result. For example, a 2025A cash-flow bridge must
+use:
+
+```text
+BeginningCash + NetChangeInCash = EndingCash
+17,388 - 3,141 = 14,247
+```
+
+Do not replace a failing amount with a plug or alter the check formula merely
+to force a zero. Correct the underlying actual or formula, recalculate, and
+verify the same check in every scenario.
+
 ## Verification
 
 Before finishing:
