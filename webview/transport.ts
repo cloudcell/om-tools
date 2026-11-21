@@ -56,11 +56,23 @@ export function createTransport(): Transport {
   throw new Error("no transport available: not in VSCode and no WebSocket");
 }
 
-/** WebSocket transport — for the future standalone browser deployment.
- *  Speaks the same request/response message protocol as VsCodeTransport;
- *  the bridge server (bridge/server.js) proxies envelopes to the om-core socket. */
+/** Minimal socket contract — a real WebSocket or any shim with the same
+ *  callback fields (e.g. an in-page LocalSocket backed by the wasm engine). */
+export interface WebSocketLike {
+  onopen: ((ev?: any) => void) | null;
+  onmessage: ((ev: { data: any }) => void) | null;
+  onerror: ((ev?: any) => void) | null;
+  onclose: ((ev?: any) => void) | null;
+  send(data: string): void;
+}
+
+/** WebSocket transport — speaks the same request/response message protocol as
+ *  VsCodeTransport. Pass a url (or nothing: same-origin ws://, ?ws=host:port
+ *  override) to open a real socket, or a ready-made WebSocketLike shim for
+ *  in-process backends. The bridge server (bridge/server.js) proxies envelopes
+ *  to the om-core socket. */
 export class WebSocketTransport implements Transport {
-  private ws: WebSocket;
+  private ws: WebSocket | WebSocketLike;
   private pending = new Map<string, { resolve: (v: any) => void; reject: (e: any) => void }>();
   private statusCbs = new Set<(status: string, message?: string, extra?: StatusExtra) => void>();
   private eventCbs = new Map<string, Set<(env: any) => void>>();
@@ -69,20 +81,23 @@ export class WebSocketTransport implements Transport {
   private sendQueue: string[] = [];
   private ready = false;
 
-  constructor(url?: string) {
-    // Default to same-origin ws:// — the bridge serves HTTP and WS on one port,
-    // so in a real browser deployment this just works. Override via querystring
-    // ?ws=host:port to point at a separate bridge.
-    const params = new URLSearchParams(location.search);
-    const wsHost = params.get("ws") || location.host;
-    const u = url || `ws://${wsHost}`;
-    this.ws = new WebSocket(u);
+  constructor(urlOrSocket?: string | WebSocketLike) {
+    if (typeof urlOrSocket === "object" && urlOrSocket !== null) {
+      this.ws = urlOrSocket;
+    } else {
+      // Default to same-origin ws:// — the bridge serves HTTP and WS on one port,
+      // so in a real browser deployment this just works. Override via querystring
+      // ?ws=host:port to point at a separate bridge.
+      const params = new URLSearchParams(location.search);
+      const wsHost = params.get("ws") || location.host;
+      this.ws = new WebSocket(urlOrSocket || `ws://${wsHost}`);
+    }
     this.ws.onopen = () => {
       this.ready = true;
       for (const m of this.sendQueue) this.ws.send(m);
       this.sendQueue = [];
     };
-    this.ws.onmessage = (ev) => this.onMessage(ev.data);
+    this.ws.onmessage = (ev: { data: any }) => this.onMessage(ev.data);
     this.ws.onerror = () => {
       for (const [, p] of this.pending) p.reject(new Error("websocket error"));
       this.pending.clear();

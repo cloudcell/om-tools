@@ -33,8 +33,15 @@ over its newline-delimited JSON envelope socket protocol.
   Runtime+GUI only and skips all socket/fs probes; socket shows Runtime/GUI/Engine
   path/Dependencies/uv.
 - `npm run test:respawn` — worker-kill/respawn smoke (needs a built ts_runtime).
-- `webview/` — pure HTML/CSS/TS UI (no framework). `transport.ts` is the only VSCode coupling
-  point; swap `VsCodeTransport` for a `WebSocketTransport` to run the same UI in a browser.
+- `webview/` — pure HTML/CSS/TS UI (no framework), the `om-gui` library
+  (`webview/package.json`). `mount(root, { transport })` in `webview/app.ts` is the
+  host contract — the host supplies a `Transport` (`transport.ts`):
+  `VsCodeTransport` in the extension webview, `WebSocketTransport` in a browser
+  (real ws url, or a ready-made `WebSocketLike` shim for in-process backends).
+  Artifacts: `dist/webview.js` (iife, self-mounts via `main.ts` + `createTransport`
+  auto-detect), `dist/webview.mjs` (ESM, exports `mount`/transports, side-effect
+  free), `dist/webview.css`. om-tools-web vendors all three via `tools/sync.sh`
+  and mounts the ESM build on its in-page `LocalSocket`.
 - `shared/messages.ts` — host<->webview message protocol.
 
 ## om-core runtime connection

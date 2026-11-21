@@ -1,86 +1,15 @@
+import { mount } from "./app";
 import { createTransport } from "./transport";
-import { OmApi } from "./api";
-import { Store } from "./state";
-import { AppShell } from "./components/appShell";
-import { applyTheme, sanitizeTheme } from "./theme";
-import "./styles.css";
 
-/** Webview entry point. Wires the transport (VSCode postMessage today,
- *  WebSocket in a future browser build) to the OM Core API client and
- *  renders the app shell. */
-async function main() {
-  const transport = createTransport();
-  const api = new OmApi(transport);
-  const store = new Store(api);
-
-  // Saved colour theme goes on <html> before the first render, so nothing paints in the wrong colours.
-  applyTheme(sanitizeTheme(api.loadUiState()?.theme));
-
-  // Render the shell first so the GUI is visible even while connecting.
-  const shell = new AppShell(store);
-  const app = document.getElementById("app")!;
-  app.replaceWith(shell.render());
-
-  // Status updates from the host (connecting/connected/disconnected/error).
-  transport.onStatus((status, message, extra) => {
-    if (status === "connected") {
-      store.setStatus(true, message || "connected");
-      // A new runtime holds another model: tabs, file name and "unsaved" of the old one go (like File → New).
-      (extra?.freshRuntime ? store.onRuntimeReplaced() : store.refreshModel()).catch(() => {});
-    } else if (status === "disconnected" || status === "error") {
-      store.setStatus(false, message || status, extra?.hint);
-    } else {
-      store.state.statusMessage = message || status;
-      store.state.statusHint = "";     // connecting: the way out of "disconnected" is being taken
-      store.notify();
-    }
-  });
-
-  // Pull config (showSystemElements, endpoint) from the host — non-blocking.
-  transport.getConfig().then((cfg) => {
-    store.state.showSystemElements = cfg.showSystemElements;
-    store.state.endpoint = cfg.endpoint;
-    store.state.nativeFileDialogs = !!cfg.nativeFileDialogs;
-    store.state.serverFileBrowse = !!cfg.serverFileBrowse;
-    store.state.defaultDir = cfg.defaultDir || "";
-    store.notify();
-  }).catch(() => {});
-
-  // Engine bus events → refresh model/rules on structural changes.
-  api.subscribe("event.dimension.*", () => { store.invalidateDimCache(); store.refreshModel(); });
-  api.subscribe("event.cube.*", () => store.refreshModel());
-  api.subscribe("event.view.*", () => store.refreshModel());
-  api.subscribe("event.workspace.*", () => { store.invalidateDimCache(); store.refreshModel(); });
-  api.subscribe("command.*.succeeded", (ev) => {
-    const cmd = ev.topic?.split(".")[1];
-    // UI-state commands (set_selection on every click, width persists) cannot
-    // change model or cell data — refreshing on their echo just repaints twice.
-    if (cmd && Store.UI_ONLY_COMMANDS.has(cmd)) return;
-    store.refreshModel(); store.refreshRules();
-    // Any succeeded command may have changed cell data — reload open views so
-    // mutations from other clients (MCP om_command, REPL) show up immediately.
-    // Own edits already reloaded; the debounce makes that second pass cheap.
-    // Recalc events are the refresh's own echo — scheduling another recalc
-    // off them loops forever (each recalc emits calculation.finished again).
-    if (cmd === "run_recalculation" || cmd === "recompute_dirty") {
-      store.scheduleViewReload();
-    } else {
-      store.scheduleExternalRefresh(cmd);
-    }
-  });
-  api.subscribe("event.calculation.finished", () => store.scheduleViewReload());
-
-  // If already connected by the time we mount (host auto-connects), load model.
-  if (store.state.connected) store.refreshModel().catch(() => {});
-}
-
-main().catch((e) => {
-  const app = document.getElementById("app");
-  if (app) {
-    // textContent, not innerHTML: the message can carry text from the runtime or the model (T-049, DEV-08).
-    const box = document.createElement("div");
-    box.style.cssText = "padding:24px;color:#d32f2f;font-family:system-ui";
-    box.textContent = `OM Core GUI failed to start: ${String(e?.message || e)}`;
-    app.replaceChildren(box);
-  }
+/** Self-mounting entry for the bundled iife build (dist/webview.js) — the VS
+ *  Code webview's index.html loads it as a classic script, so it picks its
+ *  transport and mounts on its own. Hosts that drive the ESM build
+ *  (dist/webview.mjs) call mount() themselves instead. */
+const app = document.getElementById("app")!;
+mount(app, { transport: createTransport() }).catch((e) => {
+  // textContent, not innerHTML: the message can carry text from the runtime or the model (T-049, DEV-08).
+  const box = document.createElement("div");
+  box.style.cssText = "padding:24px;color:#d32f2f;font-family:system-ui";
+  box.textContent = `OM Core GUI failed to start: ${String(e?.message || e)}`;
+  app.replaceChildren(box);
 });

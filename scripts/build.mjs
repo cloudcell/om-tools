@@ -21,6 +21,11 @@ await build({
 await build({
   entryPoints: ["webview/main.ts"], bundle: true, platform: "browser", format: "iife", outfile: "dist/webview.js",
 });
+await build({
+  // ESM variant of the om-gui library: exports mount()/transports, no self-mount.
+  // Hosts that can import modules (om-tools-web, future embedders) use this.
+  entryPoints: ["webview/index.ts"], bundle: true, platform: "browser", format: "esm", outfile: "dist/webview.mjs",
+});
 copyFileSync("webview/index.html", "dist/index.html");
 await build({
   entryPoints: ["bridge/server.ts"], bundle: true, platform: "node", format: "cjs",

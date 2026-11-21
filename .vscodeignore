@@ -21,6 +21,7 @@ test-harness.ts
 **/*.ts
 **/*.vsix
 dist/bridge.js
+dist/webview.mjs
 dist/test-harness.js
 dist/respawn-check.js
 dist/_selftest.js
