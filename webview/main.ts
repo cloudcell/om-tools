@@ -51,7 +51,24 @@ async function main() {
   api.subscribe("event.cube.*", () => store.refreshModel());
   api.subscribe("event.view.*", () => store.refreshModel());
   api.subscribe("event.workspace.*", () => { store.invalidateDimCache(); store.refreshModel(); });
-  api.subscribe("command.*.succeeded", () => { store.refreshModel(); store.refreshRules(); });
+  api.subscribe("command.*.succeeded", (ev) => {
+    const cmd = ev.topic?.split(".")[1];
+    // UI-state commands (set_selection on every click, width persists) cannot
+    // change model or cell data — refreshing on their echo just repaints twice.
+    if (cmd && Store.UI_ONLY_COMMANDS.has(cmd)) return;
+    store.refreshModel(); store.refreshRules();
+    // Any succeeded command may have changed cell data — reload open views so
+    // mutations from other clients (MCP om_command, REPL) show up immediately.
+    // Own edits already reloaded; the debounce makes that second pass cheap.
+    // Recalc events are the refresh's own echo — scheduling another recalc
+    // off them loops forever (each recalc emits calculation.finished again).
+    if (cmd === "run_recalculation" || cmd === "recompute_dirty") {
+      store.scheduleViewReload();
+    } else {
+      store.scheduleExternalRefresh(cmd);
+    }
+  });
+  api.subscribe("event.calculation.finished", () => store.scheduleViewReload());
 
   // If already connected by the time we mount (host auto-connects), load model.
   if (store.state.connected) store.refreshModel().catch(() => {});

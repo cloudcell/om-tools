@@ -224,6 +224,27 @@
           "type": "number",
           "default": 0,
           "description": "Port for the OM Core MCP server. 0 = an ephemeral port assigned by the OS (recommended). Set a fixed port only when an MCP client needs a stable URL."
+        },
+        "omCore.engineMode": {
+          "type": "string",
+          "enum": ["auto", "embedded", "socket"],
+          "default": "auto",
+          "description": "Which engine the GUI talks to. 'embedded' = the bundled zig/wasm engine in a worker (zero dependencies, no runtime to start). 'socket' = an external om-core/om-runtime over unix/TCP. 'auto' = socket when omCore.runtimeEndpoint or OPENM_TRANSPORT_* is explicitly set, embedded otherwise."
+        },
+        "omCore.engineStateBytes": {
+          "type": "number",
+          "default": 0,
+          "description": "Embedded engine state-arena size in bytes (0 = engine default, 8 MiB). Bump for large workspaces."
+        },
+        "omCore.engineScratchBytes": {
+          "type": "number",
+          "default": 0,
+          "description": "Embedded engine scratch-arena size in bytes (0 = engine default, 2 MiB)."
+        },
+        "omCore.tsRuntimePath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a built ts_runtime checkout (uses <path>/dist/engineWorker.cjs + om_engine.wasm) for the embedded engine. Empty = the extension's bundled copy. OM_TS_RUNTIME_DIR env var also works; the setting wins."
         }
       }
     },

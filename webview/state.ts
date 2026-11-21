@@ -622,7 +622,8 @@ export class Store {
     try {
       await this.api.setPageItemId(v.viewId, dimId, itemId);
       v.pageSelections[dimId] = itemId;
-      this.notify();
+      // No notify() here: it would repaint the grid with the OLD slice's
+      // cells first. loadView notifies once, with the new values.
       await this.loadView(v.viewId);
     } catch (e: any) { console.error("setPageItem failed", e); }
   }
@@ -931,6 +932,61 @@ export class Store {
 
   async recalc(scope = "all") {
     try { await this.api.recalc(scope); await this.reloadOpenViews(); } catch (e: any) { await alertDialog("Recalc failed", e?.message || String(e)); }
+  }
+
+  /** Commands that change rule coverage or values where a dirty-scope recalc may
+   *  not reach every stale cell on older runtimes (T-047) — external events get
+   *  a full recalc, matching `afterRuleChange("all")`. */
+  private static readonly FULL_RECALC_COMMANDS = new Set([
+    "set_rule", "update_rule", "update_rule_full", "delete_rule",
+    "set_rule_order", "apply_rule_batch", "set_rule_anchored",
+    "delete_rule_anchored", "undo", "redo",
+    "load_workspace", "create_new_workspace", "restore_checkpoint",
+  ]);
+
+  /** Commands that only mutate UI/session state — selection, active view,
+   *  persisted widths. Their succeeded events must NOT trigger model/rules
+   *  refreshes or a recalc: cell/model data cannot change, and set_selection
+   *  fires on every grid click (an echo → repaint → echo → repaint blink). */
+  static readonly UI_ONLY_COMMANDS = new Set([
+    "set_selection", "set_active_view", "set_view_col_width",
+    "set_view_row_header_width", "cancel_operation",
+    "clear_profiler_snapshot", "set_property", "set_engine",
+    "set_multithread_recompute", "set_page_item_id",
+  ]);
+
+  private externalRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private externalRefreshFull = false;
+  private viewReloadTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Reload views after a calculation finished — ours or another client's.
+   *  NO recalc here: `run_recalculation.succeeded`/`event.calculation.finished`
+   *  are emitted BY a recalc, so scheduling another one loops forever. */
+  scheduleViewReload() {
+    if (this.viewReloadTimer !== null) return;
+    this.viewReloadTimer = setTimeout(() => {
+      this.viewReloadTimer = null;
+      void this.reloadOpenViews();
+    }, 200);
+  }
+
+  /** A `command.*.succeeded` bus event fired — possibly from another client
+   *  (MCP `om_command`, REPL, a second GUI) or from this webview. Our own edits
+   *  already reloaded synchronously, so the extra reload only repairs views an
+   *  external mutation left stale. Debounced: a burst of commands (batch rule
+   *  edits) collapses into one recalc + reload. */
+  scheduleExternalRefresh(commandId?: string) {
+    if (commandId && Store.FULL_RECALC_COMMANDS.has(commandId)) this.externalRefreshFull = true;
+    if (this.externalRefreshTimer !== null) return;
+    this.externalRefreshTimer = setTimeout(() => {
+      this.externalRefreshTimer = null;
+      const scope = this.externalRefreshFull ? "all" : "dirty";
+      this.externalRefreshFull = false;
+      void (async () => {
+        try { await this.api.recalc(scope); } catch {}
+        await this.reloadOpenViews();
+      })();
+    }, 200);
   }
 
   /** Every pane refreshes after model data changes, not only the focused one. */
