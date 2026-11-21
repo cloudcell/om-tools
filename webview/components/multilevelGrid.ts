@@ -64,6 +64,26 @@ const COLORS = {
   error: "var(--ml-error)",
 };
 
+/** Width of ")" in the data-cell font, measured once. With negative=parentheses
+ *  formats, Excel and the Qt grid leave room for the missing ")" after
+ *  non-negative numbers so digits line up with parenthesized negatives.
+ *  formatAmount pads with a space, but CSS collapses it — compensate with
+ *  real padding instead (see renderDataCells). */
+let _parenPadPx: number | null = null;
+function parenPadPx(): number {
+  if (_parenPadPx === null) {
+    const ctx = document.createElement("canvas").getContext("2d");
+    if (ctx) {
+      const fam = getComputedStyle(document.documentElement).getPropertyValue("--font-sans").trim() || "sans-serif";
+      ctx.font = `11px ${fam}`;
+      _parenPadPx = ctx.measureText(")").width;
+    } else {
+      _parenPadPx = 4; // close enough to ")" at 11px
+    }
+  }
+  return _parenPadPx;
+}
+
 /** MultilevelGrid — custom-painted multilevel grid with band computation,
  *  outline groups, collapse/expand, aggregate items, and Quantrix-like grouping.
  *  Mirrors lib_gui_elements/matrix_grid.py paintEvent + banding.py. */
@@ -1295,6 +1315,10 @@ export class MultilevelGrid {
           width: this.colW(c) + "px", height: METRICS.rowH + "px",
           borderRight: `1px solid ${COLORS.gridline}`, borderBottom: `1px solid ${COLORS.gridline}`,
           display: "flex", alignItems: "center", padding: "0 4px", fontSize: "11px",
+          // Accounting alignment: the formatter pads non-negatives with a
+          // trailing space standing in for ")", which HTML collapses — replace
+          // it with real ")"-wide padding so digits line up with negatives.
+          paddingRight: (4 + (kind === "number" && disp.endsWith(" ") ? parenPadPx() : 0)) + "px",
           // Engine '@'-channel paint takes precedence over the hardcoded-cell
           // style (same order as lib_gui_elements/matrix_grid.py: engine_fill > fmt).
           background: isSel ? COLORS.selBg : (cell.fill ?? (markHard ? COLORS.hardnumberBg : COLORS.cellBg)),
