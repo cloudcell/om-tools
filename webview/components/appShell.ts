@@ -313,7 +313,10 @@ export class AppShell {
     const sideMax = () => Math.max(LEFT_MIN, bodyEl.clientWidth * 0.5);
     const row = el("div", { class: "body-row" });
     let bottomSplitEl: HTMLElement | null = null;
-    const bottomMax = (): number => Math.max(BOTTOM_MIN, center.clientHeight - GRID_MIN_HEIGHT - (bottomSplitEl ? bottomSplitEl.offsetHeight : 0));
+    // The zone lives in .body-docked, NOT inside .center: center shrinks as the zone
+    // grows, so max must add the zone's own height back — centerH + zoneH is constant
+    // during the gesture. (Was: center.clientHeight alone, undercounting by zoneH.)
+    const bottomMax = (): number => Math.max(BOTTOM_MIN, center.clientHeight + zones.bottom.el.offsetHeight - GRID_MIN_HEIGHT - (bottomSplitEl ? bottomSplitEl.offsetHeight : 0));
     const leftSplit = new Splitter({
       axis: "x", grow: 1, min: LEFT_MIN, max: sideMax, defaultSize: DEFAULT_LAYOUT.leftDockWidth,
       collapsedSize: 8, label: "the left panel",
@@ -329,7 +332,9 @@ export class AppShell {
     const bottomSplit = new Splitter({
       axis: "y", grow: -1, min: BOTTOM_MIN, max: bottomMax, defaultSize: DEFAULT_LAYOUT.rulePanelHeight,
       collapsedSize: 28, label: "the bottom panel",   // collapsed = the zone's own tab strip
-      get: () => ({ size: Math.min(layout.rulePanelHeight, bottomMax()), collapsed: layout.rulePanelCollapsed }),
+      // Rendered height while expanded — a stored value that outlived a window resize
+      // would otherwise give a wrong drag baseline and snap the sash on the first move.
+      get: () => ({ size: layout.rulePanelCollapsed ? layout.rulePanelHeight : (zones.bottom.el.offsetHeight || layout.rulePanelHeight), collapsed: layout.rulePanelCollapsed }),
       apply: applyBottom, commit: saveLayout,
     });
     applyLeft(layout.leftDockWidth, layout.leftCollapsed);
@@ -756,8 +761,10 @@ export class AppShell {
     const sync = () => {
       const v = this.store.state.activeView;
       const cell = v && v.selectedRow >= 0 && v.selectedCol >= 0 && v.cells
-        ? v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol] : undefined;
-      nameBox.textContent = v && cell ? `${v.rowHeaders[v.selectedRow] || ""} / ${v.colHeaders[v.selectedCol] || ""}` : "—";
+        ? this.store.cellAtVisual(v, v.selectedRow, v.selectedCol) : undefined;
+      const hr = v ? this.store.dataRowIndex(v, v.selectedRow) : -1;
+      const hc = v ? this.store.dataColIndex(v, v.selectedCol) : -1;
+      nameBox.textContent = v && cell ? `${v.rowHeaders[hr] || ""} / ${v.colHeaders[hc] || ""}` : "—";
       shown = ruleBarText(cell);
       if (document.activeElement !== input) input.value = shown;
     };

@@ -48,7 +48,7 @@ export class RulePanel {
     const content = el("div", { class: "lower-content" });
     panel.appendChild(content);
 
-    this.store.subscribe(() => this.refresh(panel));
+    this.store.subscribe(() => { if (this.store.notifyReason !== "focus") this.refresh(panel); });
     this.refresh(panel);
     return panel;
   }
@@ -307,7 +307,7 @@ export class RulePanel {
       content.appendChild(el("div", { class: "muted", style: { padding: "12px" } }, ["Select a data cell to inspect calculation flow."]));
       return;
     }
-    const cell = v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol];
+    const cell = this.store.cellAtVisual(v, v.selectedRow, v.selectedCol);
     if (!cell?.addr) { content.appendChild(el("div", { class: "muted", style: { padding: "12px" } }, ["No cell address available."])); return; }
 
     const graph = this.calcFlowMode === "graph";
@@ -568,7 +568,11 @@ export class RulePanel {
     if (!v || v.cubeId !== cubeId || !v.colKeys.length) return;
     const i = this.currentViewCellIndex().get(addr.join("|"));
     if (i === undefined) return;
-    this.store.setSelectionFull(Math.floor(i / v.colKeys.length), i % v.colKeys.length, "cell", new Set<string>(), undefined, undefined, this.gid);
+    // i is a cell-DATA index; selection takes VISUAL grid coordinates.
+    const vr = this.store.visualRowIndex(v, Math.floor(i / v.colKeys.length));
+    const vc = this.store.visualColIndex(v, i % v.colKeys.length);
+    if (vr < 0 || vc < 0) return;
+    this.store.setSelectionFull(vr, vc, "cell", new Set<string>(), undefined, undefined, this.gid);
   }
 
   // ---- Circular References tab ----
@@ -593,7 +597,7 @@ export class RulePanel {
       content.appendChild(el("div", { class: "muted", style: { padding: "12px" } }, ["Select a data cell to check for circular references."]));
       return;
     }
-    const cell = v.cells.cells[v.selectedRow * v.colKeys.length + v.selectedCol];
+    const cell = this.store.cellAtVisual(v, v.selectedRow, v.selectedCol);
     if (!cell?.addr) { content.appendChild(el("div", { class: "muted", style: { padding: "12px" } }, ["No cell address available."])); return; }
 
     const result = el("div", {});

@@ -79,17 +79,28 @@ export class Splitter {
     const start = { ...this.o.get() };
     const startPos = this.pos(e);
     const visibleStart = start.collapsed ? this.o.collapsedSize : start.size;
+    // Read the bounds once up front: max() reads layout (pane.clientHeight), and calling
+    // it per frame right after the height write forces a synchronous reflow of the whole
+    // view area — on a heavy grid that makes the sash trail the pointer.
+    const minPx = this.o.min;
+    const maxPx = Math.max(minPx, this.o.max());
     let moved = false;
     let last: PointerEvent = e;
     let frame = 0;
+    let lastSize = start.size, lastCollapsed = start.collapsed;
 
     const update = (ev: PointerEvent) => {
       const delta = (this.pos(ev) - startPos) * this.o.grow;
       if (Math.abs(delta) >= CLICK_SLOP) moved = true;
       if (!moved) return;
       const raw = visibleStart + delta;
-      if (raw < this.o.min / 2) this.set(start.size, true);   // keep the size to reopen with
-      else this.set(this.clampSize(raw), false);
+      const collapsed = raw < minPx / 2;
+      const size = Math.round(collapsed ? start.size : Math.max(minPx, Math.min(maxPx, raw)));
+      if (size === lastSize && collapsed === lastCollapsed) return;   // pinned — nothing to write
+      const wasCollapsed = lastCollapsed;
+      lastSize = size; lastCollapsed = collapsed;
+      this.o.apply(size, collapsed);                                  // keep the size to reopen with
+      if (collapsed !== wasCollapsed) this.sync();                    // ARIA/class refresh on transitions only
     };
     const onMove = (ev: PointerEvent) => {
       last = ev;
@@ -104,6 +115,7 @@ export class Splitter {
       try { handle.releasePointerCapture(e.pointerId); } catch { /* already released */ }
       this.el.classList.remove("dragging");
       document.body.classList.remove(`splitter-dragging-${this.o.axis}`);
+      this.sync();   // update() skipped sync() per frame — refresh ARIA/tooltip once at the end
       if (cancel) this.set(start.size, start.collapsed);
       else if (!moved && start.collapsed) { this.set(this.clampSize(start.size), false); this.openedByClickAt = Date.now(); }
       const now = this.o.get();

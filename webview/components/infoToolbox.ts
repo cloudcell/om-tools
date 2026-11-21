@@ -29,7 +29,7 @@ export class InfoToolbox {
 
   private showCell(content: HTMLElement, r: number, c: number) {
     const v = this.store.state.activeView!;
-    const cell = v.cells!.cells[r * v.colKeys.length + c];
+    const cell = this.store.cellAtVisual(v, r, c);
     if (!cell) { content.appendChild(el("div", { class: "muted" }, ["No cell data."])); return; }
 
     const sec = el("div", { class: "info-section" });

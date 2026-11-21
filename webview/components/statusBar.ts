@@ -37,8 +37,11 @@ export class StatusBar {
       focusPath.textContent = s.focusPath;
       const v = s.activeView;
       if (v && v.selectedRow >= 0 && v.selectedCol >= 0) {
-        const rh = v.rowHeaders[v.selectedRow] || `r${v.selectedRow}`;
-        const ch = v.colHeaders[v.selectedCol] || `c${v.selectedCol}`;
+        // Selection indices are visual; header arrays are data-indexed.
+        const dr = this.store.dataRowIndex(v, v.selectedRow);
+        const dc = this.store.dataColIndex(v, v.selectedCol);
+        const rh = (dr >= 0 && v.rowHeaders[dr]) || `r${v.selectedRow}`;
+        const ch = (dc >= 0 && v.colHeaders[dc]) || `c${v.selectedCol}`;
         cellAddr.textContent = `${rh} / ${ch}`;
         navMode.textContent = `nav: ${v.selMode}`;
       } else {
