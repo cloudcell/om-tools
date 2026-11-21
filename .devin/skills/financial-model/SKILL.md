@@ -54,24 +54,92 @@ Examples:
 Do not retain a space-containing name by assuming OM Core will display it
 nicely. Rename or recreate objects before finalizing.
 
-## Mandatory wildcard rule
+## Slice-first rule construction
 
-Never use `*.*`, whole-cube wildcard references, or wildcard cross-cube mapping
-unless the user explicitly asks for wildcard behavior.
+OM Core is a multidimensional rule engine, not a spreadsheet. Express one
+calculation once over the broadest valid slice instead of repeating it for
+every year or scenario.
 
-Examples to avoid unless explicitly requested:
-
-- `ProfitLoss::*.*`
-- `*.*`
-- wildcard whole-cube mapping
-
-Use explicit dimensions and item names in targets and expressions:
+Prefer compact slice targets by omitting dimensions that should vary freely:
 
 ```text
-ProfitLossItem.COGS = ProfitLossItem.Revenue * 0.60
+rule ProfitLoss::ProfitLossItem.COGS =
+  ProfitLoss::[ProfitLossItem.Revenue] * 0.60
 ```
 
-When targeting only one scenario, include `Scenario.ScenarioName`.
+There is no need to write `Year.*` or `Scenario.*`. A rule target that does not
+mention `Year` or `Scenario` is applied across every item of those dimensions.
+Use explicit item selectors only for actual periods, scenario overrides, or
+other genuine exceptions:
+
+```text
+rule DCFValuation::DCFMetric.PVOfUFCF:Year.2030E:Scenario.Downside =
+  CashFlowStatement::[CashFlowItem.UFCF] * 3.29
+```
+
+Do not add slice wildcards for dimensions absent from the target. In
+particular, use `ProfitLoss::ProfitLossItem.COGS`, not
+`ProfitLoss::ProfitLossItem.COGS:Year.*:Scenario.*`.
+
+Do not use `*.*` or whole-cube wildcard mapping. Do not use wildcard
+cross-cube references. Cross-cube references must name both the cube and the
+explicit line item, for example:
+
+```text
+ProfitLoss::[ProfitLossItem.NetIncome]
+```
+
+For recurrence rules, omit all freely varying dimensions from the target and
+use a sequential accessor in the RHS:
+
+```text
+rule CashFlowStatement::CashFlowItem.BeginningCash =
+  CashFlowStatement::CashFlowItem.EndingCash:Year[PREV]
+```
+
+Valid sequential accessors are only `[FIRST]`, `[LAST]`, `[PREV]`, `[NEXT]`,
+and `[THIS]`. They require a dimension declared with `dim_type: "seq"`:
+
+- `Year[FIRST]`
+- `Year[LAST]`
+- `Year[PREV]`
+- `Year[NEXT]`
+- `Year[THIS]`
+
+Never use dot notation for a sequential accessor. These are invalid:
+
+- `Year.PREV`
+- `Year.NEXT`
+- `Year.THIS`
+
+Also never write relative cells on the LHS:
+
+- `Year[PREV]`
+- `Year[NEXT]`
+- `Year[THIS]`
+
+For range operations on a sequential dimension, use `start..end` on the RHS or
+inside an aggregate:
+
+```text
+SUM(CashFlowStatement::CashFlowItem.UFCF:Year.2026E..2030E)
+```
+
+Compact shorthand is useful only when cube-relative binding is unambiguous:
+
+```text
+ProfitLoss::[ProfitLossItem.Revenue]
+```
+
+If the referenced cube differs in dimensions or the context would be ambiguous,
+write the full cube-qualified address explicitly.
+
+Bracket shorthand that combines item and sequential selectors is not a recurrence
+form. Use a full canonical RHS address such as:
+
+```text
+CashFlowStatement::CashFlowItem.EndingCash:Year[PREV]
+```
 
 ## Rebuilding existing models
 
@@ -100,9 +168,81 @@ Never delete unrelated cubes or dimensions.
 - `delete_rule` requires only `rule_id`.
 - Rule expressions use dimension names and dot notation, for example
   `ProfitLossItem.Revenue`.
+- Cube-qualified RHS references use the documented forms
+  `ProfitLoss::[ProfitLossItem.Revenue]` or
+  `ProfitLoss::ProfitLossItem.Revenue:Year.2030E`.
+- Sequential dimensions use bracket accessors on the RHS:
+  `Year[FIRST]`, `Year[PREV]`, `Year[THIS]`, `Year[NEXT]`, `Year[LAST]`.
+- Derived formulas must use `is_anchored=false` and target broad slices.
+  A formula rule is not a spreadsheet cell copy. Omit dimensions that should
+  vary freely instead of writing `Year.*` or `Scenario.*`. Use explicit
+  selectors only for a genuine period or scenario exception. Hardcoded actuals
+  and assumptions may use hardvalues or explicit input rules; they must not be
+  copied into dozens of formula rules.
 
 Use `cell_range` only after reading the view's `view_row_keys` and
 `view_col_keys`.
+
+## Formatting
+
+Formatting is semantic and rule-driven, not a spreadsheet presentation pass.
+Use channels on the cube's `@` dimension:
+
+- `@.format_number` for number, currency, or percent display
+- `@.fill` for background fill
+- `@.font_weight` for emphasis
+- `@.font_color` for conditional or scenario-specific text
+
+The `@.format_number` channel accepts only `general` or `preset:...`.
+Use semicolon-separated preset parameters and `=` assignments:
+
+```text
+'preset:number(decimals=0; group=true; negative=parentheses; zero=dash)'
+'preset:currency(code=USD; decimals=0; group=true; negative=parentheses; zero=dash)'
+'preset:percent(decimals=1)'
+```
+
+Do not use raw Excel masks or `pattern:...` in a format rule.
+
+Apply broad formats once by omitting freely varying dimensions:
+
+```text
+ProfitLoss::@.format_number:ProfitLossItem.* =
+  'preset:number(decimals=0; group=true; negative=parentheses; zero=dash)'
+
+DCFValuation::@.format_number:DCFMetric.WACC =
+  'preset:percent(decimals=1)'
+```
+
+Do not add broad `@.fill` rules for ordinary line-item dimensions if they would
+overwrite hardnumber highlighting. OM Core should continue to show hardcoded
+inputs distinctly. Reserve fills for totals, checks, and deliberate scenario
+bands. Omit `Year.*` and `Scenario.*` from formatting targets when the format
+should apply across every omitted item.
+
+Use compact hierarchy formatting:
+
+- number formats on all statement/DCF cells
+- bold font weight on totals and key output lines
+- a subtle gray fill on totals
+- no fill or border decorations on ordinary detail lines
+- percent formatting on WACC, terminal growth, growth, margins, and returns
+- stronger emphasis on EnterpriseValue, EquityValue, UFCF, TotalAssets,
+  TotalLiabilitiesAndEquity, and NetIncome
+
+Scenario presentation should use the same cells and values for all scenarios.
+Do not create separate scenario tabs or duplicate statement sections.
+
+Conditional formatting may use the value channel and a documented palette:
+
+```text
+Checks::@.fill:CheckMetric.BalanceSheetCheck =
+  IF(Checks::[CheckMetric.BalanceSheetCheck] = 0, "#D9EAD3", "#F4CCCC")
+```
+
+When styling selected items or 2030E, name those selectors explicitly. Keep
+general formats broad and add more-specific formatting rules afterward so
+specificity and rule order produce the intended hierarchy.
 
 ## Build sequence
 
@@ -115,13 +255,16 @@ Use `cell_range` only after reading the view's `view_row_keys` and
 4. Create four statement/valuation cubes and a checks cube.
 5. Create one view for each cube.
 6. Enter only actual and assumption hardcodes.
-7. Add explicit formulas for totals and derived values.
-8. Link statements with cross-cube formulas only where necessary and explicitly
-   named.
+7. Add slice formulas for totals and derived values. Prefer one rule covering
+   all Year and Scenario items by omitting those dimensions from the target,
+   over repeated per-year or per-scenario rules.
+8. Link statements with explicit cube-qualified formulas only where necessary.
+   Carry shared dimensions from context only when the binding is unambiguous.
 9. Run recalculation.
-10. Verify every output with `cell_range`.
-11. Add or update checks to prove ties and roll-forwards.
-12. Recalculate again after any fix.
+10. Add broad number formats and visual hierarchy through `@` channels.
+11. Verify every output with `cell_range`.
+12. Add or update checks to prove ties and roll-forwards.
+13. Recalculate again after any fix.
 
 ## Formula integrity
 
