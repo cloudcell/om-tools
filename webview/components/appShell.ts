@@ -1,6 +1,7 @@
 import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText, DEFAULT_LAYOUT } from "../state";
 import { DEFAULT_DOCK, FEEDBACK_URL, LINKS, type DockLayout, type DockPanelId, type DockZoneId, type UiLayout, type UiTheme } from "../../shared/messages";
 import { parseSession, type SessionDescriptor } from "../../shared/session";
+import { makeBundle, BUNDLE_MODEL_MEMBER, BUNDLE_EXT } from "../../shared/omz";
 import { applyTheme, currentTheme } from "../theme";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
@@ -614,7 +615,10 @@ export class AppShell {
       { icon: msym("link"), label: "Open Session…", fn: () => this.openSession() },
       { icon: msym("save"), label: "Save Session…", fn: () => this.saveSession() },
       ...(this.store.api.supportsNativeExternalLinks
-        ? [{ icon: msym("open_in_new"), label: "Share Session…", fn: () => this.shareSession() }]
+        ? [
+            { icon: msym("save"), label: "Save Bundle (.omz)…", fn: () => this.saveBundle() },
+            { icon: msym("open_in_new"), label: "Share Session…", fn: () => this.shareSession() },
+          ]
         : []),
       { icon: msym("save"), label: "Save…", fn: () => this.saveFile() },
       { sep: true },
@@ -936,6 +940,30 @@ export class AppShell {
       await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the session was downloaded to your default Downloads folder.");
   }
 
+  /** Save the current model + session as one .omz zip — the single self-contained
+   *  share artifact. The model is serialized live from the engine (so unsaved edits
+   *  ride along); the session's model source becomes the bundle's own member. */
+  private async bundleBytes(): Promise<{ suggested: string; bytes: Uint8Array } | null> {
+    const snap = await this.store.api.serializeWorkspace().catch(() => null);
+    if (!snap?.json) {
+      await alertDialog("Save Bundle", "This engine cannot serialize the workspace — bundles are supported by the browser engine.");
+      return null;
+    }
+    const session = this.store.captureSession(currentTheme());
+    session.model = { bundle: BUNDLE_MODEL_MEMBER };
+    const bytes = await makeBundle(new TextEncoder().encode(snap.json), JSON.stringify(session, null, 2));
+    const suggested = this.store.fileName().replace(/\.(json|msgpack|omz)$/i, "") + BUNDLE_EXT;
+    return { suggested, bytes };
+  }
+
+  private async saveBundle() {
+    const b = await this.bundleBytes();
+    if (!b) return;
+    const res = await this.store.api.saveBinaryFile(b.suggested, b.bytes).catch(() => null);
+    if (res?.downloaded)
+      await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the bundle was downloaded to your default Downloads folder.");
+  }
+
   /** File → Share Session… (web build only — the menu item is gated on
    *  supportsNativeExternalLinks): capture the live session and hand it to the
    *  share dialog, which regenerates links/files when the user supplies a public
@@ -958,9 +986,19 @@ export class AppShell {
       },
       makeLink: (url) => `${location.origin}${location.pathname}?session=${encodeURIComponent(url)}`,
       onDownload: async (json) => {
-        const res = await this.store.api.saveTextFile(suggested, json).catch(() => null);
+        // The self-host artifact is an .omz — the session's model pointer becomes
+        // the bundle's own member, so the uploaded file needs nothing beside it.
+        const snap = await this.store.api.serializeWorkspace().catch(() => null);
+        if (!snap?.json) {
+          await alertDialog("Share Session", "This engine cannot serialize the workspace — bundles are supported by the browser engine.");
+          return;
+        }
+        const s = JSON.parse(json) as SessionDescriptor;
+        s.model = { bundle: BUNDLE_MODEL_MEMBER };
+        const bytes = await makeBundle(new TextEncoder().encode(snap.json), JSON.stringify(s, null, 2));
+        const res = await this.store.api.saveBinaryFile(suggested.replace(/\.omsession\.json$/i, "") + BUNDLE_EXT, bytes).catch(() => null);
         if (res?.downloaded)
-          await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the session was downloaded to your default Downloads folder.");
+          await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the bundle was downloaded to your default Downloads folder.");
       },
     });
   }

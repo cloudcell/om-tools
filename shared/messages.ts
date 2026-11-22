@@ -23,7 +23,7 @@ export const LINK_URLS: readonly string[] = Object.values(LINKS);
 export interface ReadTextFileParams { path: string }
 /** `saveTextFile` params — host picks the destination (native save dialog), writes the
  *  text, returns the chosen path. `downloaded` = browser download fallback (no picker). */
-export interface SaveTextFileParams { suggestedName?: string; text: string }
+export interface SaveTextFileParams { suggestedName?: string; text?: string; bytesB64?: string }
 
 export interface HostRequest {
   type: "request";

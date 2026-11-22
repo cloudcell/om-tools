@@ -777,16 +777,16 @@ export function shareSessionDialog(opts: {
 
       const fileBlock = el("div", { style: { marginBottom: "10px" } });
       fileBlock.appendChild(el("div", { style: { fontSize: "12px", fontWeight: "600", marginBottom: "6px", color: "var(--dlg-title)" } },
-        ["Share as a session file"]));
+        ["Share as a file — one upload, nothing else needed"]));
       fileBlock.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "8px", lineHeight: "1.45" } },
-        ["Save this session file, upload it anywhere public, then paste its link below."]));
+        ["An .omz bundle has the model and this session inside one file. Save it, upload it anywhere public, then paste its link below."]));
       const dlRow = el("div", { style: { display: "flex", gap: "6px", marginBottom: "8px" } });
       const dlBtn = el("button", { style: { padding: "6px 12px", border: "1px solid var(--dlg-border)", borderRadius: "6px", background: "var(--dlg-btn-bg)", fontSize: "12px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" } },
-        ["Save session file…"]) as HTMLButtonElement;
+        ["Save bundle (.omz)…"]) as HTMLButtonElement;
       dlBtn.addEventListener("click", () => { dlBtn.disabled = true; void opts.onDownload(current.json).finally(() => { dlBtn.disabled = false; }); });
       dlRow.appendChild(dlBtn);
       fileBlock.appendChild(dlRow);
-      fileBlock.appendChild(entry("https://… public link to the session file", (v) => {
+      fileBlock.appendChild(entry("https://… public link to the .omz file", (v) => {
         clear(outWrap);
         if (/^https?:\/\//.test(v)) outWrap.appendChild(row("Share link", opts.makeLink(v)));
       }));

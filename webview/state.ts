@@ -1100,6 +1100,14 @@ export class Store {
     const kind = sessionModelKind(session.model);
     if (kind === "example") return session.model.ref!;
     if (kind === "url") return session.model.url!;
+    if (kind === "bundle") {
+      // The model is a zip member next to the session inside the .omz it came
+      // from. A filesystem sessionPath (VS Code) loads that .omz — the host
+      // extracts the model member. On web the backend stashed the bundle bytes
+      // when it served the session; om-bundle: reads the member from the stash.
+      if (sessionPath && !/^https?:\/\//.test(sessionPath)) return sessionPath;
+      return `om-bundle:${session.model.bundle || "model.json"}`;
+    }
     const p = session.model.path!;
     if (/^https?:\/\//.test(p) || /^([a-zA-Z]:[\\/]|[\\/]|~)/.test(p)) return p;
     const dir = sessionPath ? sessionPath.replace(/[\\/][^\\/]*$/, "") : "";

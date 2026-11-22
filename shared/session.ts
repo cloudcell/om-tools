@@ -18,6 +18,9 @@ export interface SessionModelRef {
   path?: string;
   /** http(s) URL — fetched as bytes (web host; VS Code may support later). */
   url?: string;
+  /** Zip member name — the model is bundled next to this session inside the same
+   *  `.omz` container. Only meaningful when the session itself arrived from a bundle. */
+  bundle?: string;
 }
 
 export interface SessionZone { panels?: string[]; active?: string | null }
@@ -95,12 +98,15 @@ export function parseSession(text: string): SessionParseResult {
   if (obj.schema !== SESSION_SCHEMA) return { ok: false, error: `unsupported schema "${obj.schema}" (want ${SESSION_SCHEMA})` };
   const m = obj.model;
   if (!m || typeof m !== "object") return { ok: false, error: "missing model" };
-  const sources = [m.ref, m.path, m.url].filter((v) => typeof v === "string" && v.length > 0);
-  if (sources.length !== 1) return { ok: false, error: "model needs exactly one of ref/path/url" };
+  const sources = [m.ref, m.path, m.url, m.bundle].filter((v) => typeof v === "string" && v.length > 0);
+  if (sources.length !== 1) return { ok: false, error: "model needs exactly one of ref/path/url/bundle" };
   if (typeof m.ref === "string" && m.ref && !EXAMPLE_REF_RE.test(m.ref))
     return { ok: false, error: `bad model ref "${m.ref}"` };
   if (typeof m.url === "string" && m.url && !/^https?:\/\//.test(m.url))
     return { ok: false, error: `model url must be http(s): "${m.url}"` };
+  if (typeof m.bundle === "string" && m.bundle &&
+      (!/^[A-Za-z0-9_./-]+$/.test(m.bundle) || m.bundle.includes("..") || m.bundle.startsWith("/") || m.bundle.endsWith("/")))
+    return { ok: false, error: `bad bundle member "${m.bundle}"` };
   if (obj.theme !== undefined && obj.theme !== "light" && obj.theme !== "dark")
     return { ok: false, error: `bad theme "${obj.theme}"` };
   for (const key of ["groups", "views"] as const) {
@@ -120,11 +126,12 @@ function isAreaNode(n: any): boolean {
   return false;
 }
 
-export type SessionModelKind = "example" | "path" | "url" | null;
+export type SessionModelKind = "example" | "path" | "url" | "bundle" | null;
 export function sessionModelKind(m: SessionModelRef): SessionModelKind {
   if (typeof m?.ref === "string" && m.ref) return "example";
   if (typeof m?.url === "string" && m.url) return "url";
   if (typeof m?.path === "string" && m.path) return "path";
+  if (typeof m?.bundle === "string" && m.bundle) return "bundle";
   return null;
 }
 
