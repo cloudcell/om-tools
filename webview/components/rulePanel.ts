@@ -30,7 +30,7 @@ export class RulePanel {
   render(): HTMLElement {
     const panel = el("div", { class: "rule-panel" });
     const tabs = el("div", { class: "lower-tabs" });
-    const tabNames = [["rules", "Rules"], ["calcflow", "Calculation Flow"], ["circrefs", "Circular References"]];
+    const tabNames = [["rules", "Rules"], ["calcflow", "Calculation Flow"]]; // circrefs hidden for now — tab + renderCircRefs kept below
     for (const [id, label] of tabNames) {
       const off = disabledTabs.has(id);
       const t = el("div", {
@@ -640,7 +640,8 @@ export class RulePanel {
   }
 }
 
-const tabNames = [["rules", "Rules"], ["calcflow", "Calculation Flow"], ["circrefs", "Circular References"]];
+// "circrefs" (Circular References) is intentionally absent — the subpane code stays, hidden for now.
+const tabNames = [["rules", "Rules"], ["calcflow", "Calculation Flow"]];
 /** Tabs outside the MVP preview: shown greyed out, not clickable. */
 const disabledTabs = new Set(["circrefs"]);
 
