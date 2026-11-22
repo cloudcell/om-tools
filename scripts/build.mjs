@@ -8,7 +8,7 @@
 
 import { build, version as esbuildVersion } from "esbuild";
 import { execSync } from "node:child_process";
-import { copyFileSync, readFileSync, writeFileSync, chmodSync, existsSync } from "node:fs";
+import { copyFileSync, readFileSync, writeFileSync, chmodSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 
 const toolchain = `esb${esbuildVersion}`;
 
@@ -55,6 +55,12 @@ await build({
   define: guiDefine, outfile: "dist/webview.mjs",
 });
 copyFileSync("webview/index.html", "dist/index.html");
+// Bundled examples: repo-root examples/ + shared/catalog.json → dist/examples/.
+// extension.ts resolves `om-example:<id>` refs against this directory; the
+// root-anchored `examples/**` rule in .vscodeignore ships dist/ but not the source dir.
+mkdirSync("dist/examples", { recursive: true });
+for (const f of readdirSync("examples")) copyFileSync(`examples/${f}`, `dist/examples/${f}`);
+copyFileSync("shared/catalog.json", "dist/examples/catalog.json");
 await build({
   entryPoints: ["bridge/server.ts"], bundle: true, platform: "node", format: "cjs",
   external: ["ws"], outfile: "dist/bridge.js",

@@ -10,7 +10,8 @@ import { StatusBar } from "./statusBar";
 import { InfoToolbox } from "./infoToolbox";
 import { FormatToolbox } from "./formatToolbox";
 import { PerformanceWatch } from "./performanceWatch";
-import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog, optionsDialog, browseDialog } from "./dialogs";
+import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog, optionsDialog, browseDialog, examplePickerDialog, type ExampleEntry } from "./dialogs";
+import catalogData from "../../shared/catalog.json";
 import { Timeline } from "./timeline";
 import { ModelActions } from "./modelActions";
 import { Splitter } from "./splitter";
@@ -37,6 +38,10 @@ const GRID_MIN_HEIGHT = 120;
 
 const DOCK_PANEL_IDS: DockPanelId[] = ["browser", "info", "format", "perf", "timeline", "rules"];
 const DOCK_ZONE_IDS: DockZoneId[] = ["left", "right", "bottom"];
+
+/** Bundled example catalog (shared/catalog.json — same file the web host fetches and the
+ *  extension's fileParams allowlist is built from). */
+const CATALOG: ExampleEntry[] = (catalogData as { examples: ExampleEntry[] }).examples;
 
 /** Saved layout from storage: keep only sane values, the rest falls back to DEFAULT_LAYOUT. */
 function sanitizeLayout(raw: unknown): Partial<Required<UiLayout>> {
@@ -565,6 +570,7 @@ export class AppShell {
     return [
       { icon: msym("note_add"), label: "New", fn: () => this.confirmDirty(() => this.store.newWorkspace()) },
       { icon: msym("folder_open"), label: "Open…", fn: () => this.openFile() },
+      { icon: msym("grid_on"), label: "Open Example…", fn: () => this.openExample() },
       { icon: msym("save"), label: "Save…", fn: () => this.saveFile() },
       { sep: true },
       { icon: msym("logout"), label: "Quit", fn: () => alertDialog("Quit", "Quit is handled by closing the browser tab or VS Code window.") },
@@ -827,6 +833,16 @@ export class AppShell {
       if (choice === "save" && !(await this.saveFile())) return;
     }
     await fn();
+  }
+
+  /** File → Open Example…: pick a bundled example, then load it through the normal
+   *  workspace path (`om-example:<id>` is resolved to bytes by each host at its
+   *  file-reading boundary). confirmDirty protects unsaved work, loadWorkspaceFile
+   *  surfaces failures and resets the UI — same as File → Open. */
+  private async openExample() {
+    const ex = await examplePickerDialog("Open Example", CATALOG);
+    if (!ex) return;
+    await this.confirmDirty(() => this.store.loadWorkspaceFile(`om-example:${ex.id}`));
   }
 
   private async openFile() {

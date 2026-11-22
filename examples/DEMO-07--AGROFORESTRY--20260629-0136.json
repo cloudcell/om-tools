@@ -1,0 +1,5948 @@
+{
+  "schema_version": 16,
+  "workspace": {
+    "id": "ws_3afaca21fddd45a58eb4d9fd260f2964",
+    "name": "Demo",
+    "dimensions": {
+      "@": {
+        "id": "@",
+        "name": "@",
+        "items": [
+          {
+            "id": "at_value",
+            "name": "value"
+          },
+          {
+            "id": "at_style",
+            "name": "style"
+          },
+          {
+            "id": "at_format_number",
+            "name": "format_number"
+          },
+          {
+            "id": "at_format_text",
+            "name": "format_text"
+          },
+          {
+            "id": "at_format_null",
+            "name": "format_null"
+          },
+          {
+            "id": "at_format_error",
+            "name": "format_error"
+          },
+          {
+            "id": "at_fill",
+            "name": "fill"
+          },
+          {
+            "id": "at_font_family",
+            "name": "font_family"
+          },
+          {
+            "id": "at_font_size",
+            "name": "font_size"
+          },
+          {
+            "id": "at_font_weight",
+            "name": "font_weight"
+          },
+          {
+            "id": "at_font_italic",
+            "name": "font_italic"
+          },
+          {
+            "id": "at_font_color",
+            "name": "font_color"
+          },
+          {
+            "id": "at_text_h_align",
+            "name": "text_h_align"
+          },
+          {
+            "id": "at_text_v_align",
+            "name": "text_v_align"
+          },
+          {
+            "id": "at_text_indent",
+            "name": "text_indent"
+          },
+          {
+            "id": "at_text_wrap",
+            "name": "text_wrap"
+          },
+          {
+            "id": "at_text_rotation",
+            "name": "text_rotation"
+          },
+          {
+            "id": "at_border_top",
+            "name": "border_top"
+          },
+          {
+            "id": "at_border_bottom",
+            "name": "border_bottom"
+          },
+          {
+            "id": "at_border_left",
+            "name": "border_left"
+          },
+          {
+            "id": "at_border_right",
+            "name": "border_right"
+          },
+          {
+            "id": "at_border_diag_up",
+            "name": "border_diag_up"
+          },
+          {
+            "id": "at_border_diag_down",
+            "name": "border_diag_down"
+          },
+          {
+            "id": "at_validation_type",
+            "name": "validation_type"
+          },
+          {
+            "id": "at_validation_rule",
+            "name": "validation_rule"
+          },
+          {
+            "id": "at_validation_message",
+            "name": "validation_message"
+          },
+          {
+            "id": "at_validation_allow_empty",
+            "name": "validation_allow_empty"
+          },
+          {
+            "id": "at_comment",
+            "name": "comment"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": true
+      },
+      "dim_3a8244e5a524413491cc8038dd9bdb52": {
+        "id": "dim_3a8244e5a524413491cc8038dd9bdb52",
+        "name": "%CFGITM",
+        "items": [
+          {
+            "id": "item_21db7c4eeace4e39942755792b150105",
+            "name": "system_table_typ"
+          },
+          {
+            "id": "item_96f8f0ff0bd545dead97722690ad4a90",
+            "name": "system_table_sig"
+          },
+          {
+            "id": "item_124f80fefd884a23bbf1f7a102f4e468",
+            "name": "system_table_recnod"
+          },
+          {
+            "id": "item_bcd5d5667bf240b3a1476589fd803d4a",
+            "name": "system_table_recedg"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_485ddcc895944995b7f87dacc1a26d4f": {
+        "id": "dim_485ddcc895944995b7f87dacc1a26d4f",
+        "name": "%CFGMET",
+        "items": [
+          {
+            "id": "item_eac57861e69241a49b2c96875cbd24c3",
+            "name": "NUL"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_d818abffc2f74cf4ad8d27acbb52670f": {
+        "id": "dim_d818abffc2f74cf4ad8d27acbb52670f",
+        "name": "%ADR",
+        "items": [
+          {
+            "id": "item_0e326c353d264ef7ae37b4d8b9b62802",
+            "name": "ADR"
+          },
+          {
+            "id": "item_0636a90ca49b4da7a22581ecb3667567",
+            "name": "ARG"
+          },
+          {
+            "id": "item_5a9bfd5d24744783b132edaea509421c",
+            "name": "SRC"
+          },
+          {
+            "id": "item_a09d5d88ad384acdaee6211d1daf4ff2",
+            "name": "TGT"
+          },
+          {
+            "id": "item_673037964e16449b8b819ffb3e7bb865",
+            "name": "FLD"
+          },
+          {
+            "id": "item_de7f5945739a4db5b14ee4471cee4630",
+            "name": "SIG"
+          },
+          {
+            "id": "item_853d8ab7c6de4626b26023fb6c48e7cc",
+            "name": "OBJ"
+          },
+          {
+            "id": "item_b5521a335a3f412c95f8a30107b3c8fa",
+            "name": "REL"
+          },
+          {
+            "id": "item_faa05001db144441bf0d2a7248ceb388",
+            "name": "REI"
+          },
+          {
+            "id": "item_1b6e0ee5f6e944a59b941ca4b7bdf901",
+            "name": "PRD"
+          },
+          {
+            "id": "item_522659f45bd84e41854823213f362b7a",
+            "name": "GRD"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_5afd9ccf89144e908bbda046bd1d95f9": {
+        "id": "dim_5afd9ccf89144e908bbda046bd1d95f9",
+        "name": "%FLD",
+        "items": [
+          {
+            "id": "item_d9db0ba46fbc4682a88a91ec7128cdcd",
+            "name": "SRC"
+          },
+          {
+            "id": "item_b8387fb289474215bec921ffbc56486e",
+            "name": "TGT"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_fe35cd7e932948239ae776afb89703f0": {
+        "id": "dim_fe35cd7e932948239ae776afb89703f0",
+        "name": "%TYPADR",
+        "items": [
+          {
+            "id": "item_8d6f06aebb2542c794046fb13fc44293",
+            "name": "system_type_nul"
+          },
+          {
+            "id": "item_4f4463ef0cf846b88ee9d56d5b86e956",
+            "name": "system_type_knd"
+          },
+          {
+            "id": "item_44110b6ff633471bac52308185f99c6d",
+            "name": "system_type_dim"
+          },
+          {
+            "id": "item_c88795d989b840a39c6bb6d4d878c5b9",
+            "name": "system_type_ref"
+          },
+          {
+            "id": "item_566e474b9e2e4cc797ebc0a4548edbaa",
+            "name": "system_type_lbl"
+          },
+          {
+            "id": "item_770781a2d2fa44a89e314c235413e383",
+            "name": "system_type_src"
+          },
+          {
+            "id": "item_56f35f69143b49c08aed7cd1e22f5d45",
+            "name": "system_type_tgt"
+          },
+          {
+            "id": "item_f11b1d9cf77648b497a671e436d7e507",
+            "name": "system_type_ord"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_94e14f20368643f786ea44c6051b7e19": {
+        "id": "dim_94e14f20368643f786ea44c6051b7e19",
+        "name": "%TYPFLD",
+        "items": [
+          {
+            "id": "item_42e43f799ed54c54a74d500d63be5c14",
+            "name": "NUL"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_d53042dece554c16a18f06f95c0303b0": {
+        "id": "dim_d53042dece554c16a18f06f95c0303b0",
+        "name": "%RECNODADR",
+        "items": [
+          {
+            "id": "item_7ebb22d45f2544b48fb0243b2db4d89b",
+            "name": "NUL"
+          },
+          {
+            "id": "item_db3e166fa2894c7996022ee83e01fead",
+            "name": "nod_36938d32c1c345ecac70f74574cde1b5"
+          },
+          {
+            "id": "item_0d5a3e35373f47c9b5c4790037b8aece",
+            "name": "nod_2dc56ade664a49bd8d36e54a16c25074"
+          },
+          {
+            "id": "item_825d7b17e84443ed86dcba26c1621ffd",
+            "name": "nod_ea091e3f86cb46e38f4c87f9fdfd7b6c"
+          },
+          {
+            "id": "item_d61617d217494852b270c71b904552d3",
+            "name": "nod_2713b330fc144a0d939719870e891cfa"
+          },
+          {
+            "id": "item_470025557c094826a4e545fb1c5b2aea",
+            "name": "nod_cf8cadcb36ba4fba9ec42610886b869b"
+          },
+          {
+            "id": "item_262af04736d54fe99e53df863b38b243",
+            "name": "nod_88d1fa985eb54445a94ac62afa9f7d29"
+          },
+          {
+            "id": "item_889eca54a9204c01ac76e31cd11c320b",
+            "name": "nod_5799d405e8fb40969b158acb5d387c25"
+          },
+          {
+            "id": "item_6037c78980994742879d212692779fed",
+            "name": "nod_9e0d463673884b10a9c888cefd7d998a"
+          },
+          {
+            "id": "item_bbdc1bdabaf6409aa12da2b136d1cd81",
+            "name": "nod_2401307a87be4a5cbabe9417b401a4c5"
+          },
+          {
+            "id": "item_805e7d4ea8484f0f8c5e01b15cf88566",
+            "name": "nod_88ed1d164a26410e83eb558b710f35b0"
+          },
+          {
+            "id": "item_9da3d1dbcc8f4d4895920594df90c41f",
+            "name": "nod_de3235f14ec740f885a13dab4f1c7198"
+          },
+          {
+            "id": "item_f51478124eb34c0bbbf86fb4faa0ff62",
+            "name": "nod_dfa70315230f4dce8be59e8c4413df03"
+          },
+          {
+            "id": "item_01731d2f8ed14a29a1652f2580770568",
+            "name": "nod_8493f594abed4768bef11d23826ca6ff"
+          },
+          {
+            "id": "item_f804484740a94e7ab471a2c16a383aa3",
+            "name": "nod_37fa9a0432eb43d9a1330084263a127e"
+          },
+          {
+            "id": "item_9d38dd5931644110976c3318bffa086a",
+            "name": "nod_2770a7554fad4b40a1b3a1316cb734e8"
+          },
+          {
+            "id": "item_068069cc4c6342d78c75b3b20c219f6c",
+            "name": "nod_1066edd7a0c8470ea413b3e409e7f1f9"
+          },
+          {
+            "id": "item_3e25e382eb8346e98e540686f190e8e5",
+            "name": "nod_f78651291c1e46c78d4819e6fee25aaa"
+          },
+          {
+            "id": "item_2d4ba022c0b640a69511a8487f514e48",
+            "name": "nod_d91781ef8033493b9f83354130436ac4"
+          },
+          {
+            "id": "item_1cc7253b19bb4a3da197d0759186ef96",
+            "name": "nod_a58329744092414bb4c4b355f34a9199"
+          },
+          {
+            "id": "item_5479e5223dc24a56b40e90c356f4c638",
+            "name": "nod_cb823fb5d1a74eaabfb92ba1b4d6d3d2"
+          },
+          {
+            "id": "item_374fec0ca43f4364ae96ff63529e2624",
+            "name": "nod_626437868549425cbbc889a9f51cf6cc"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_577c012d1877470ca8e5c17507fe947e": {
+        "id": "dim_577c012d1877470ca8e5c17507fe947e",
+        "name": "%RECNODFLD",
+        "items": [
+          {
+            "id": "item_34ae9fa9ec224646b9e9d10b281e62be",
+            "name": "KND"
+          },
+          {
+            "id": "item_30ca1a4d4d6c47b7815ed5707861a94c",
+            "name": "DIM"
+          },
+          {
+            "id": "item_b55e04af71b444dbb48072d3a377581d",
+            "name": "REF"
+          },
+          {
+            "id": "item_eb79590e11df4b2289d3eaee1fa81344",
+            "name": "LBL"
+          },
+          {
+            "id": "item_8e34070fcf7b42a285a139e59b9127d6",
+            "name": "ORD"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_c1475420beaf49e69b2f008b95252d9b": {
+        "id": "dim_c1475420beaf49e69b2f008b95252d9b",
+        "name": "%RECEDGADR",
+        "items": [
+          {
+            "id": "item_5ae3b523081247a5b8b92f64d3c46db0",
+            "name": "NUL"
+          },
+          {
+            "id": "item_bc5e14b4ceb84b0d86034479085de7b8",
+            "name": "edg_0efbb7c62fde481cb033278a1b71063e"
+          },
+          {
+            "id": "item_89b67bd191824ba1bb391a9d7c2e82d7",
+            "name": "edg_01eabfec055d4913a6241ddffe60996e"
+          },
+          {
+            "id": "item_d2cd9ef248ac4592b239f56ea63e1fb7",
+            "name": "edg_cc65d3df2dea43a8a44e54bb3b9f35e1"
+          },
+          {
+            "id": "item_29bbe8bb9a78449288df2d827ed1ac94",
+            "name": "edg_34c4084d6f9f4521af0cbc7c38093aee"
+          },
+          {
+            "id": "item_37bc9828300949b7b0f49078af5e9e9a",
+            "name": "edg_adf8a080634548ac8ed9a60526da93a4"
+          },
+          {
+            "id": "item_c77459055ec049a2aeaff0d0017ce5f8",
+            "name": "edg_583c56ffee0242f08616428bc31d0dd3"
+          },
+          {
+            "id": "item_b2dd498ba76045c299a396b313509391",
+            "name": "edg_19741e2584a0486c82a964dea012232c"
+          },
+          {
+            "id": "item_1ed94272cff643c0b571aef414b1c4b5",
+            "name": "edg_238e763df19c40d6881925574ded725d"
+          },
+          {
+            "id": "item_dcdc19945f754022bf8421bbc52720fb",
+            "name": "edg_189706d3f0bf4064af19d220c32a1acf"
+          },
+          {
+            "id": "item_f9a17ab73eba4f539e43cd8ee492e3dc",
+            "name": "edg_f487652d1aee4a1e979c489bc3ec1114"
+          },
+          {
+            "id": "item_2202e72e4012496cb6b7376fd0d3c75b",
+            "name": "edg_8d5d081d24f34075924686a9fe633c8c"
+          },
+          {
+            "id": "item_43bd518232ef49e8a228042ac7b1e468",
+            "name": "edg_04beefeb7d1b4d11b945acb5753ea644"
+          },
+          {
+            "id": "item_4ecd6391148a4c1982935acf7bf8b139",
+            "name": "edg_3ae8bd006b404138a20b8fa9a36c0673"
+          },
+          {
+            "id": "item_61621d774e9c46d882aa912f0a959daa",
+            "name": "edg_71a053993013486f8500593765127391"
+          },
+          {
+            "id": "item_560ef5f1fe1a440990afe4ddb3adf648",
+            "name": "edg_0a66c6369548485785c668ec3d9ec29c"
+          },
+          {
+            "id": "item_708e92d8a3a6411b94c1863efdc62566",
+            "name": "edg_6a62a7bee1ea45deac58e6d7f04215ef"
+          },
+          {
+            "id": "item_50123df371e644dca3ec153894bd9f40",
+            "name": "edg_10d60b0c2a8e4e04b381151b18b56c12"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_66d5bdd5ac694aed8cdb8c4b068ad058": {
+        "id": "dim_66d5bdd5ac694aed8cdb8c4b068ad058",
+        "name": "%RECEDGFLD",
+        "items": [
+          {
+            "id": "item_c7e792d412914ebdb642bb8c3f9e6504",
+            "name": "KND"
+          },
+          {
+            "id": "item_d9c30eb306804e60925eeede512b1d64",
+            "name": "SRC"
+          },
+          {
+            "id": "item_661207ce5c204c99a98b3ee255fd46d2",
+            "name": "TGT"
+          },
+          {
+            "id": "item_23eb752516e0433bba76b2e5f01c0bef",
+            "name": "DIM"
+          },
+          {
+            "id": "item_6fefd8c72e454aba9dd22b8196008343",
+            "name": "ORD"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_5377bec05a8c42ae8cadc4d5bb204039": {
+        "id": "dim_5377bec05a8c42ae8cadc4d5bb204039",
+        "name": "A",
+        "items": [
+          {
+            "id": "item_6cf3db56b85a45d9965d10d75ef02219",
+            "name": "gmz57"
+          },
+          {
+            "id": "item_6ceaf425157742c499ce851d7b4cb9d1",
+            "name": "oz825"
+          },
+          {
+            "id": "item_66eceeed8546428aa93f22304661d32c",
+            "name": "1rhqv"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_341fbe1cf1ec47f897299897a3a82942": {
+        "id": "dim_341fbe1cf1ec47f897299897a3a82942",
+        "name": "B",
+        "items": [
+          {
+            "id": "item_2ad57ab9817047c19f514e95e74f0c63",
+            "name": "x31pf"
+          },
+          {
+            "id": "item_10e915ed4e394c56964fbaae0b772654",
+            "name": "5q8kg"
+          },
+          {
+            "id": "item_1643bb5f6b4d4adea19dd7c096f79108",
+            "name": "4scm6"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_fdfaa6770c704a1a922a55ab8d774006": {
+        "id": "dim_fdfaa6770c704a1a922a55ab8d774006",
+        "name": "Plant",
+        "items": [
+          {
+            "id": "item_ccb692853a7741b8b6979227411a4bcf",
+            "name": "Apple"
+          },
+          {
+            "id": "item_2f5f0764e01f4e93927753eab0a6d64c",
+            "name": "Pear"
+          },
+          {
+            "id": "item_e548c7dac863441ea048d7cd0a357139",
+            "name": "Hazelnut"
+          },
+          {
+            "id": "item_1d006de61e2c4c14804d732c5e5f02b0",
+            "name": "Oak"
+          },
+          {
+            "id": "item_c1b5fb78607749449746d2e693051b7b",
+            "name": "Willow"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_36ced95314224347b2c29fca798209d5": {
+        "id": "dim_36ced95314224347b2c29fca798209d5",
+        "name": "PlantData",
+        "items": [
+          {
+            "id": "item_485dc58ad9b547cfa8234df193d7a9e9",
+            "name": "SystemName"
+          },
+          {
+            "id": "item_e4f0c3758ac7487b9853f0ffe059ba03",
+            "name": "Quantity_m2"
+          },
+          {
+            "id": "item_5e7b200d93d649eb907aaf0f775d37a6",
+            "name": "SpacePerPlant_m2"
+          },
+          {
+            "id": "item_9f522d06f75b4655b69eeeeec22c39d3",
+            "name": "NumberOfPlants"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_b31850cc068c4d278fa3f064d2c4e56c": {
+        "id": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+        "name": "InitialCost",
+        "items": [
+          {
+            "id": "item_0ad611665d4942cd8d4df0aed6f70166",
+            "name": "CCY"
+          },
+          {
+            "id": "item_5ade64679ea14f479fe369e8bfdda1bc",
+            "name": "PlantMaterialCostPerUnit"
+          },
+          {
+            "id": "item_a46bbe3649b5428c8f571ac0d47ea9b3",
+            "name": "LaborPerInitialPlantingAction"
+          },
+          {
+            "id": "item_eed71a5cff3b483bafbbb242bd81598b",
+            "name": "PlantMaterialType"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_af72b96dedfa4f768a4e62c1cffa920b": {
+        "id": "dim_af72b96dedfa4f768a4e62c1cffa920b",
+        "name": "PlantAge",
+        "items": [
+          {
+            "id": "item_373ec98721f8435d9fa43c105511a4a1",
+            "name": "1"
+          },
+          {
+            "id": "item_fe2ddd990bcf483a97ac06cc9ec9f62c",
+            "name": "2"
+          },
+          {
+            "id": "item_2a89997638394d1d924f2cd709e1522f",
+            "name": "3"
+          },
+          {
+            "id": "item_3c3d94fc2c2148fab0d7ef42d70d0f16",
+            "name": "4"
+          },
+          {
+            "id": "item_559be8c60ba54db1b73364996a00806a",
+            "name": "5"
+          },
+          {
+            "id": "item_2a985a5088b94f3c8828576326d313ea",
+            "name": "6"
+          },
+          {
+            "id": "item_b1bdb6894fc84db0b4aaebf658524a1f",
+            "name": "7"
+          },
+          {
+            "id": "item_2fb0c6a665104ac19e1ed2c906604df0",
+            "name": "8"
+          },
+          {
+            "id": "item_0c0eacb893de4f4482bdeffdb9e4d83f",
+            "name": "9"
+          },
+          {
+            "id": "item_3bae712d96cc4eb881ea78309f2b4053",
+            "name": "10"
+          },
+          {
+            "id": "item_24d470234b8c48359d662d5422bdce20",
+            "name": "11"
+          },
+          {
+            "id": "item_ab5465d4691f49e0909cac50a9b29594",
+            "name": "12"
+          },
+          {
+            "id": "item_acc2db03b89d4d868b501d19124fb6af",
+            "name": "13"
+          },
+          {
+            "id": "item_41fe6fe5a33e48ccb69599c67e3b7007",
+            "name": "14"
+          },
+          {
+            "id": "item_e89e71d481df4e01b189764a709ce34c",
+            "name": "15"
+          },
+          {
+            "id": "item_7bb397cbd721499299f213116e30e897",
+            "name": "16"
+          }
+        ],
+        "dim_type": "seq",
+        "is_technical": false
+      },
+      "dim_ac7bfb596ac340ada14e32b882468adc": {
+        "id": "dim_ac7bfb596ac340ada14e32b882468adc",
+        "name": "LifecycleCost",
+        "items": [
+          {
+            "id": "item_bbaab1dd407d4714854186ecd74e8a21",
+            "name": "Planting"
+          },
+          {
+            "id": "item_c1316ab2247b44018637d23efed03cd8",
+            "name": "Fertiliser"
+          },
+          {
+            "id": "item_2f9c1039abe344e1b17f7f521baca53a",
+            "name": "Pruning"
+          },
+          {
+            "id": "item_cdce6e829fec40b4b6396878e3edae95",
+            "name": "Weeding"
+          },
+          {
+            "id": "item_101e83f13d754e46ac6e3a21d56eb500",
+            "name": "Harvesting"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_e09f003a499440dd9a476afbf1d76531": {
+        "id": "dim_e09f003a499440dd9a476afbf1d76531",
+        "name": "Assumption",
+        "items": [
+          {
+            "id": "item_98ec550cf9004981b03c82993b3aa095",
+            "name": "HourlyRate"
+          },
+          {
+            "id": "item_fd74eb76c2764ee3817caf46b6e8adb5",
+            "name": "TotalAreaM2"
+          },
+          {
+            "id": "item_78680bc83ab245da9d7791e875040d6d",
+            "name": "VATRate"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_8280b7f2882c44519bf9c74e89a75343": {
+        "id": "dim_8280b7f2882c44519bf9c74e89a75343",
+        "name": "Metric",
+        "items": [
+          {
+            "id": "item_24413c38f0bc4bc6be04c21c0956ea50",
+            "name": "NumberOfPlants"
+          },
+          {
+            "id": "item_20d3cb153e72439792ad665596915ef2",
+            "name": "TotalInitialCost"
+          },
+          {
+            "id": "item_79a8f53ee8c345b3a1b138dc5254be9d",
+            "name": "TotalLifecycleCost"
+          },
+          {
+            "id": "item_c2266002d5de4178bc5763967a1fc58a",
+            "name": "TotalCost"
+          },
+          {
+            "id": "item_dc452695273f4afb97297c9cd7982aae",
+            "name": "TotalAreaM2"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_d56f778d24674f9d96e5c11f3ec41514": {
+        "id": "dim_d56f778d24674f9d96e5c11f3ec41514",
+        "name": "Check",
+        "items": [
+          {
+            "id": "item_351d25a01f6a4ad38ba8584fac68c3f7",
+            "name": "AreaCheck"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      }
+    },
+    "cubes": {
+      "cube_d492ae3f76af4970be382182c9feac3a": {
+        "id": "cube_d492ae3f76af4970be382182c9feac3a",
+        "name": "%CFG",
+        "dimension_ids": [
+          "@",
+          "dim_3a8244e5a524413491cc8038dd9bdb52",
+          "dim_485ddcc895944995b7f87dacc1a26d4f"
+        ],
+        "data": {
+          "at_value|item_21db7c4eeace4e39942755792b150105|item_eac57861e69241a49b2c96875cbd24c3": {
+            "_type": "text",
+            "value": "%TYP",
+            "hardcoded": true
+          },
+          "at_value|item_96f8f0ff0bd545dead97722690ad4a90|item_eac57861e69241a49b2c96875cbd24c3": {
+            "_type": "text",
+            "value": "%SIG",
+            "hardcoded": true
+          },
+          "at_value|item_124f80fefd884a23bbf1f7a102f4e468|item_eac57861e69241a49b2c96875cbd24c3": {
+            "_type": "text",
+            "value": "%RECNOD",
+            "hardcoded": true
+          },
+          "at_value|item_bcd5d5667bf240b3a1476589fd803d4a|item_eac57861e69241a49b2c96875cbd24c3": {
+            "_type": "text",
+            "value": "%RECEDG",
+            "hardcoded": true
+          }
+        }
+      },
+      "cube_1b91382e688047a1a88e4e4fb9c7dc0b": {
+        "id": "cube_1b91382e688047a1a88e4e4fb9c7dc0b",
+        "name": "%SIG",
+        "dimension_ids": [
+          "@",
+          "dim_d818abffc2f74cf4ad8d27acbb52670f",
+          "dim_5afd9ccf89144e908bbda046bd1d95f9"
+        ],
+        "data": {
+          "at_value|item_0e326c353d264ef7ae37b4d8b9b62802|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_0e326c353d264ef7ae37b4d8b9b62802|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_0636a90ca49b4da7a22581ecb3667567|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_0636a90ca49b4da7a22581ecb3667567|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_5a9bfd5d24744783b132edaea509421c|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_5a9bfd5d24744783b132edaea509421c|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "ARG",
+            "hardcoded": true
+          },
+          "at_value|item_a09d5d88ad384acdaee6211d1daf4ff2|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "ARG",
+            "hardcoded": true
+          },
+          "at_value|item_a09d5d88ad384acdaee6211d1daf4ff2|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_673037964e16449b8b819ffb3e7bb865|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_673037964e16449b8b819ffb3e7bb865|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "ARG",
+            "hardcoded": true
+          },
+          "at_value|item_de7f5945739a4db5b14ee4471cee4630|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_de7f5945739a4db5b14ee4471cee4630|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "FLD",
+            "hardcoded": true
+          },
+          "at_value|item_853d8ab7c6de4626b26023fb6c48e7cc|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_853d8ab7c6de4626b26023fb6c48e7cc|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "SIG",
+            "hardcoded": true
+          },
+          "at_value|item_b5521a335a3f412c95f8a30107b3c8fa|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "OBJ",
+            "hardcoded": true
+          },
+          "at_value|item_b5521a335a3f412c95f8a30107b3c8fa|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "OBJ",
+            "hardcoded": true
+          },
+          "at_value|item_faa05001db144441bf0d2a7248ceb388|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_faa05001db144441bf0d2a7248ceb388|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "REL",
+            "hardcoded": true
+          },
+          "at_value|item_1b6e0ee5f6e944a59b941ca4b7bdf901|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "REI",
+            "hardcoded": true
+          },
+          "at_value|item_1b6e0ee5f6e944a59b941ca4b7bdf901|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "REI",
+            "hardcoded": true
+          },
+          "at_value|item_522659f45bd84e41854823213f362b7a|item_d9db0ba46fbc4682a88a91ec7128cdcd": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_522659f45bd84e41854823213f362b7a|item_b8387fb289474215bec921ffbc56486e": {
+            "_type": "text",
+            "value": "PRD",
+            "hardcoded": true
+          }
+        }
+      },
+      "cube_51ac7833eac84924bab1e92dc01b8b26": {
+        "id": "cube_51ac7833eac84924bab1e92dc01b8b26",
+        "name": "%TYP",
+        "dimension_ids": [
+          "@",
+          "dim_fe35cd7e932948239ae776afb89703f0",
+          "dim_94e14f20368643f786ea44c6051b7e19"
+        ],
+        "data": {
+          "at_value|item_8d6f06aebb2542c794046fb13fc44293|item_42e43f799ed54c54a74d500d63be5c14": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_4f4463ef0cf846b88ee9d56d5b86e956|item_42e43f799ed54c54a74d500d63be5c14": {
+            "_type": "text",
+            "value": "KND",
+            "hardcoded": true
+          },
+          "at_value|item_44110b6ff633471bac52308185f99c6d|item_42e43f799ed54c54a74d500d63be5c14": {
+            "_type": "text",
+            "value": "DIM",
+            "hardcoded": true
+          },
+          "at_value|item_c88795d989b840a39c6bb6d4d878c5b9|item_42e43f799ed54c54a74d500d63be5c14": {
+            "_type": "text",
+            "value": "REF",
+            "hardcoded": true
+          },
+          "at_value|item_566e474b9e2e4cc797ebc0a4548edbaa|item_42e43f799ed54c54a74d500d63be5c14": {
+            "_type": "text",
+            "value": "LBL",
+            "hardcoded": true
+          },
+          "at_value|item_770781a2d2fa44a89e314c235413e383|item_42e43f799ed54c54a74d500d63be5c14": {
+            "_type": "text",
+            "value": "SRC",
+            "hardcoded": true
+          },
+          "at_value|item_56f35f69143b49c08aed7cd1e22f5d45|item_42e43f799ed54c54a74d500d63be5c14": {
+            "_type": "text",
+            "value": "TGT",
+            "hardcoded": true
+          },
+          "at_value|item_f11b1d9cf77648b497a671e436d7e507|item_42e43f799ed54c54a74d500d63be5c14": {
+            "_type": "text",
+            "value": "ORD",
+            "hardcoded": true
+          }
+        }
+      },
+      "cube_9a62dc6d11af40e2a33f160074754d6c": {
+        "id": "cube_9a62dc6d11af40e2a33f160074754d6c",
+        "name": "%RECNOD",
+        "dimension_ids": [
+          "@",
+          "dim_d53042dece554c16a18f06f95c0303b0",
+          "dim_577c012d1877470ca8e5c17507fe947e"
+        ],
+        "data": {
+          "at_value|item_db3e166fa2894c7996022ee83e01fead|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "GROUP",
+            "hardcoded": true
+          },
+          "at_value|item_db3e166fa2894c7996022ee83e01fead|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_36ced95314224347b2c29fca798209d5",
+            "hardcoded": true
+          },
+          "at_value|item_db3e166fa2894c7996022ee83e01fead|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Area & Count",
+            "hardcoded": true
+          },
+          "at_value|item_0d5a3e35373f47c9b5c4790037b8aece|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_0d5a3e35373f47c9b5c4790037b8aece|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_36ced95314224347b2c29fca798209d5",
+            "hardcoded": true
+          },
+          "at_value|item_0d5a3e35373f47c9b5c4790037b8aece|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_e4f0c3758ac7487b9853f0ffe059ba03",
+            "hardcoded": true
+          },
+          "at_value|item_0d5a3e35373f47c9b5c4790037b8aece|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Quantity_m2",
+            "hardcoded": true
+          },
+          "at_value|item_825d7b17e84443ed86dcba26c1621ffd|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_825d7b17e84443ed86dcba26c1621ffd|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_36ced95314224347b2c29fca798209d5",
+            "hardcoded": true
+          },
+          "at_value|item_825d7b17e84443ed86dcba26c1621ffd|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_5e7b200d93d649eb907aaf0f775d37a6",
+            "hardcoded": true
+          },
+          "at_value|item_825d7b17e84443ed86dcba26c1621ffd|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "SpacePerPlant_m2",
+            "hardcoded": true
+          },
+          "at_value|item_d61617d217494852b270c71b904552d3|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_d61617d217494852b270c71b904552d3|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_36ced95314224347b2c29fca798209d5",
+            "hardcoded": true
+          },
+          "at_value|item_d61617d217494852b270c71b904552d3|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_9f522d06f75b4655b69eeeeec22c39d3",
+            "hardcoded": true
+          },
+          "at_value|item_d61617d217494852b270c71b904552d3|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "NumberOfPlants",
+            "hardcoded": true
+          },
+          "at_value|item_db3e166fa2894c7996022ee83e01fead|item_8e34070fcf7b42a285a139e59b9127d6": {
+            "_type": "number",
+            "value": 0,
+            "hardcoded": true
+          },
+          "at_value|item_470025557c094826a4e545fb1c5b2aea|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "GROUP",
+            "hardcoded": true
+          },
+          "at_value|item_470025557c094826a4e545fb1c5b2aea|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+            "hardcoded": true
+          },
+          "at_value|item_470025557c094826a4e545fb1c5b2aea|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Cost Components",
+            "hardcoded": true
+          },
+          "at_value|item_262af04736d54fe99e53df863b38b243|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_262af04736d54fe99e53df863b38b243|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+            "hardcoded": true
+          },
+          "at_value|item_262af04736d54fe99e53df863b38b243|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_0ad611665d4942cd8d4df0aed6f70166",
+            "hardcoded": true
+          },
+          "at_value|item_262af04736d54fe99e53df863b38b243|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "CCY",
+            "hardcoded": true
+          },
+          "at_value|item_889eca54a9204c01ac76e31cd11c320b|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_889eca54a9204c01ac76e31cd11c320b|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+            "hardcoded": true
+          },
+          "at_value|item_889eca54a9204c01ac76e31cd11c320b|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_5ade64679ea14f479fe369e8bfdda1bc",
+            "hardcoded": true
+          },
+          "at_value|item_889eca54a9204c01ac76e31cd11c320b|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "PlantMaterialCostPerUnit",
+            "hardcoded": true
+          },
+          "at_value|item_6037c78980994742879d212692779fed|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_6037c78980994742879d212692779fed|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+            "hardcoded": true
+          },
+          "at_value|item_6037c78980994742879d212692779fed|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_a46bbe3649b5428c8f571ac0d47ea9b3",
+            "hardcoded": true
+          },
+          "at_value|item_6037c78980994742879d212692779fed|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "LaborPerInitialPlantingAction",
+            "hardcoded": true
+          },
+          "at_value|item_bbdc1bdabaf6409aa12da2b136d1cd81|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_bbdc1bdabaf6409aa12da2b136d1cd81|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+            "hardcoded": true
+          },
+          "at_value|item_bbdc1bdabaf6409aa12da2b136d1cd81|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_eed71a5cff3b483bafbbb242bd81598b",
+            "hardcoded": true
+          },
+          "at_value|item_bbdc1bdabaf6409aa12da2b136d1cd81|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "PlantMaterialType",
+            "hardcoded": true
+          },
+          "at_value|item_470025557c094826a4e545fb1c5b2aea|item_8e34070fcf7b42a285a139e59b9127d6": {
+            "_type": "number",
+            "value": 0,
+            "hardcoded": true
+          },
+          "at_value|item_805e7d4ea8484f0f8c5e01b15cf88566|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "GROUP",
+            "hardcoded": true
+          },
+          "at_value|item_805e7d4ea8484f0f8c5e01b15cf88566|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_805e7d4ea8484f0f8c5e01b15cf88566|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Annual Operations",
+            "hardcoded": true
+          },
+          "at_value|item_9da3d1dbcc8f4d4895920594df90c41f|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_9da3d1dbcc8f4d4895920594df90c41f|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_9da3d1dbcc8f4d4895920594df90c41f|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_bbaab1dd407d4714854186ecd74e8a21",
+            "hardcoded": true
+          },
+          "at_value|item_9da3d1dbcc8f4d4895920594df90c41f|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Planting",
+            "hardcoded": true
+          },
+          "at_value|item_f51478124eb34c0bbbf86fb4faa0ff62|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_f51478124eb34c0bbbf86fb4faa0ff62|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_f51478124eb34c0bbbf86fb4faa0ff62|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_c1316ab2247b44018637d23efed03cd8",
+            "hardcoded": true
+          },
+          "at_value|item_f51478124eb34c0bbbf86fb4faa0ff62|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Fertiliser",
+            "hardcoded": true
+          },
+          "at_value|item_01731d2f8ed14a29a1652f2580770568|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_01731d2f8ed14a29a1652f2580770568|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_01731d2f8ed14a29a1652f2580770568|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_2f9c1039abe344e1b17f7f521baca53a",
+            "hardcoded": true
+          },
+          "at_value|item_01731d2f8ed14a29a1652f2580770568|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Pruning",
+            "hardcoded": true
+          },
+          "at_value|item_f804484740a94e7ab471a2c16a383aa3|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_f804484740a94e7ab471a2c16a383aa3|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_f804484740a94e7ab471a2c16a383aa3|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_cdce6e829fec40b4b6396878e3edae95",
+            "hardcoded": true
+          },
+          "at_value|item_f804484740a94e7ab471a2c16a383aa3|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Weeding",
+            "hardcoded": true
+          },
+          "at_value|item_9d38dd5931644110976c3318bffa086a|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_9d38dd5931644110976c3318bffa086a|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_9d38dd5931644110976c3318bffa086a|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_101e83f13d754e46ac6e3a21d56eb500",
+            "hardcoded": true
+          },
+          "at_value|item_9d38dd5931644110976c3318bffa086a|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Harvesting",
+            "hardcoded": true
+          },
+          "at_value|item_805e7d4ea8484f0f8c5e01b15cf88566|item_8e34070fcf7b42a285a139e59b9127d6": {
+            "_type": "number",
+            "value": 0,
+            "hardcoded": true
+          },
+          "at_value|item_068069cc4c6342d78c75b3b20c219f6c|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "GROUP",
+            "hardcoded": true
+          },
+          "at_value|item_068069cc4c6342d78c75b3b20c219f6c|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_068069cc4c6342d78c75b3b20c219f6c|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "Summary Metrics",
+            "hardcoded": true
+          },
+          "at_value|item_3e25e382eb8346e98e540686f190e8e5|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_3e25e382eb8346e98e540686f190e8e5|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_3e25e382eb8346e98e540686f190e8e5|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_24413c38f0bc4bc6be04c21c0956ea50",
+            "hardcoded": true
+          },
+          "at_value|item_3e25e382eb8346e98e540686f190e8e5|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "NumberOfPlants",
+            "hardcoded": true
+          },
+          "at_value|item_2d4ba022c0b640a69511a8487f514e48|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_2d4ba022c0b640a69511a8487f514e48|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_2d4ba022c0b640a69511a8487f514e48|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_dc452695273f4afb97297c9cd7982aae",
+            "hardcoded": true
+          },
+          "at_value|item_2d4ba022c0b640a69511a8487f514e48|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "TotalAreaM2",
+            "hardcoded": true
+          },
+          "at_value|item_1cc7253b19bb4a3da197d0759186ef96|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_1cc7253b19bb4a3da197d0759186ef96|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_1cc7253b19bb4a3da197d0759186ef96|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_20d3cb153e72439792ad665596915ef2",
+            "hardcoded": true
+          },
+          "at_value|item_1cc7253b19bb4a3da197d0759186ef96|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "TotalInitialCost",
+            "hardcoded": true
+          },
+          "at_value|item_5479e5223dc24a56b40e90c356f4c638|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_5479e5223dc24a56b40e90c356f4c638|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_5479e5223dc24a56b40e90c356f4c638|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_79a8f53ee8c345b3a1b138dc5254be9d",
+            "hardcoded": true
+          },
+          "at_value|item_5479e5223dc24a56b40e90c356f4c638|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "TotalLifecycleCost",
+            "hardcoded": true
+          },
+          "at_value|item_374fec0ca43f4364ae96ff63529e2624|item_34ae9fa9ec224646b9e9d10b281e62be": {
+            "_type": "text",
+            "value": "ITEM_REF",
+            "hardcoded": true
+          },
+          "at_value|item_374fec0ca43f4364ae96ff63529e2624|item_30ca1a4d4d6c47b7815ed5707861a94c": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_374fec0ca43f4364ae96ff63529e2624|item_b55e04af71b444dbb48072d3a377581d": {
+            "_type": "text",
+            "value": "item_c2266002d5de4178bc5763967a1fc58a",
+            "hardcoded": true
+          },
+          "at_value|item_374fec0ca43f4364ae96ff63529e2624|item_eb79590e11df4b2289d3eaee1fa81344": {
+            "_type": "text",
+            "value": "TotalCost",
+            "hardcoded": true
+          },
+          "at_value|item_068069cc4c6342d78c75b3b20c219f6c|item_8e34070fcf7b42a285a139e59b9127d6": {
+            "_type": "number",
+            "value": 0,
+            "hardcoded": true
+          }
+        }
+      },
+      "cube_934f496430ea45e7a355f6f7159c2748": {
+        "id": "cube_934f496430ea45e7a355f6f7159c2748",
+        "name": "%RECEDG",
+        "dimension_ids": [
+          "@",
+          "dim_c1475420beaf49e69b2f008b95252d9b",
+          "dim_66d5bdd5ac694aed8cdb8c4b068ad058"
+        ],
+        "data": {
+          "at_value|item_bc5e14b4ceb84b0d86034479085de7b8|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_bc5e14b4ceb84b0d86034479085de7b8|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_2dc56ade664a49bd8d36e54a16c25074",
+            "hardcoded": true
+          },
+          "at_value|item_bc5e14b4ceb84b0d86034479085de7b8|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_36938d32c1c345ecac70f74574cde1b5",
+            "hardcoded": true
+          },
+          "at_value|item_bc5e14b4ceb84b0d86034479085de7b8|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_36ced95314224347b2c29fca798209d5",
+            "hardcoded": true
+          },
+          "at_value|item_bc5e14b4ceb84b0d86034479085de7b8|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 0,
+            "hardcoded": true
+          },
+          "at_value|item_89b67bd191824ba1bb391a9d7c2e82d7|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_89b67bd191824ba1bb391a9d7c2e82d7|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_ea091e3f86cb46e38f4c87f9fdfd7b6c",
+            "hardcoded": true
+          },
+          "at_value|item_89b67bd191824ba1bb391a9d7c2e82d7|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_36938d32c1c345ecac70f74574cde1b5",
+            "hardcoded": true
+          },
+          "at_value|item_89b67bd191824ba1bb391a9d7c2e82d7|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_36ced95314224347b2c29fca798209d5",
+            "hardcoded": true
+          },
+          "at_value|item_89b67bd191824ba1bb391a9d7c2e82d7|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 1,
+            "hardcoded": true
+          },
+          "at_value|item_d2cd9ef248ac4592b239f56ea63e1fb7|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_d2cd9ef248ac4592b239f56ea63e1fb7|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_2713b330fc144a0d939719870e891cfa",
+            "hardcoded": true
+          },
+          "at_value|item_d2cd9ef248ac4592b239f56ea63e1fb7|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_36938d32c1c345ecac70f74574cde1b5",
+            "hardcoded": true
+          },
+          "at_value|item_d2cd9ef248ac4592b239f56ea63e1fb7|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_36ced95314224347b2c29fca798209d5",
+            "hardcoded": true
+          },
+          "at_value|item_d2cd9ef248ac4592b239f56ea63e1fb7|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 2,
+            "hardcoded": true
+          },
+          "at_value|item_29bbe8bb9a78449288df2d827ed1ac94|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_29bbe8bb9a78449288df2d827ed1ac94|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_2401307a87be4a5cbabe9417b401a4c5",
+            "hardcoded": true
+          },
+          "at_value|item_29bbe8bb9a78449288df2d827ed1ac94|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_cf8cadcb36ba4fba9ec42610886b869b",
+            "hardcoded": true
+          },
+          "at_value|item_29bbe8bb9a78449288df2d827ed1ac94|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+            "hardcoded": true
+          },
+          "at_value|item_29bbe8bb9a78449288df2d827ed1ac94|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 0,
+            "hardcoded": true
+          },
+          "at_value|item_37bc9828300949b7b0f49078af5e9e9a|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_37bc9828300949b7b0f49078af5e9e9a|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_88d1fa985eb54445a94ac62afa9f7d29",
+            "hardcoded": true
+          },
+          "at_value|item_37bc9828300949b7b0f49078af5e9e9a|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_cf8cadcb36ba4fba9ec42610886b869b",
+            "hardcoded": true
+          },
+          "at_value|item_37bc9828300949b7b0f49078af5e9e9a|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+            "hardcoded": true
+          },
+          "at_value|item_37bc9828300949b7b0f49078af5e9e9a|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 1,
+            "hardcoded": true
+          },
+          "at_value|item_c77459055ec049a2aeaff0d0017ce5f8|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_c77459055ec049a2aeaff0d0017ce5f8|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_5799d405e8fb40969b158acb5d387c25",
+            "hardcoded": true
+          },
+          "at_value|item_c77459055ec049a2aeaff0d0017ce5f8|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_cf8cadcb36ba4fba9ec42610886b869b",
+            "hardcoded": true
+          },
+          "at_value|item_c77459055ec049a2aeaff0d0017ce5f8|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+            "hardcoded": true
+          },
+          "at_value|item_c77459055ec049a2aeaff0d0017ce5f8|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 2,
+            "hardcoded": true
+          },
+          "at_value|item_b2dd498ba76045c299a396b313509391|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_b2dd498ba76045c299a396b313509391|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_9e0d463673884b10a9c888cefd7d998a",
+            "hardcoded": true
+          },
+          "at_value|item_b2dd498ba76045c299a396b313509391|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_cf8cadcb36ba4fba9ec42610886b869b",
+            "hardcoded": true
+          },
+          "at_value|item_b2dd498ba76045c299a396b313509391|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_b31850cc068c4d278fa3f064d2c4e56c",
+            "hardcoded": true
+          },
+          "at_value|item_b2dd498ba76045c299a396b313509391|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 3,
+            "hardcoded": true
+          },
+          "at_value|item_1ed94272cff643c0b571aef414b1c4b5|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_1ed94272cff643c0b571aef414b1c4b5|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_8493f594abed4768bef11d23826ca6ff",
+            "hardcoded": true
+          },
+          "at_value|item_1ed94272cff643c0b571aef414b1c4b5|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_88ed1d164a26410e83eb558b710f35b0",
+            "hardcoded": true
+          },
+          "at_value|item_1ed94272cff643c0b571aef414b1c4b5|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_1ed94272cff643c0b571aef414b1c4b5|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 0,
+            "hardcoded": true
+          },
+          "at_value|item_dcdc19945f754022bf8421bbc52720fb|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_dcdc19945f754022bf8421bbc52720fb|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_37fa9a0432eb43d9a1330084263a127e",
+            "hardcoded": true
+          },
+          "at_value|item_dcdc19945f754022bf8421bbc52720fb|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_88ed1d164a26410e83eb558b710f35b0",
+            "hardcoded": true
+          },
+          "at_value|item_dcdc19945f754022bf8421bbc52720fb|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_dcdc19945f754022bf8421bbc52720fb|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 1,
+            "hardcoded": true
+          },
+          "at_value|item_f9a17ab73eba4f539e43cd8ee492e3dc|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_f9a17ab73eba4f539e43cd8ee492e3dc|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_de3235f14ec740f885a13dab4f1c7198",
+            "hardcoded": true
+          },
+          "at_value|item_f9a17ab73eba4f539e43cd8ee492e3dc|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_88ed1d164a26410e83eb558b710f35b0",
+            "hardcoded": true
+          },
+          "at_value|item_f9a17ab73eba4f539e43cd8ee492e3dc|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_f9a17ab73eba4f539e43cd8ee492e3dc|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 2,
+            "hardcoded": true
+          },
+          "at_value|item_2202e72e4012496cb6b7376fd0d3c75b|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_2202e72e4012496cb6b7376fd0d3c75b|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_dfa70315230f4dce8be59e8c4413df03",
+            "hardcoded": true
+          },
+          "at_value|item_2202e72e4012496cb6b7376fd0d3c75b|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_88ed1d164a26410e83eb558b710f35b0",
+            "hardcoded": true
+          },
+          "at_value|item_2202e72e4012496cb6b7376fd0d3c75b|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_2202e72e4012496cb6b7376fd0d3c75b|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 3,
+            "hardcoded": true
+          },
+          "at_value|item_43bd518232ef49e8a228042ac7b1e468|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_43bd518232ef49e8a228042ac7b1e468|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_2770a7554fad4b40a1b3a1316cb734e8",
+            "hardcoded": true
+          },
+          "at_value|item_43bd518232ef49e8a228042ac7b1e468|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_88ed1d164a26410e83eb558b710f35b0",
+            "hardcoded": true
+          },
+          "at_value|item_43bd518232ef49e8a228042ac7b1e468|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_ac7bfb596ac340ada14e32b882468adc",
+            "hardcoded": true
+          },
+          "at_value|item_43bd518232ef49e8a228042ac7b1e468|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 4,
+            "hardcoded": true
+          },
+          "at_value|item_4ecd6391148a4c1982935acf7bf8b139|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_4ecd6391148a4c1982935acf7bf8b139|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_626437868549425cbbc889a9f51cf6cc",
+            "hardcoded": true
+          },
+          "at_value|item_4ecd6391148a4c1982935acf7bf8b139|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_1066edd7a0c8470ea413b3e409e7f1f9",
+            "hardcoded": true
+          },
+          "at_value|item_4ecd6391148a4c1982935acf7bf8b139|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_4ecd6391148a4c1982935acf7bf8b139|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 0,
+            "hardcoded": true
+          },
+          "at_value|item_61621d774e9c46d882aa912f0a959daa|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_61621d774e9c46d882aa912f0a959daa|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_f78651291c1e46c78d4819e6fee25aaa",
+            "hardcoded": true
+          },
+          "at_value|item_61621d774e9c46d882aa912f0a959daa|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_1066edd7a0c8470ea413b3e409e7f1f9",
+            "hardcoded": true
+          },
+          "at_value|item_61621d774e9c46d882aa912f0a959daa|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_61621d774e9c46d882aa912f0a959daa|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 1,
+            "hardcoded": true
+          },
+          "at_value|item_560ef5f1fe1a440990afe4ddb3adf648|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_560ef5f1fe1a440990afe4ddb3adf648|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_cb823fb5d1a74eaabfb92ba1b4d6d3d2",
+            "hardcoded": true
+          },
+          "at_value|item_560ef5f1fe1a440990afe4ddb3adf648|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_1066edd7a0c8470ea413b3e409e7f1f9",
+            "hardcoded": true
+          },
+          "at_value|item_560ef5f1fe1a440990afe4ddb3adf648|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_560ef5f1fe1a440990afe4ddb3adf648|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 2,
+            "hardcoded": true
+          },
+          "at_value|item_708e92d8a3a6411b94c1863efdc62566|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_708e92d8a3a6411b94c1863efdc62566|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_d91781ef8033493b9f83354130436ac4",
+            "hardcoded": true
+          },
+          "at_value|item_708e92d8a3a6411b94c1863efdc62566|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_1066edd7a0c8470ea413b3e409e7f1f9",
+            "hardcoded": true
+          },
+          "at_value|item_708e92d8a3a6411b94c1863efdc62566|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_708e92d8a3a6411b94c1863efdc62566|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 3,
+            "hardcoded": true
+          },
+          "at_value|item_50123df371e644dca3ec153894bd9f40|item_c7e792d412914ebdb642bb8c3f9e6504": {
+            "_type": "text",
+            "value": "MEMBER_OF",
+            "hardcoded": true
+          },
+          "at_value|item_50123df371e644dca3ec153894bd9f40|item_d9c30eb306804e60925eeede512b1d64": {
+            "_type": "text",
+            "value": "nod_a58329744092414bb4c4b355f34a9199",
+            "hardcoded": true
+          },
+          "at_value|item_50123df371e644dca3ec153894bd9f40|item_661207ce5c204c99a98b3ee255fd46d2": {
+            "_type": "text",
+            "value": "nod_1066edd7a0c8470ea413b3e409e7f1f9",
+            "hardcoded": true
+          },
+          "at_value|item_50123df371e644dca3ec153894bd9f40|item_23eb752516e0433bba76b2e5f01c0bef": {
+            "_type": "text",
+            "value": "dim_8280b7f2882c44519bf9c74e89a75343",
+            "hardcoded": true
+          },
+          "at_value|item_50123df371e644dca3ec153894bd9f40|item_6fefd8c72e454aba9dd22b8196008343": {
+            "_type": "number",
+            "value": 4,
+            "hardcoded": true
+          }
+        }
+      },
+      "cube_2e8d7753d4814c9f92097a6e1318d8ef": {
+        "id": "cube_2e8d7753d4814c9f92097a6e1318d8ef",
+        "name": "C",
+        "dimension_ids": [
+          "@",
+          "dim_5377bec05a8c42ae8cadc4d5bb204039",
+          "dim_341fbe1cf1ec47f897299897a3a82942"
+        ],
+        "data": {}
+      },
+      "cube_d01337103bff4a6da1af3e52bc5fbab3": {
+        "id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "name": "Inventory",
+        "dimension_ids": [
+          "@",
+          "dim_fdfaa6770c704a1a922a55ab8d774006",
+          "dim_36ced95314224347b2c29fca798209d5"
+        ],
+        "data": {}
+      },
+      "cube_fc26af18563742759764cb27939c1d5e": {
+        "id": "cube_fc26af18563742759764cb27939c1d5e",
+        "name": "InitialCosts",
+        "dimension_ids": [
+          "@",
+          "dim_fdfaa6770c704a1a922a55ab8d774006",
+          "dim_b31850cc068c4d278fa3f064d2c4e56c"
+        ],
+        "data": {}
+      },
+      "cube_3da1daf8b52849ddaccfc4e50dac0371": {
+        "id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "name": "LifecycleCosts",
+        "dimension_ids": [
+          "@",
+          "dim_fdfaa6770c704a1a922a55ab8d774006",
+          "dim_af72b96dedfa4f768a4e62c1cffa920b",
+          "dim_ac7bfb596ac340ada14e32b882468adc"
+        ],
+        "data": {}
+      },
+      "cube_c420dc8db23444af90ad910c6ca56140": {
+        "id": "cube_c420dc8db23444af90ad910c6ca56140",
+        "name": "Assumptions",
+        "dimension_ids": [
+          "@",
+          "dim_e09f003a499440dd9a476afbf1d76531"
+        ],
+        "data": {}
+      },
+      "cube_5df0847e61f64b8aa6656890b50acef4": {
+        "id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "name": "Summary",
+        "dimension_ids": [
+          "@",
+          "dim_fdfaa6770c704a1a922a55ab8d774006",
+          "dim_8280b7f2882c44519bf9c74e89a75343"
+        ],
+        "data": {}
+      },
+      "cube_15af0fdd7f12407d8d019948fbd545a0": {
+        "id": "cube_15af0fdd7f12407d8d019948fbd545a0",
+        "name": "Checks",
+        "dimension_ids": [
+          "@",
+          "dim_d56f778d24674f9d96e5c11f3ec41514"
+        ],
+        "data": {}
+      }
+    },
+    "rules": {
+      "r_f691b07b45bb4ea7bee2255305e9f49f": {
+        "id": "r_f691b07b45bb4ea7bee2255305e9f49f",
+        "cube_id": "cube_c420dc8db23444af90ad910c6ca56140",
+        "expression": "15.00",
+        "addr_mask": [
+          null,
+          "item_98ec550cf9004981b03c82993b3aa095"
+        ],
+        "targets": [
+          [
+            "Assumption",
+            "HourlyRate"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6ef7b3733b3243cdbc3d6ef8dcd2c236": {
+        "id": "r_6ef7b3733b3243cdbc3d6ef8dcd2c236",
+        "cube_id": "cube_c420dc8db23444af90ad910c6ca56140",
+        "expression": "10000.00",
+        "addr_mask": [
+          null,
+          "item_fd74eb76c2764ee3817caf46b6e8adb5"
+        ],
+        "targets": [
+          [
+            "Assumption",
+            "TotalAreaM2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0d5706291223440e8307aa3f83d9e5ad": {
+        "id": "r_0d5706291223440e8307aa3f83d9e5ad",
+        "cube_id": "cube_c420dc8db23444af90ad910c6ca56140",
+        "expression": "0.00",
+        "addr_mask": [
+          null,
+          "item_78680bc83ab245da9d7791e875040d6d"
+        ],
+        "targets": [
+          [
+            "Assumption",
+            "VATRate"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ec4b3b32d75c4957ae8eb3b2cc4b467f": {
+        "id": "r_ec4b3b32d75c4957ae8eb3b2cc4b467f",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "1200.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_e4f0c3758ac7487b9853f0ffe059ba03"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantData",
+            "Quantity_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_58fcfba702284a54909c79f790f531c3": {
+        "id": "r_58fcfba702284a54909c79f790f531c3",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "800.00",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_e4f0c3758ac7487b9853f0ffe059ba03"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantData",
+            "Quantity_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_bda7bda8c57b4f1db2ca92f052ff4029": {
+        "id": "r_bda7bda8c57b4f1db2ca92f052ff4029",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "2000.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_e4f0c3758ac7487b9853f0ffe059ba03"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantData",
+            "Quantity_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_35260b9d220a4e69a55edc702647f78d": {
+        "id": "r_35260b9d220a4e69a55edc702647f78d",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "3000.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_e4f0c3758ac7487b9853f0ffe059ba03"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantData",
+            "Quantity_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0c4dfbae57ba44ebba38f28fb047731c": {
+        "id": "r_0c4dfbae57ba44ebba38f28fb047731c",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "3000.00",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_e4f0c3758ac7487b9853f0ffe059ba03"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantData",
+            "Quantity_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f9bd17db8db34a91b0f664f243ce6753": {
+        "id": "r_f9bd17db8db34a91b0f664f243ce6753",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "16.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_5e7b200d93d649eb907aaf0f775d37a6"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantData",
+            "SpacePerPlant_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6c9ec2e589a149429c3199389a08af23": {
+        "id": "r_6c9ec2e589a149429c3199389a08af23",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "16.00",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_5e7b200d93d649eb907aaf0f775d37a6"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantData",
+            "SpacePerPlant_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_26eae971ea0e4bd0862dbd447f42be26": {
+        "id": "r_26eae971ea0e4bd0862dbd447f42be26",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "9.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_5e7b200d93d649eb907aaf0f775d37a6"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantData",
+            "SpacePerPlant_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5fcf66173dd24f3292caec4d0eca438f": {
+        "id": "r_5fcf66173dd24f3292caec4d0eca438f",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "25.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_5e7b200d93d649eb907aaf0f775d37a6"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantData",
+            "SpacePerPlant_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5ae90091dfbc426d9c17475fb6ffb4da": {
+        "id": "r_5ae90091dfbc426d9c17475fb6ffb4da",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "4.00",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_5e7b200d93d649eb907aaf0f775d37a6"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantData",
+            "SpacePerPlant_m2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f7c5e5a821334c28a3e0cdabe4dd793e": {
+        "id": "r_f7c5e5a821334c28a3e0cdabe4dd793e",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "\"Apple\"",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_485dc58ad9b547cfa8234df193d7a9e9"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantData",
+            "SystemName"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_8d6251a3b4254325ba75463cae9867e8": {
+        "id": "r_8d6251a3b4254325ba75463cae9867e8",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "\"Pear\"",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_485dc58ad9b547cfa8234df193d7a9e9"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantData",
+            "SystemName"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_765246f5369c4e1ba220b4f5a8247245": {
+        "id": "r_765246f5369c4e1ba220b4f5a8247245",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "\"Hazelnut\"",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_485dc58ad9b547cfa8234df193d7a9e9"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantData",
+            "SystemName"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_c59eaf62390f4311a032fd4c4395985a": {
+        "id": "r_c59eaf62390f4311a032fd4c4395985a",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "\"Oak\"",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_485dc58ad9b547cfa8234df193d7a9e9"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantData",
+            "SystemName"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_242e4c7611434ef7b6b00c63985f6fe3": {
+        "id": "r_242e4c7611434ef7b6b00c63985f6fe3",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "\"Willow\"",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_485dc58ad9b547cfa8234df193d7a9e9"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantData",
+            "SystemName"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2db91d7abf534f068d97d2095a45042e": {
+        "id": "r_2db91d7abf534f068d97d2095a45042e",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"EUR\"",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_0ad611665d4942cd8d4df0aed6f70166"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "InitialCost",
+            "CCY"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_b900152f50a0477eada60e1b667085e0": {
+        "id": "r_b900152f50a0477eada60e1b667085e0",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"EUR\"",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_0ad611665d4942cd8d4df0aed6f70166"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "InitialCost",
+            "CCY"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6328bc4708ac4fa58edf1f9bf9b9129a": {
+        "id": "r_6328bc4708ac4fa58edf1f9bf9b9129a",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"EUR\"",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_0ad611665d4942cd8d4df0aed6f70166"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "InitialCost",
+            "CCY"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_8599799661b34e65a8eec9d51bdac874": {
+        "id": "r_8599799661b34e65a8eec9d51bdac874",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"EUR\"",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_0ad611665d4942cd8d4df0aed6f70166"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "InitialCost",
+            "CCY"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_8b557dd5c0cd4466a4e76acc1b496365": {
+        "id": "r_8b557dd5c0cd4466a4e76acc1b496365",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"EUR\"",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_0ad611665d4942cd8d4df0aed6f70166"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "InitialCost",
+            "CCY"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_95b56a31d39543ac995475446ebd4c5d": {
+        "id": "r_95b56a31d39543ac995475446ebd4c5d",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"Seedling\"",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_eed71a5cff3b483bafbbb242bd81598b"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialType"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5f878c9e30af4d438ddf26020d01d5b0": {
+        "id": "r_5f878c9e30af4d438ddf26020d01d5b0",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"Grafted\"",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_eed71a5cff3b483bafbbb242bd81598b"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialType"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_59280e3d091d482bb42ebb9f4480aa16": {
+        "id": "r_59280e3d091d482bb42ebb9f4480aa16",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"Seedling\"",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_eed71a5cff3b483bafbbb242bd81598b"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialType"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_61296ed86fc447ce83ad0684f11b0453": {
+        "id": "r_61296ed86fc447ce83ad0684f11b0453",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"Seedling\"",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_eed71a5cff3b483bafbbb242bd81598b"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialType"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5b21f3beecb242c58d2860249cbef35f": {
+        "id": "r_5b21f3beecb242c58d2860249cbef35f",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"Cutting\"",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_eed71a5cff3b483bafbbb242bd81598b"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialType"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_918eee9f68ac4773ae2e2b04638bbb1d": {
+        "id": "r_918eee9f68ac4773ae2e2b04638bbb1d",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "8.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_5ade64679ea14f479fe369e8bfdda1bc"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialCostPerUnit"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_fbbc6f1b403b4637b9d2c5c0523e8b03": {
+        "id": "r_fbbc6f1b403b4637b9d2c5c0523e8b03",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "12.00",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_5ade64679ea14f479fe369e8bfdda1bc"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialCostPerUnit"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ac196090a7c34b3093879056a1d9b99e": {
+        "id": "r_ac196090a7c34b3093879056a1d9b99e",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_5ade64679ea14f479fe369e8bfdda1bc"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialCostPerUnit"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ab34af1df4c044af86311e0205e105d0": {
+        "id": "r_ab34af1df4c044af86311e0205e105d0",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "3.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_5ade64679ea14f479fe369e8bfdda1bc"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialCostPerUnit"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2a0cbfdb887c4307aa86e2c32ab7be99": {
+        "id": "r_2a0cbfdb887c4307aa86e2c32ab7be99",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_5ade64679ea14f479fe369e8bfdda1bc"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "InitialCost",
+            "PlantMaterialCostPerUnit"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f9b892bd3f384979a6f237f8c7610cce": {
+        "id": "r_f9b892bd3f384979a6f237f8c7610cce",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "0.50",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_a46bbe3649b5428c8f571ac0d47ea9b3"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "InitialCost",
+            "LaborPerInitialPlantingAction"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_80e0f5ecf66d4078a75ee52c90edb033": {
+        "id": "r_80e0f5ecf66d4078a75ee52c90edb033",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "0.60",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_a46bbe3649b5428c8f571ac0d47ea9b3"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "InitialCost",
+            "LaborPerInitialPlantingAction"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_46f1b34d97c949228c690cdfb332382b": {
+        "id": "r_46f1b34d97c949228c690cdfb332382b",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "0.40",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_a46bbe3649b5428c8f571ac0d47ea9b3"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "InitialCost",
+            "LaborPerInitialPlantingAction"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_100a4d7dbc4b4850938b76e22bce980d": {
+        "id": "r_100a4d7dbc4b4850938b76e22bce980d",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "0.30",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_a46bbe3649b5428c8f571ac0d47ea9b3"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "InitialCost",
+            "LaborPerInitialPlantingAction"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_004c1ae5a5f64df6b43584becabcb6a7": {
+        "id": "r_004c1ae5a5f64df6b43584becabcb6a7",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "0.20",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_a46bbe3649b5428c8f571ac0d47ea9b3"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "InitialCost",
+            "LaborPerInitialPlantingAction"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5b12098039e449d2b9116ed68b16761a": {
+        "id": "r_5b12098039e449d2b9116ed68b16761a",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "0.00",
+        "addr_mask": [
+          null,
+          null,
+          null,
+          "item_bbaab1dd407d4714854186ecd74e8a21"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "*"
+          ],
+          [
+            "LifecycleCost",
+            "Planting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_fe38eaea90564db2a664bca10f0bfbb7": {
+        "id": "r_fe38eaea90564db2a664bca10f0bfbb7",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_373ec98721f8435d9fa43c105511a4a1",
+          "item_bbaab1dd407d4714854186ecd74e8a21"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "1"
+          ],
+          [
+            "LifecycleCost",
+            "Planting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3359bfbb0fb1446e850aadcc4c29e9cc": {
+        "id": "r_3359bfbb0fb1446e850aadcc4c29e9cc",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "0.00",
+        "addr_mask": [
+          null,
+          null,
+          null,
+          "item_c1316ab2247b44018637d23efed03cd8"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "*"
+          ],
+          [
+            "LifecycleCost",
+            "Fertiliser"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_645efeb4407e47ffa64eafdd23d51e2d": {
+        "id": "r_645efeb4407e47ffa64eafdd23d51e2d",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          null,
+          "item_fe2ddd990bcf483a97ac06cc9ec9f62c",
+          "item_c1316ab2247b44018637d23efed03cd8"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "2"
+          ],
+          [
+            "LifecycleCost",
+            "Fertiliser"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_62c81bec935f46169d694d3a063072cc": {
+        "id": "r_62c81bec935f46169d694d3a063072cc",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          null,
+          "item_559be8c60ba54db1b73364996a00806a",
+          "item_c1316ab2247b44018637d23efed03cd8"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "5"
+          ],
+          [
+            "LifecycleCost",
+            "Fertiliser"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0eb83d107b2b415caa73ed8b4e49d46d": {
+        "id": "r_0eb83d107b2b415caa73ed8b4e49d46d",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          null,
+          "item_2fb0c6a665104ac19e1ed2c906604df0",
+          "item_c1316ab2247b44018637d23efed03cd8"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "8"
+          ],
+          [
+            "LifecycleCost",
+            "Fertiliser"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_4e913ef3d17941b6849688ee2a65950f": {
+        "id": "r_4e913ef3d17941b6849688ee2a65950f",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          null,
+          "item_24d470234b8c48359d662d5422bdce20",
+          "item_c1316ab2247b44018637d23efed03cd8"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "11"
+          ],
+          [
+            "LifecycleCost",
+            "Fertiliser"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ccdf904b26294645900f72bffbe4fdd1": {
+        "id": "r_ccdf904b26294645900f72bffbe4fdd1",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          null,
+          "item_41fe6fe5a33e48ccb69599c67e3b7007",
+          "item_c1316ab2247b44018637d23efed03cd8"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "14"
+          ],
+          [
+            "LifecycleCost",
+            "Fertiliser"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f1b3c793771a482f98cce13e4d103c3a": {
+        "id": "r_f1b3c793771a482f98cce13e4d103c3a",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "0.00",
+        "addr_mask": [
+          null,
+          null,
+          null,
+          "item_2f9c1039abe344e1b17f7f521baca53a"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "*"
+          ],
+          [
+            "LifecycleCost",
+            "Pruning"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ef2ae2434d6344d7aebdb326882e4da4": {
+        "id": "r_ef2ae2434d6344d7aebdb326882e4da4",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_2a89997638394d1d924f2cd709e1522f",
+          "item_2f9c1039abe344e1b17f7f521baca53a"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "3"
+          ],
+          [
+            "LifecycleCost",
+            "Pruning"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_9200725d423c48abb01f0c670169f0d0": {
+        "id": "r_9200725d423c48abb01f0c670169f0d0",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_2a985a5088b94f3c8828576326d313ea",
+          "item_2f9c1039abe344e1b17f7f521baca53a"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "6"
+          ],
+          [
+            "LifecycleCost",
+            "Pruning"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_98a8a0402f0c49baaa68133656dda107": {
+        "id": "r_98a8a0402f0c49baaa68133656dda107",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_0c0eacb893de4f4482bdeffdb9e4d83f",
+          "item_2f9c1039abe344e1b17f7f521baca53a"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "9"
+          ],
+          [
+            "LifecycleCost",
+            "Pruning"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d704a1054be44e679dd6ed9cc964e228": {
+        "id": "r_d704a1054be44e679dd6ed9cc964e228",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_ab5465d4691f49e0909cac50a9b29594",
+          "item_2f9c1039abe344e1b17f7f521baca53a"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "12"
+          ],
+          [
+            "LifecycleCost",
+            "Pruning"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_33542b323a0e4af7b90c1ecba1f443fd": {
+        "id": "r_33542b323a0e4af7b90c1ecba1f443fd",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_e89e71d481df4e01b189764a709ce34c",
+          "item_2f9c1039abe344e1b17f7f521baca53a"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "15"
+          ],
+          [
+            "LifecycleCost",
+            "Pruning"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0f62f85d833648ba8ebcf235c8a2c206": {
+        "id": "r_0f62f85d833648ba8ebcf235c8a2c206",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "0.00",
+        "addr_mask": [
+          null,
+          null,
+          null,
+          "item_cdce6e829fec40b4b6396878e3edae95"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "*"
+          ],
+          [
+            "LifecycleCost",
+            "Weeding"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_fa56a034dbb04b81bc0f5591236d064e": {
+        "id": "r_fa56a034dbb04b81bc0f5591236d064e",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_fe2ddd990bcf483a97ac06cc9ec9f62c",
+          "item_cdce6e829fec40b4b6396878e3edae95"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "2"
+          ],
+          [
+            "LifecycleCost",
+            "Weeding"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_c0b65ef2610b4c8195585e87f3ccddc9": {
+        "id": "r_c0b65ef2610b4c8195585e87f3ccddc9",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_3c3d94fc2c2148fab0d7ef42d70d0f16",
+          "item_cdce6e829fec40b4b6396878e3edae95"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "4"
+          ],
+          [
+            "LifecycleCost",
+            "Weeding"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_4aa8690eee374758a10533ac0fd2e31d": {
+        "id": "r_4aa8690eee374758a10533ac0fd2e31d",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_2a985a5088b94f3c8828576326d313ea",
+          "item_cdce6e829fec40b4b6396878e3edae95"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "6"
+          ],
+          [
+            "LifecycleCost",
+            "Weeding"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d4add26e54c6461e91df9d908826590d": {
+        "id": "r_d4add26e54c6461e91df9d908826590d",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_2fb0c6a665104ac19e1ed2c906604df0",
+          "item_cdce6e829fec40b4b6396878e3edae95"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "8"
+          ],
+          [
+            "LifecycleCost",
+            "Weeding"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2c42a30c74e64312aca3cb7fdde4a953": {
+        "id": "r_2c42a30c74e64312aca3cb7fdde4a953",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_3bae712d96cc4eb881ea78309f2b4053",
+          "item_cdce6e829fec40b4b6396878e3edae95"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "10"
+          ],
+          [
+            "LifecycleCost",
+            "Weeding"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6e15757a7bf24d338db9ed63e70069a8": {
+        "id": "r_6e15757a7bf24d338db9ed63e70069a8",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_ab5465d4691f49e0909cac50a9b29594",
+          "item_cdce6e829fec40b4b6396878e3edae95"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "12"
+          ],
+          [
+            "LifecycleCost",
+            "Weeding"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_29d3c334985a44ac8279179efc162f6d": {
+        "id": "r_29d3c334985a44ac8279179efc162f6d",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_41fe6fe5a33e48ccb69599c67e3b7007",
+          "item_cdce6e829fec40b4b6396878e3edae95"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "14"
+          ],
+          [
+            "LifecycleCost",
+            "Weeding"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_53ac7cc6c3ea43e69e997b804885df53": {
+        "id": "r_53ac7cc6c3ea43e69e997b804885df53",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.00",
+        "addr_mask": [
+          null,
+          null,
+          "item_7bb397cbd721499299f213116e30e897",
+          "item_cdce6e829fec40b4b6396878e3edae95"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "16"
+          ],
+          [
+            "LifecycleCost",
+            "Weeding"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_635167a406754f9096e083bcf39bb84a": {
+        "id": "r_635167a406754f9096e083bcf39bb84a",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "0.00",
+        "addr_mask": [
+          null,
+          null,
+          null,
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "*"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d7678d54d22b43cd909ac22b30917415": {
+        "id": "r_d7678d54d22b43cd909ac22b30917415",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_559be8c60ba54db1b73364996a00806a",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "5"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ec9d5ae6d66249f79d6a6fc15934a722": {
+        "id": "r_ec9d5ae6d66249f79d6a6fc15934a722",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_2a985a5088b94f3c8828576326d313ea",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "6"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_99880430e04442a38d1b9d083c2cfdf9": {
+        "id": "r_99880430e04442a38d1b9d083c2cfdf9",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_b1bdb6894fc84db0b4aaebf658524a1f",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "7"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_90dc80a325034f85a823931ae6edc624": {
+        "id": "r_90dc80a325034f85a823931ae6edc624",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_2fb0c6a665104ac19e1ed2c906604df0",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "8"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6e8b374a80554df1aeca3c7117a56e26": {
+        "id": "r_6e8b374a80554df1aeca3c7117a56e26",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_0c0eacb893de4f4482bdeffdb9e4d83f",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "9"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_46d6edb7c8b64d468680ca0c1bb9b10e": {
+        "id": "r_46d6edb7c8b64d468680ca0c1bb9b10e",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_3bae712d96cc4eb881ea78309f2b4053",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "10"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_bcc6954e8e52486aa0e4e96a10079939": {
+        "id": "r_bcc6954e8e52486aa0e4e96a10079939",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_24d470234b8c48359d662d5422bdce20",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "11"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6b00a5a3153547f0af0de02c28b8e59c": {
+        "id": "r_6b00a5a3153547f0af0de02c28b8e59c",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_ab5465d4691f49e0909cac50a9b29594",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "12"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_68b725ec95584a718673fb5aa076c975": {
+        "id": "r_68b725ec95584a718673fb5aa076c975",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_acc2db03b89d4d868b501d19124fb6af",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "13"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_1187c512e77048e7b54c630855429cc0": {
+        "id": "r_1187c512e77048e7b54c630855429cc0",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_41fe6fe5a33e48ccb69599c67e3b7007",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "14"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d892763f0dcf405ab544c54410cf2f3e": {
+        "id": "r_d892763f0dcf405ab544c54410cf2f3e",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_e89e71d481df4e01b189764a709ce34c",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "15"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3a6511e3a95e4020ba855719325df177": {
+        "id": "r_3a6511e3a95e4020ba855719325df177",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "5.00",
+        "addr_mask": [
+          null,
+          "item_ccb692853a7741b8b6979227411a4bcf",
+          "item_7bb397cbd721499299f213116e30e897",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Apple"
+          ],
+          [
+            "PlantAge",
+            "16"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0e405a44eb66416c8e8efaea46e811a9": {
+        "id": "r_0e405a44eb66416c8e8efaea46e811a9",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_559be8c60ba54db1b73364996a00806a",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "5"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_693d4f753ac44927aa1aad2b0da81932": {
+        "id": "r_693d4f753ac44927aa1aad2b0da81932",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_2a985a5088b94f3c8828576326d313ea",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "6"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ccb5fc9e6c4a4865855ab3e42f261821": {
+        "id": "r_ccb5fc9e6c4a4865855ab3e42f261821",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_b1bdb6894fc84db0b4aaebf658524a1f",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "7"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e98c0f4da94d4577adca86cfd2961747": {
+        "id": "r_e98c0f4da94d4577adca86cfd2961747",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_2fb0c6a665104ac19e1ed2c906604df0",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "8"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_37f471ff8eb346f3a01e96c9dd01e0f6": {
+        "id": "r_37f471ff8eb346f3a01e96c9dd01e0f6",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_0c0eacb893de4f4482bdeffdb9e4d83f",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "9"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_dc75ef9b5fc74532a4c2b490c07501d5": {
+        "id": "r_dc75ef9b5fc74532a4c2b490c07501d5",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_3bae712d96cc4eb881ea78309f2b4053",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "10"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_63e80e6e38fc49a4894f04174763391f": {
+        "id": "r_63e80e6e38fc49a4894f04174763391f",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_24d470234b8c48359d662d5422bdce20",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "11"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7c69b9f573724ba7a19afeff087f1bd8": {
+        "id": "r_7c69b9f573724ba7a19afeff087f1bd8",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_ab5465d4691f49e0909cac50a9b29594",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "12"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_1efe5b0f974d4481a81d9279782f0ecf": {
+        "id": "r_1efe5b0f974d4481a81d9279782f0ecf",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_acc2db03b89d4d868b501d19124fb6af",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "13"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_13173fe35cdb4dd3867c3972086c0889": {
+        "id": "r_13173fe35cdb4dd3867c3972086c0889",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_41fe6fe5a33e48ccb69599c67e3b7007",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "14"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_cca5acf5ccae4b7791d238fb9a7cc48e": {
+        "id": "r_cca5acf5ccae4b7791d238fb9a7cc48e",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_e89e71d481df4e01b189764a709ce34c",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "15"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_616d3942cac6417cbb6a54832fc68454": {
+        "id": "r_616d3942cac6417cbb6a54832fc68454",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "4.50",
+        "addr_mask": [
+          null,
+          "item_2f5f0764e01f4e93927753eab0a6d64c",
+          "item_7bb397cbd721499299f213116e30e897",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Pear"
+          ],
+          [
+            "PlantAge",
+            "16"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_89a46b4ca4144910ac9f686592a0a986": {
+        "id": "r_89a46b4ca4144910ac9f686592a0a986",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_559be8c60ba54db1b73364996a00806a",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "5"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_24e52747247e4ec29b87bdda73640ba3": {
+        "id": "r_24e52747247e4ec29b87bdda73640ba3",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_2a985a5088b94f3c8828576326d313ea",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "6"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e04a0bc0fce84730b6f55d34f9f77de5": {
+        "id": "r_e04a0bc0fce84730b6f55d34f9f77de5",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_b1bdb6894fc84db0b4aaebf658524a1f",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "7"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_72bd9afab0bb450b8037ea86d992e639": {
+        "id": "r_72bd9afab0bb450b8037ea86d992e639",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_2fb0c6a665104ac19e1ed2c906604df0",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "8"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_4841cd5f7d1f4c8f9d97c98bb617cd0f": {
+        "id": "r_4841cd5f7d1f4c8f9d97c98bb617cd0f",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_0c0eacb893de4f4482bdeffdb9e4d83f",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "9"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d4cc77ece6c34b07a22f7daa82ec6bb9": {
+        "id": "r_d4cc77ece6c34b07a22f7daa82ec6bb9",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_3bae712d96cc4eb881ea78309f2b4053",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "10"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_473c72f4f8894abc8d9a31cddafdcb63": {
+        "id": "r_473c72f4f8894abc8d9a31cddafdcb63",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_24d470234b8c48359d662d5422bdce20",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "11"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e3a101aa1b244316b69e1499554375bf": {
+        "id": "r_e3a101aa1b244316b69e1499554375bf",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_ab5465d4691f49e0909cac50a9b29594",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "12"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3ca64883c7d34f589fad75c7417fdca8": {
+        "id": "r_3ca64883c7d34f589fad75c7417fdca8",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_acc2db03b89d4d868b501d19124fb6af",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "13"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_451083d45ab14fdebb50e42d62ce9270": {
+        "id": "r_451083d45ab14fdebb50e42d62ce9270",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_41fe6fe5a33e48ccb69599c67e3b7007",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "14"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e17cb7d1a6294e22bbbb5f6be723c664": {
+        "id": "r_e17cb7d1a6294e22bbbb5f6be723c664",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_e89e71d481df4e01b189764a709ce34c",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "15"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_1f1845d347fb4731bcfddf3a3b73ee1e": {
+        "id": "r_1f1845d347fb4731bcfddf3a3b73ee1e",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "6.00",
+        "addr_mask": [
+          null,
+          "item_e548c7dac863441ea048d7cd0a357139",
+          "item_7bb397cbd721499299f213116e30e897",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Hazelnut"
+          ],
+          [
+            "PlantAge",
+            "16"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e476e63e66f04ed2940cc07e09381b73": {
+        "id": "r_e476e63e66f04ed2940cc07e09381b73",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_3bae712d96cc4eb881ea78309f2b4053",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantAge",
+            "10"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_db7fef56c87e429c9f074ed24af47e73": {
+        "id": "r_db7fef56c87e429c9f074ed24af47e73",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_24d470234b8c48359d662d5422bdce20",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantAge",
+            "11"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_93f23bc1137849528801db3478c2eeb6": {
+        "id": "r_93f23bc1137849528801db3478c2eeb6",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_ab5465d4691f49e0909cac50a9b29594",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantAge",
+            "12"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_b49bbdd28719491d8354fe20757cf7a9": {
+        "id": "r_b49bbdd28719491d8354fe20757cf7a9",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_acc2db03b89d4d868b501d19124fb6af",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantAge",
+            "13"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_42f6c1b564de4ee0806871098136fdfa": {
+        "id": "r_42f6c1b564de4ee0806871098136fdfa",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_41fe6fe5a33e48ccb69599c67e3b7007",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantAge",
+            "14"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7a2b604a2efe4ca1aae2b468219101b8": {
+        "id": "r_7a2b604a2efe4ca1aae2b468219101b8",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_e89e71d481df4e01b189764a709ce34c",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantAge",
+            "15"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_62194bf09f2843ecb5ba6facd6dfa7cc": {
+        "id": "r_62194bf09f2843ecb5ba6facd6dfa7cc",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "2.00",
+        "addr_mask": [
+          null,
+          "item_1d006de61e2c4c14804d732c5e5f02b0",
+          "item_7bb397cbd721499299f213116e30e897",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Oak"
+          ],
+          [
+            "PlantAge",
+            "16"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3b58948bc5114426b00b25b95dc399a3": {
+        "id": "r_3b58948bc5114426b00b25b95dc399a3",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_3c3d94fc2c2148fab0d7ef42d70d0f16",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "4"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5fc6eeff303b458db537f31fcd1286e6": {
+        "id": "r_5fc6eeff303b458db537f31fcd1286e6",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_559be8c60ba54db1b73364996a00806a",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "5"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_b545981628504206bc85ef2a7590641f": {
+        "id": "r_b545981628504206bc85ef2a7590641f",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_2a985a5088b94f3c8828576326d313ea",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "6"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6d0c9e5520404ffb9e16f5269645ff49": {
+        "id": "r_6d0c9e5520404ffb9e16f5269645ff49",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_b1bdb6894fc84db0b4aaebf658524a1f",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "7"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_fe36a6c888964dd48a2a35e63d8fff90": {
+        "id": "r_fe36a6c888964dd48a2a35e63d8fff90",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_2fb0c6a665104ac19e1ed2c906604df0",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "8"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0bd585679b40460eb29c2605cf118fa3": {
+        "id": "r_0bd585679b40460eb29c2605cf118fa3",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_0c0eacb893de4f4482bdeffdb9e4d83f",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "9"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_39d0051257f04add979b18373c62ca1c": {
+        "id": "r_39d0051257f04add979b18373c62ca1c",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_3bae712d96cc4eb881ea78309f2b4053",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "10"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_c836dee5aba84f339d7c366515d8c9fe": {
+        "id": "r_c836dee5aba84f339d7c366515d8c9fe",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_24d470234b8c48359d662d5422bdce20",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "11"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d0e3c594a9dd430a8d68968469abe7a8": {
+        "id": "r_d0e3c594a9dd430a8d68968469abe7a8",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_ab5465d4691f49e0909cac50a9b29594",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "12"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f330f18a707c44f9a2a70aa87de985d5": {
+        "id": "r_f330f18a707c44f9a2a70aa87de985d5",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_acc2db03b89d4d868b501d19124fb6af",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "13"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_593a8c5d0f2242ba84be0657c11cde29": {
+        "id": "r_593a8c5d0f2242ba84be0657c11cde29",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_41fe6fe5a33e48ccb69599c67e3b7007",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "14"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5f2d7c56c0144d7483a7a2ff83faeb02": {
+        "id": "r_5f2d7c56c0144d7483a7a2ff83faeb02",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_e89e71d481df4e01b189764a709ce34c",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "15"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_bdaea0079adf4f51a0156790723a4bc4": {
+        "id": "r_bdaea0079adf4f51a0156790723a4bc4",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "1.50",
+        "addr_mask": [
+          null,
+          "item_c1b5fb78607749449746d2e693051b7b",
+          "item_7bb397cbd721499299f213116e30e897",
+          "item_101e83f13d754e46ac6e3a21d56eb500"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "Willow"
+          ],
+          [
+            "PlantAge",
+            "16"
+          ],
+          [
+            "LifecycleCost",
+            "Harvesting"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_a631b308fa4a48d8837f39231d677144": {
+        "id": "r_a631b308fa4a48d8837f39231d677144",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "Inventory::[PlantData.Quantity_m2] / Inventory::[PlantData.SpacePerPlant_m2]",
+        "addr_mask": [
+          null,
+          null,
+          "item_9f522d06f75b4655b69eeeeec22c39d3"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantData",
+            "NumberOfPlants"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5809f480970b4344bcc1d3b3fcba8625": {
+        "id": "r_5809f480970b4344bcc1d3b3fcba8625",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "InitialCosts::[InitialCost.PlantMaterialCostPerUnit] * Inventory::[PlantData.NumberOfPlants] + InitialCosts::[InitialCost.LaborPerInitialPlantingAction] * Assumptions::[Assumption.HourlyRate] * Inventory::[PlantData.NumberOfPlants]",
+        "addr_mask": [
+          null,
+          null,
+          "item_20d3cb153e72439792ad665596915ef2"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalInitialCost"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2392fb45542c4cc4bfdeb02d38ba1e0f": {
+        "id": "r_2392fb45542c4cc4bfdeb02d38ba1e0f",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "SUM(LifecycleCosts::[PlantAge.*, LifecycleCost.*]) * Inventory::[PlantData.NumberOfPlants]",
+        "addr_mask": [
+          null,
+          null,
+          "item_79a8f53ee8c345b3a1b138dc5254be9d"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalLifecycleCost"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_31d5f734fe7d431680c5b5bc5f7b45a9": {
+        "id": "r_31d5f734fe7d431680c5b5bc5f7b45a9",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "Summary::[Metric.TotalInitialCost] + Summary::[Metric.TotalLifecycleCost]",
+        "addr_mask": [
+          null,
+          null,
+          "item_c2266002d5de4178bc5763967a1fc58a"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalCost"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_365a0a92dfef46009f06d1796f6567d7": {
+        "id": "r_365a0a92dfef46009f06d1796f6567d7",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "Inventory::[PlantData.NumberOfPlants]",
+        "addr_mask": [
+          null,
+          null,
+          "item_24413c38f0bc4bc6be04c21c0956ea50"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "NumberOfPlants"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7feb5fd7ee7247178c7b24bf539399cf": {
+        "id": "r_7feb5fd7ee7247178c7b24bf539399cf",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "Inventory::[PlantData.Quantity_m2]",
+        "addr_mask": [
+          null,
+          null,
+          "item_dc452695273f4afb97297c9cd7982aae"
+        ],
+        "targets": [
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalAreaM2"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f1d89dea33d74e23aa386db284be3dc4": {
+        "id": "r_f1d89dea33d74e23aa386db284be3dc4",
+        "cube_id": "cube_15af0fdd7f12407d8d019948fbd545a0",
+        "expression": "Assumptions::[Assumption.TotalAreaM2] - SUM(Summary::[Plant.*, Metric.TotalAreaM2])",
+        "addr_mask": [
+          null,
+          "item_351d25a01f6a4ad38ba8584fac68c3f7"
+        ],
+        "targets": [
+          [
+            "Check",
+            "AreaCheck"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_c1019ef367cd4e1b89d317fb8311bd48": {
+        "id": "r_c1019ef367cd4e1b89d317fb8311bd48",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantData",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_01f7dcb883c24441a3910285ae6c7c12": {
+        "id": "r_01f7dcb883c24441a3910285ae6c7c12",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantData",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_07c6f90ae4194b9fb66664cee39a0a83": {
+        "id": "r_07c6f90ae4194b9fb66664cee39a0a83",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantData",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_da163cc537ae48d3b3d41d74395c41ba": {
+        "id": "r_da163cc537ae48d3b3d41d74395c41ba",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "InitialCost",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2be9d65909d544debf69780b0352a4e1": {
+        "id": "r_2be9d65909d544debf69780b0352a4e1",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "InitialCost",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3189815ed0c645cd9a3a8285e34ae3b1": {
+        "id": "r_3189815ed0c645cd9a3a8285e34ae3b1",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "InitialCost",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_dd94bb790f694621a1a862f1043e94d2": {
+        "id": "r_dd94bb790f694621a1a862f1043e94d2",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "*"
+          ],
+          [
+            "LifecycleCost",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_4fe0b42e8805425e8e4aa45596411c82": {
+        "id": "r_4fe0b42e8805425e8e4aa45596411c82",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "*"
+          ],
+          [
+            "LifecycleCost",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_b4e9711bbdc74a37b51403dec09b11c1": {
+        "id": "r_b4e9711bbdc74a37b51403dec09b11c1",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "PlantAge",
+            "*"
+          ],
+          [
+            "LifecycleCost",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7dbfbeb285da40ec86c908e2f50b42a4": {
+        "id": "r_7dbfbeb285da40ec86c908e2f50b42a4",
+        "cube_id": "cube_c420dc8db23444af90ad910c6ca56140",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "Assumption",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7fc3b1a1b57643ec9017b954ec3b2190": {
+        "id": "r_7fc3b1a1b57643ec9017b954ec3b2190",
+        "cube_id": "cube_c420dc8db23444af90ad910c6ca56140",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Assumption",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3f5fb5baeaaa42799f6efd89dda311d6": {
+        "id": "r_3f5fb5baeaaa42799f6efd89dda311d6",
+        "cube_id": "cube_c420dc8db23444af90ad910c6ca56140",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "Assumption",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_394ef28db9ca4bec8d9c2b5f7a7d1ca6": {
+        "id": "r_394ef28db9ca4bec8d9c2b5f7a7d1ca6",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d14e9618afa24c52b267b56f39afe696": {
+        "id": "r_d14e9618afa24c52b267b56f39afe696",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_cf31550272f84af8a390dcb06cb95a98": {
+        "id": "r_cf31550272f84af8a390dcb06cb95a98",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6dd2f3c65d294610be40f125034081a8": {
+        "id": "r_6dd2f3c65d294610be40f125034081a8",
+        "cube_id": "cube_15af0fdd7f12407d8d019948fbd545a0",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "Check",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_042eba08c47e47919bd8f5bc629b5f1b": {
+        "id": "r_042eba08c47e47919bd8f5bc629b5f1b",
+        "cube_id": "cube_15af0fdd7f12407d8d019948fbd545a0",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Check",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7ab27e62ac2644618257c1453944bb19": {
+        "id": "r_7ab27e62ac2644618257c1453944bb19",
+        "cube_id": "cube_15af0fdd7f12407d8d019948fbd545a0",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "Check",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2fc73e0abafb47bd900dafe76774a35a": {
+        "id": "r_2fc73e0abafb47bd900dafe76774a35a",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          null,
+          "item_c2266002d5de4178bc5763967a1fc58a"
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalCost"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3f2992163d614e84ba09cc9c56054315": {
+        "id": "r_3f2992163d614e84ba09cc9c56054315",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "\"#e2e8f0\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          "item_c2266002d5de4178bc5763967a1fc58a"
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalCost"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_fa5c30d747f148ffbe00cbf0dfd6d635": {
+        "id": "r_fa5c30d747f148ffbe00cbf0dfd6d635",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          null,
+          "item_20d3cb153e72439792ad665596915ef2"
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalInitialCost"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ce42ffb5b1ce431bacf457c8edb581b6": {
+        "id": "r_ce42ffb5b1ce431bacf457c8edb581b6",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "\"#edf2f7\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          "item_20d3cb153e72439792ad665596915ef2"
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalInitialCost"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d1706b9dff374ad38f04db48f6bb0c6c": {
+        "id": "r_d1706b9dff374ad38f04db48f6bb0c6c",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          null,
+          "item_79a8f53ee8c345b3a1b138dc5254be9d"
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalLifecycleCost"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_04f3db93bf4e41d5865d5ef4253f110c": {
+        "id": "r_04f3db93bf4e41d5865d5ef4253f110c",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "\"#edf2f7\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          "item_79a8f53ee8c345b3a1b138dc5254be9d"
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "TotalLifecycleCost"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e7bfdff771884901be104131605e0315": {
+        "id": "r_e7bfdff771884901be104131605e0315",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          null,
+          "item_24413c38f0bc4bc6be04c21c0956ea50"
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "NumberOfPlants"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2d389cd7bd2943fa88dd7e2425b17156": {
+        "id": "r_2d389cd7bd2943fa88dd7e2425b17156",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "expression": "\"#edf2f7\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          "item_24413c38f0bc4bc6be04c21c0956ea50"
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Plant",
+            "*"
+          ],
+          [
+            "Metric",
+            "NumberOfPlants"
+          ]
+        ],
+        "is_anchored": false
+      }
+    },
+    "rule_order": [
+      "r_f691b07b45bb4ea7bee2255305e9f49f",
+      "r_6ef7b3733b3243cdbc3d6ef8dcd2c236",
+      "r_0d5706291223440e8307aa3f83d9e5ad",
+      "r_ec4b3b32d75c4957ae8eb3b2cc4b467f",
+      "r_58fcfba702284a54909c79f790f531c3",
+      "r_bda7bda8c57b4f1db2ca92f052ff4029",
+      "r_35260b9d220a4e69a55edc702647f78d",
+      "r_0c4dfbae57ba44ebba38f28fb047731c",
+      "r_f9bd17db8db34a91b0f664f243ce6753",
+      "r_6c9ec2e589a149429c3199389a08af23",
+      "r_26eae971ea0e4bd0862dbd447f42be26",
+      "r_5fcf66173dd24f3292caec4d0eca438f",
+      "r_5ae90091dfbc426d9c17475fb6ffb4da",
+      "r_f7c5e5a821334c28a3e0cdabe4dd793e",
+      "r_8d6251a3b4254325ba75463cae9867e8",
+      "r_765246f5369c4e1ba220b4f5a8247245",
+      "r_c59eaf62390f4311a032fd4c4395985a",
+      "r_242e4c7611434ef7b6b00c63985f6fe3",
+      "r_2db91d7abf534f068d97d2095a45042e",
+      "r_b900152f50a0477eada60e1b667085e0",
+      "r_6328bc4708ac4fa58edf1f9bf9b9129a",
+      "r_8599799661b34e65a8eec9d51bdac874",
+      "r_8b557dd5c0cd4466a4e76acc1b496365",
+      "r_95b56a31d39543ac995475446ebd4c5d",
+      "r_5f878c9e30af4d438ddf26020d01d5b0",
+      "r_59280e3d091d482bb42ebb9f4480aa16",
+      "r_61296ed86fc447ce83ad0684f11b0453",
+      "r_5b21f3beecb242c58d2860249cbef35f",
+      "r_918eee9f68ac4773ae2e2b04638bbb1d",
+      "r_fbbc6f1b403b4637b9d2c5c0523e8b03",
+      "r_ac196090a7c34b3093879056a1d9b99e",
+      "r_ab34af1df4c044af86311e0205e105d0",
+      "r_2a0cbfdb887c4307aa86e2c32ab7be99",
+      "r_f9b892bd3f384979a6f237f8c7610cce",
+      "r_80e0f5ecf66d4078a75ee52c90edb033",
+      "r_46f1b34d97c949228c690cdfb332382b",
+      "r_100a4d7dbc4b4850938b76e22bce980d",
+      "r_004c1ae5a5f64df6b43584becabcb6a7",
+      "r_5b12098039e449d2b9116ed68b16761a",
+      "r_fe38eaea90564db2a664bca10f0bfbb7",
+      "r_3359bfbb0fb1446e850aadcc4c29e9cc",
+      "r_645efeb4407e47ffa64eafdd23d51e2d",
+      "r_62c81bec935f46169d694d3a063072cc",
+      "r_0eb83d107b2b415caa73ed8b4e49d46d",
+      "r_4e913ef3d17941b6849688ee2a65950f",
+      "r_ccdf904b26294645900f72bffbe4fdd1",
+      "r_f1b3c793771a482f98cce13e4d103c3a",
+      "r_ef2ae2434d6344d7aebdb326882e4da4",
+      "r_9200725d423c48abb01f0c670169f0d0",
+      "r_98a8a0402f0c49baaa68133656dda107",
+      "r_d704a1054be44e679dd6ed9cc964e228",
+      "r_33542b323a0e4af7b90c1ecba1f443fd",
+      "r_0f62f85d833648ba8ebcf235c8a2c206",
+      "r_fa56a034dbb04b81bc0f5591236d064e",
+      "r_c0b65ef2610b4c8195585e87f3ccddc9",
+      "r_4aa8690eee374758a10533ac0fd2e31d",
+      "r_d4add26e54c6461e91df9d908826590d",
+      "r_2c42a30c74e64312aca3cb7fdde4a953",
+      "r_6e15757a7bf24d338db9ed63e70069a8",
+      "r_29d3c334985a44ac8279179efc162f6d",
+      "r_53ac7cc6c3ea43e69e997b804885df53",
+      "r_635167a406754f9096e083bcf39bb84a",
+      "r_d7678d54d22b43cd909ac22b30917415",
+      "r_ec9d5ae6d66249f79d6a6fc15934a722",
+      "r_99880430e04442a38d1b9d083c2cfdf9",
+      "r_90dc80a325034f85a823931ae6edc624",
+      "r_6e8b374a80554df1aeca3c7117a56e26",
+      "r_46d6edb7c8b64d468680ca0c1bb9b10e",
+      "r_bcc6954e8e52486aa0e4e96a10079939",
+      "r_6b00a5a3153547f0af0de02c28b8e59c",
+      "r_68b725ec95584a718673fb5aa076c975",
+      "r_1187c512e77048e7b54c630855429cc0",
+      "r_d892763f0dcf405ab544c54410cf2f3e",
+      "r_3a6511e3a95e4020ba855719325df177",
+      "r_0e405a44eb66416c8e8efaea46e811a9",
+      "r_693d4f753ac44927aa1aad2b0da81932",
+      "r_ccb5fc9e6c4a4865855ab3e42f261821",
+      "r_e98c0f4da94d4577adca86cfd2961747",
+      "r_37f471ff8eb346f3a01e96c9dd01e0f6",
+      "r_dc75ef9b5fc74532a4c2b490c07501d5",
+      "r_63e80e6e38fc49a4894f04174763391f",
+      "r_7c69b9f573724ba7a19afeff087f1bd8",
+      "r_1efe5b0f974d4481a81d9279782f0ecf",
+      "r_13173fe35cdb4dd3867c3972086c0889",
+      "r_cca5acf5ccae4b7791d238fb9a7cc48e",
+      "r_616d3942cac6417cbb6a54832fc68454",
+      "r_89a46b4ca4144910ac9f686592a0a986",
+      "r_24e52747247e4ec29b87bdda73640ba3",
+      "r_e04a0bc0fce84730b6f55d34f9f77de5",
+      "r_72bd9afab0bb450b8037ea86d992e639",
+      "r_4841cd5f7d1f4c8f9d97c98bb617cd0f",
+      "r_d4cc77ece6c34b07a22f7daa82ec6bb9",
+      "r_473c72f4f8894abc8d9a31cddafdcb63",
+      "r_e3a101aa1b244316b69e1499554375bf",
+      "r_3ca64883c7d34f589fad75c7417fdca8",
+      "r_451083d45ab14fdebb50e42d62ce9270",
+      "r_e17cb7d1a6294e22bbbb5f6be723c664",
+      "r_1f1845d347fb4731bcfddf3a3b73ee1e",
+      "r_e476e63e66f04ed2940cc07e09381b73",
+      "r_db7fef56c87e429c9f074ed24af47e73",
+      "r_93f23bc1137849528801db3478c2eeb6",
+      "r_b49bbdd28719491d8354fe20757cf7a9",
+      "r_42f6c1b564de4ee0806871098136fdfa",
+      "r_7a2b604a2efe4ca1aae2b468219101b8",
+      "r_62194bf09f2843ecb5ba6facd6dfa7cc",
+      "r_3b58948bc5114426b00b25b95dc399a3",
+      "r_5fc6eeff303b458db537f31fcd1286e6",
+      "r_b545981628504206bc85ef2a7590641f",
+      "r_6d0c9e5520404ffb9e16f5269645ff49",
+      "r_fe36a6c888964dd48a2a35e63d8fff90",
+      "r_0bd585679b40460eb29c2605cf118fa3",
+      "r_39d0051257f04add979b18373c62ca1c",
+      "r_c836dee5aba84f339d7c366515d8c9fe",
+      "r_d0e3c594a9dd430a8d68968469abe7a8",
+      "r_f330f18a707c44f9a2a70aa87de985d5",
+      "r_593a8c5d0f2242ba84be0657c11cde29",
+      "r_5f2d7c56c0144d7483a7a2ff83faeb02",
+      "r_bdaea0079adf4f51a0156790723a4bc4",
+      "r_a631b308fa4a48d8837f39231d677144",
+      "r_5809f480970b4344bcc1d3b3fcba8625",
+      "r_2392fb45542c4cc4bfdeb02d38ba1e0f",
+      "r_31d5f734fe7d431680c5b5bc5f7b45a9",
+      "r_365a0a92dfef46009f06d1796f6567d7",
+      "r_7feb5fd7ee7247178c7b24bf539399cf",
+      "r_f1d89dea33d74e23aa386db284be3dc4",
+      "r_c1019ef367cd4e1b89d317fb8311bd48",
+      "r_01f7dcb883c24441a3910285ae6c7c12",
+      "r_07c6f90ae4194b9fb66664cee39a0a83",
+      "r_da163cc537ae48d3b3d41d74395c41ba",
+      "r_2be9d65909d544debf69780b0352a4e1",
+      "r_3189815ed0c645cd9a3a8285e34ae3b1",
+      "r_dd94bb790f694621a1a862f1043e94d2",
+      "r_4fe0b42e8805425e8e4aa45596411c82",
+      "r_b4e9711bbdc74a37b51403dec09b11c1",
+      "r_7dbfbeb285da40ec86c908e2f50b42a4",
+      "r_7fc3b1a1b57643ec9017b954ec3b2190",
+      "r_3f5fb5baeaaa42799f6efd89dda311d6",
+      "r_394ef28db9ca4bec8d9c2b5f7a7d1ca6",
+      "r_d14e9618afa24c52b267b56f39afe696",
+      "r_cf31550272f84af8a390dcb06cb95a98",
+      "r_6dd2f3c65d294610be40f125034081a8",
+      "r_042eba08c47e47919bd8f5bc629b5f1b",
+      "r_7ab27e62ac2644618257c1453944bb19",
+      "r_2fc73e0abafb47bd900dafe76774a35a",
+      "r_3f2992163d614e84ba09cc9c56054315",
+      "r_fa5c30d747f148ffbe00cbf0dfd6d635",
+      "r_ce42ffb5b1ce431bacf457c8edb581b6",
+      "r_d1706b9dff374ad38f04db48f6bb0c6c",
+      "r_04f3db93bf4e41d5865d5ef4253f110c",
+      "r_e7bfdff771884901be104131605e0315",
+      "r_2d389cd7bd2943fa88dd7e2425b17156"
+    ],
+    "views": {
+      "view_5562fd8ed8e14b34bc8e37d31a1a2575": {
+        "id": "view_5562fd8ed8e14b34bc8e37d31a1a2575",
+        "name": "%CFG",
+        "cube_id": "cube_d492ae3f76af4970be382182c9feac3a",
+        "row_dim_ids": [
+          "dim_3a8244e5a524413491cc8038dd9bdb52"
+        ],
+        "col_dim_ids": [
+          "dim_485ddcc895944995b7f87dacc1a26d4f"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_05e57311970c48bf9a51418531acc489": {
+        "id": "view_05e57311970c48bf9a51418531acc489",
+        "name": "%SIG",
+        "cube_id": "cube_1b91382e688047a1a88e4e4fb9c7dc0b",
+        "row_dim_ids": [
+          "dim_d818abffc2f74cf4ad8d27acbb52670f"
+        ],
+        "col_dim_ids": [
+          "dim_5afd9ccf89144e908bbda046bd1d95f9"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_1a8a504465e8467c984bf196bd3fc80f": {
+        "id": "view_1a8a504465e8467c984bf196bd3fc80f",
+        "name": "%TYP",
+        "cube_id": "cube_51ac7833eac84924bab1e92dc01b8b26",
+        "row_dim_ids": [
+          "dim_fe35cd7e932948239ae776afb89703f0"
+        ],
+        "col_dim_ids": [
+          "dim_94e14f20368643f786ea44c6051b7e19"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_008faaf72dfc4796857fc7899a41c631": {
+        "id": "view_008faaf72dfc4796857fc7899a41c631",
+        "name": "%RECNOD",
+        "cube_id": "cube_9a62dc6d11af40e2a33f160074754d6c",
+        "row_dim_ids": [
+          "dim_d53042dece554c16a18f06f95c0303b0"
+        ],
+        "col_dim_ids": [
+          "dim_577c012d1877470ca8e5c17507fe947e"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_7fbd4a468ccf4a8da302eb761bdbb7c7": {
+        "id": "view_7fbd4a468ccf4a8da302eb761bdbb7c7",
+        "name": "%RECEDG",
+        "cube_id": "cube_934f496430ea45e7a355f6f7159c2748",
+        "row_dim_ids": [
+          "dim_c1475420beaf49e69b2f008b95252d9b"
+        ],
+        "col_dim_ids": [
+          "dim_66d5bdd5ac694aed8cdb8c4b068ad058"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_a18d87bb916549a1a0393e8cb6f8c102": {
+        "id": "view_a18d87bb916549a1a0393e8cb6f8c102",
+        "name": "C",
+        "cube_id": "cube_2e8d7753d4814c9f92097a6e1318d8ef",
+        "row_dim_ids": [
+          "dim_5377bec05a8c42ae8cadc4d5bb204039"
+        ],
+        "col_dim_ids": [
+          "dim_341fbe1cf1ec47f897299897a3a82942"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_5d34ab8f78d443a8b68e5766303a5f9b": {
+        "id": "view_5d34ab8f78d443a8b68e5766303a5f9b",
+        "name": "Inventory_View",
+        "cube_id": "cube_d01337103bff4a6da1af3e52bc5fbab3",
+        "row_dim_ids": [
+          "dim_fdfaa6770c704a1a922a55ab8d774006"
+        ],
+        "col_dim_ids": [
+          "dim_36ced95314224347b2c29fca798209d5"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_dcf683319e0d4ecbb68a6f2296d11f77": {
+        "id": "view_dcf683319e0d4ecbb68a6f2296d11f77",
+        "name": "InitialCosts_View",
+        "cube_id": "cube_fc26af18563742759764cb27939c1d5e",
+        "row_dim_ids": [
+          "dim_fdfaa6770c704a1a922a55ab8d774006"
+        ],
+        "col_dim_ids": [
+          "dim_b31850cc068c4d278fa3f064d2c4e56c"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {
+          "0": 138,
+          "2": 153,
+          "3": 186
+        },
+        "row_header_widths": {}
+      },
+      "view_048c24d9fa7c47cd8a0706010b14f878": {
+        "id": "view_048c24d9fa7c47cd8a0706010b14f878",
+        "name": "LifecycleCosts_View",
+        "cube_id": "cube_3da1daf8b52849ddaccfc4e50dac0371",
+        "row_dim_ids": [
+          "dim_fdfaa6770c704a1a922a55ab8d774006",
+          "dim_ac7bfb596ac340ada14e32b882468adc"
+        ],
+        "col_dim_ids": [
+          "dim_af72b96dedfa4f768a4e62c1cffa920b"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {
+          "1": 120,
+          "0": 74
+        }
+      },
+      "view_cf412326238e4e5f8b854c31109e585c": {
+        "id": "view_cf412326238e4e5f8b854c31109e585c",
+        "name": "Assumptions_View",
+        "cube_id": "cube_c420dc8db23444af90ad910c6ca56140",
+        "row_dim_ids": [
+          "dim_e09f003a499440dd9a476afbf1d76531"
+        ],
+        "col_dim_ids": [],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_382c99d5306e4525bde4159ac988af22": {
+        "id": "view_382c99d5306e4525bde4159ac988af22",
+        "name": "Summary_View",
+        "cube_id": "cube_5df0847e61f64b8aa6656890b50acef4",
+        "row_dim_ids": [
+          "dim_fdfaa6770c704a1a922a55ab8d774006"
+        ],
+        "col_dim_ids": [
+          "dim_8280b7f2882c44519bf9c74e89a75343"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {
+          "1": 111,
+          "2": 114,
+          "3": 90,
+          "4": 99
+        },
+        "row_header_widths": {}
+      },
+      "view_87e7e3ebbecb4c95a3e97826138aaaef": {
+        "id": "view_87e7e3ebbecb4c95a3e97826138aaaef",
+        "name": "Checks_View",
+        "cube_id": "cube_15af0fdd7f12407d8d019948fbd545a0",
+        "row_dim_ids": [
+          "dim_d56f778d24674f9d96e5c11f3ec41514"
+        ],
+        "col_dim_ids": [],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      }
+    },
+    "views_order": [
+      "view_5562fd8ed8e14b34bc8e37d31a1a2575",
+      "view_05e57311970c48bf9a51418531acc489",
+      "view_1a8a504465e8467c984bf196bd3fc80f",
+      "view_008faaf72dfc4796857fc7899a41c631",
+      "view_7fbd4a468ccf4a8da302eb761bdbb7c7",
+      "view_a18d87bb916549a1a0393e8cb6f8c102",
+      "view_5d34ab8f78d443a8b68e5766303a5f9b",
+      "view_dcf683319e0d4ecbb68a6f2296d11f77",
+      "view_048c24d9fa7c47cd8a0706010b14f878",
+      "view_cf412326238e4e5f8b854c31109e585c",
+      "view_382c99d5306e4525bde4159ac988af22",
+      "view_87e7e3ebbecb4c95a3e97826138aaaef"
+    ],
+    "udfs": [],
+    "active_view_id": "view_382c99d5306e4525bde4159ac988af22"
+  }
+}
