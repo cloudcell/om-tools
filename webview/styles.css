@@ -327,6 +327,39 @@ body {
 .menubar .theme-btn[aria-pressed="true"] { background: var(--panel-bg); color: var(--accent); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
 .menubar .theme-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+/* Feedback entry point, immediately left of the engine indicator. Rendered as an <a> in the
+   browser build and a <button> in the VS Code webview — one rule covers both: inherit the
+   menubar text, kill UA link/button styling, hover like a menu-item. */
+.menubar .feedback-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  margin-right: 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--menubar-text);
+  font: inherit;
+  line-height: 20px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.menubar .feedback-btn:visited { color: var(--menubar-text); }
+.menubar .feedback-btn:hover { background: var(--menu-hover); color: var(--menubar-text); }
+.menubar .feedback-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.menubar .feedback-btn .feedback-icon { display: flex; align-items: center; }
+.menubar .feedback-btn .feedback-icon svg { width: 16px; height: 16px; display: block; }
+
+/* Narrow widths: keep the icon (with tooltip + accessible name), hide the label so the
+   control compacts instead of ever being clipped off the right edge. */
+@media (max-width: 720px) {
+  .menubar .feedback-btn { padding: 0 5px; gap: 0; }
+  .menubar .feedback-btn .feedback-label { display: none; }
+}
+
 /* ---- Toolbar ---- */
 /* Compact (T-039 stage 2): the toolbar is a child of .menubar, so it has no bar of its own: no height, background or
    bottom border. It shrinks (and scrolls without a scrollbar) before it pushes the status and theme controls away. */

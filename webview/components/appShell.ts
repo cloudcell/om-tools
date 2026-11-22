@@ -1,5 +1,5 @@
 import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText, DEFAULT_LAYOUT } from "../state";
-import { DEFAULT_DOCK, type DockLayout, type DockPanelId, type DockZoneId, type UiLayout, type UiTheme } from "../../shared/messages";
+import { DEFAULT_DOCK, FEEDBACK_URL, type DockLayout, type DockPanelId, type DockZoneId, type UiLayout, type UiTheme } from "../../shared/messages";
 import { applyTheme, currentTheme } from "../theme";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, type MaterialIcon } from "../menuIcons";
@@ -484,9 +484,31 @@ export class AppShell {
       txt.textContent = s.connected ? "engine" : s.statusMessage;
       indicator.title = full;
     });
+    mb.appendChild(this.buildFeedbackControl());
     mb.appendChild(indicator);
     mb.appendChild(this.buildThemeSwitch());
     return mb;
+  }
+
+  /** Permanent one-click feedback entry point (speech-bubble icon + "Feedback"), immediately
+   *  left of the engine indicator. A real anchor in a browser host — native navigation is the
+   *  most reliable way to open a new tab (`window.open` is governed by popup blockers); a
+   *  button in the VS Code webview, where the host opens the link via `vscode.env.openExternal`.
+   *  No anchor in VS Code on purpose: the webview's own link interception plus our click would
+   *  risk opening the page twice. At narrow widths CSS hides the label; the icon stays. */
+  private buildFeedbackControl(): HTMLElement {
+    const children = [
+      el("span", { class: "feedback-icon", html: msym("comment") }),
+      el("span", { class: "feedback-label" }, ["Feedback"]),
+    ];
+    const attrs = {
+      class: "feedback-btn",
+      title: "Share feedback or suggest an improvement",
+      "aria-label": "Feedback — opens GitHub Discussions in your browser",
+    };
+    return this.store.api.supportsNativeExternalLinks
+      ? el("a", { ...attrs, href: FEEDBACK_URL, target: "_blank", rel: "noopener noreferrer" }, children)
+      : el("button", { ...attrs, type: "button", onclick: () => { void this.store.api.openFeedback(); } }, children);
   }
 
   /** Light / dark switch at the right end of the menu bar (T-039). The choice is saved with the panel sizes. */

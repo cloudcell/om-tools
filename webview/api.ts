@@ -62,6 +62,13 @@ export class OmApi {
   /** Saves only the given fields and keeps the rest (layout and theme are written by different code and
    *  must not wipe each other: `saveUiState` replaces the whole state). */
   updateUiState(patch: Partial<UiState>): void { this.t.saveUiState({ ...(this.t.loadUiState() || {}), ...patch }); }
+  /** Ask the host to open the fixed feedback destination (GitHub Discussions → Ideas).
+   *  The request carries no URL — the host owns it. Used only when the transport
+   *  cannot open links natively (`supportsNativeExternalLinks === false`); in a
+   *  real browser the feedback control is a plain anchor instead. */
+  openFeedback() { return this.t.request("openFeedback"); }
+  /** True in a real browser tab (native anchor navigation works); false in the VS Code webview. */
+  get supportsNativeExternalLinks(): boolean { return this.t.supportsNativeExternalLinks; }
 
   // ---- queries ----
   workspaceSummary(): Promise<WorkspaceSummary> { return this.t.request("query", { query_id: "workspace_summary" }); }

@@ -21,6 +21,10 @@ export interface Transport {
   loadUiState(): UiState | null;
   /** Persist UI state. Fire-and-forget: a failure only means the sizes are not remembered. */
   saveUiState(state: UiState): void;
+  /** True when the UI runs in a real browser tab: external links can be plain
+   *  `<a href target="_blank">` navigation. False in the VS Code webview, where
+   *  external opening must go through the host (`openFeedback` request). */
+  readonly supportsNativeExternalLinks: boolean;
 }
 
 /** The optional fields of a `status` message, validated (the page does not trust what it is sent more than it has to). */
@@ -72,6 +76,7 @@ export interface WebSocketLike {
  *  in-process backends. The bridge server (bridge/server.js) proxies envelopes
  *  to the om-core socket. */
 export class WebSocketTransport implements Transport {
+  readonly supportsNativeExternalLinks = true;
   private ws: WebSocket | WebSocketLike;
   private pending = new Map<string, { resolve: (v: any) => void; reject: (e: any) => void }>();
   private statusCbs = new Set<(status: string, message?: string, extra?: StatusExtra) => void>();
@@ -162,6 +167,7 @@ const UI_STATE_KEY = "omCore.uiState";
 
 /** VSCode postMessage transport. */
 export class VsCodeTransport implements Transport {
+  readonly supportsNativeExternalLinks = false;
   private vs: any;
   private pending = new Map<string, { resolve: (v: any) => void; reject: (e: any) => void }>();
   private statusCbs = new Set<(status: string, message?: string, extra?: StatusExtra) => void>();
