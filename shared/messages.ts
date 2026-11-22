@@ -2,11 +2,20 @@
  *  Kept transport-agnostic so the same webview bundle can run in a browser
  *  later (the browser transport would be a WebSocket instead of postMessage). */
 
-export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "fsList" | "setTitle" | "saveUiState" | "openFeedback";
+export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "fsList" | "setTitle" | "saveUiState" | "openFeedback" | "openExternal";
 
 /** One-click feedback: the only external destination the webview may ask the host to open.
  *  The `openFeedback` request carries no URL — the host always opens this. */
 export const FEEDBACK_URL = "https://github.com/cloudcell/om-tools/discussions/categories/ideas";
+
+/** Fixed external destinations for the menubar link buttons. `openExternal` carries a URL
+ *  but the host only opens one of these — anything else is rejected at the boundary. */
+export const LINKS = {
+  github: "https://github.com/cloudcell/om-tools",
+  discord: "https://discord.gg/GfU5ypAbaD",
+  docs: "https://cloudcell.github.io/om-docs/",
+} as const;
+export const LINK_URLS: readonly string[] = Object.values(LINKS);
 
 export interface HostRequest {
   type: "request";

@@ -360,6 +360,29 @@ body {
   .menubar .feedback-btn .feedback-label { display: none; }
 }
 
+/* External-link icon cluster (GitHub / Discord / Docs) — same chrome as .feedback-btn,
+   icon-only so the menubar stays lean; the name lives in the tooltip + aria-label. */
+.menubar .link-btns { flex: none; display: inline-flex; align-items: center; margin-right: 6px; }
+.menubar .link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--menubar-text);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.menubar .link-btn:visited { color: var(--menubar-text); }
+.menubar .link-btn:hover { background: var(--menu-hover); color: var(--menubar-text); }
+.menubar .link-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.menubar .link-btn .link-icon { display: flex; align-items: center; }
+.menubar .link-btn .link-icon svg { width: 16px; height: 16px; display: block; }
+
 /* ---- Toolbar ---- */
 /* Compact (T-039 stage 2): the toolbar is a child of .menubar, so it has no bar of its own: no height, background or
    bottom border. It shrinks (and scrolls without a scrollbar) before it pushes the status and theme controls away. */
