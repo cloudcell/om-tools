@@ -1,5 +1,6 @@
 import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText, DEFAULT_LAYOUT } from "../state";
 import { DEFAULT_DOCK, FEEDBACK_URL, LINKS, type DockLayout, type DockPanelId, type DockZoneId, type UiLayout, type UiTheme } from "../../shared/messages";
+import { parseSession, type SessionDescriptor } from "../../shared/session";
 import { applyTheme, currentTheme } from "../theme";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
@@ -98,7 +99,18 @@ const NOT_IN_MVP: Pick<MenuItem, "disabled" | "title"> = { disabled: true, title
  *  center view workspace with rule bar; right docks (Performance, Timeline);
  *  bottom rule panel; status bar. Mirrors lib_gui/app.py MainWindow. */
 export class AppShell {
-  constructor(private store: Store) { this.actions = new ModelActions(store); }
+  constructor(private store: Store) {
+    this.actions = new ModelActions(store);
+    // captureSession reads live scroll only for views that are a group's rendered tab.
+    store.scrollProbe = (viewId) => {
+      const s = store.state;
+      if (s.options.docking) {
+        const g = s.viewGroups.find((g) => g.activeTab === viewId);
+        return g ? this.viewArea?.gridFor(g.id)?.scrollOffsets() ?? null : null;
+      }
+      return s.activeView?.viewId === viewId ? this.matrixGrid.scrollOffsets() : null;
+    };
+  }
   private perf: PerformanceWatch | null = null;
   private matrixGrid = new MultilevelGrid(this.store);
   private viewArea: ViewArea | null = null;
@@ -599,6 +611,8 @@ export class AppShell {
       { icon: msym("note_add"), label: "New", fn: () => this.confirmDirty(() => this.store.newWorkspace()) },
       { icon: msym("folder_open"), label: "Open…", fn: () => this.openFile() },
       { icon: msym("grid_on"), label: "Open Example…", fn: () => this.openExample() },
+      { icon: msym("link"), label: "Open Session…", fn: () => this.openSession() },
+      { icon: msym("save"), label: "Save Session…", fn: () => this.saveSession() },
       { icon: msym("save"), label: "Save…", fn: () => this.saveFile() },
       { sep: true },
       { icon: msym("logout"), label: "Quit", fn: () => alertDialog("Quit", "Quit is handled by closing the browser tab or VS Code window.") },
@@ -876,6 +890,47 @@ export class AppShell {
     const ex = await examplePickerDialog("Open Example", CATALOG);
     if (!ex) return;
     await this.confirmDirty(() => this.store.loadWorkspaceFile(`om-example:${ex.id}`));
+  }
+
+  /** File → Open Session…: pick a `.omsession.json` link file, read it through the host
+   *  (the webview cannot touch the filesystem), parse, then apply — confirmDirty runs
+   *  before the model load exactly like File → Open. */
+  private async openSession() {
+    const pick = await this.store.api.pickFile({ mode: "open" });
+    if (!pick?.path) return;
+    const r = await this.store.api.readTextFile(pick.path).catch(() => null);
+    if (!r?.text) { await alertDialog("Open Session", "Could not read the session file."); return; }
+    const parsed = parseSession(r.text);
+    if (!parsed.ok) { await alertDialog("Open Session", parsed.error); return; }
+    await this.applySessionDescriptor(parsed.session, pick.path);
+  }
+
+  /** Load a parsed descriptor's model and overlay its UI state. Public so the web
+   *  build's `?session=`/`#session=` bootstrap can drive the same path — a fresh page
+   *  is never dirty, so confirmDirty just falls through there. */
+  async applySessionDescriptor(session: SessionDescriptor, sessionPath: string | null) {
+    await this.confirmDirty(async () => {
+      let skips: string[] = [];
+      try { skips = await this.store.applySession(session, sessionPath); }
+      catch (e: any) { await alertDialog("Open Session", e?.message || String(e)); return; }
+      if (session.theme && session.theme !== currentTheme()) {
+        applyTheme(session.theme);
+        this.store.api.updateUiState({ theme: session.theme });
+      }
+      if (skips.length)
+        await alertDialog("Session partly applied", skips.slice(0, 8).join("\n") + (skips.length > 8 ? `\n…and ${skips.length - 8} more` : ""));
+    });
+  }
+
+  /** File → Save Session…: capture live UI state into a descriptor and write it via the
+   *  host's save dialog (File System Access on web, native dialog in VS Code; the
+   *  download fallback announces itself like Save does). */
+  private async saveSession() {
+    const session = this.store.captureSession(currentTheme());
+    const suggested = this.store.fileName().replace(/\.(json|msgpack)$/i, "") + ".omsession.json";
+    const res = await this.store.api.saveTextFile(suggested, JSON.stringify(session, null, 2)).catch(() => null);
+    if (res?.downloaded)
+      await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the session was downloaded to your default Downloads folder.");
   }
 
   private async openFile() {

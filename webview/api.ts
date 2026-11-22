@@ -68,6 +68,12 @@ export class OmApi {
    *  real browser the feedback control is a plain anchor instead. */
   openFeedback() { return this.t.request("openFeedback"); }
   openExternal(url: string) { return this.t.request("openExternal", { url }); }
+  /** Host reads a picked/given text file (webview cannot touch the filesystem). */
+  readTextFile(path: string): Promise<{ text: string | null }> { return this.t.request("readTextFile", { path }); }
+  /** Host shows a save dialog, writes `text`, returns the chosen path (or download flag). */
+  saveTextFile(suggestedName: string, text: string): Promise<{ path: string | null; downloaded?: boolean }> {
+    return this.t.request("saveTextFile", { suggestedName, text });
+  }
   /** True in a real browser tab (native anchor navigation works); false in the VS Code webview. */
   get supportsNativeExternalLinks(): boolean { return this.t.supportsNativeExternalLinks; }
 

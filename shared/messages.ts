@@ -2,7 +2,7 @@
  *  Kept transport-agnostic so the same webview bundle can run in a browser
  *  later (the browser transport would be a WebSocket instead of postMessage). */
 
-export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "fsList" | "setTitle" | "saveUiState" | "openFeedback" | "openExternal";
+export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "fsList" | "setTitle" | "saveUiState" | "openFeedback" | "openExternal" | "readTextFile" | "saveTextFile";
 
 /** One-click feedback: the only external destination the webview may ask the host to open.
  *  The `openFeedback` request carries no URL — the host always opens this. */
@@ -16,6 +16,14 @@ export const LINKS = {
   docs: "https://cloudcell.github.io/om-docs/",
 } as const;
 export const LINK_URLS: readonly string[] = Object.values(LINKS);
+
+/** `readTextFile` params — the webview cannot read files itself; the host returns text.
+ *  Scoped: VS Code serves only `*.omsession.json` paths; the browser host serves the
+ *  file the user just picked. */
+export interface ReadTextFileParams { path: string }
+/** `saveTextFile` params — host picks the destination (native save dialog), writes the
+ *  text, returns the chosen path. `downloaded` = browser download fallback (no picker). */
+export interface SaveTextFileParams { suggestedName?: string; text: string }
 
 export interface HostRequest {
   type: "request";

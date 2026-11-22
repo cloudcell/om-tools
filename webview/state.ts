@@ -2,6 +2,7 @@ import { OmApi, DimSummary, DimDetail, CubeSummary, ViewSummary, ViewDetail, Cel
 import { formatCellValue } from "./formatting";
 import { alertDialog } from "./components/dialogs";
 import { DEFAULT_DOCK, DEFAULT_OPTIONS, type DockPanelId, type DockZoneId, type UiLayout, type UiOptions } from "../shared/messages";
+import { SESSION_SCHEMA, sessionModelKind, type SessionAreaNode, type SessionDescriptor, type SessionViewState } from "../shared/session";
 
 /** Default panel sizes, px (T-045); same as the CSS variables in styles.css. */
 export const DEFAULT_LAYOUT: Required<UiLayout> = {
@@ -1039,7 +1040,7 @@ export class Store {
    *  refer to the old one. Drop them, reload, then open a view as Qt does (`_reload_active_view`): the saved
    *  default view, else the first one. On Open a workspace with cubes but no views gets one
    *  (Qt `_ensure_default_view`), so the main area is not empty. */
-  private async resetWorkspaceUi(filePath: string | null, ensureView: boolean) {
+  private async resetWorkspaceUi(filePath: string | null, ensureView: boolean, autoOpen = true) {
     this.dimCache.clear();
     this.cubeCache.clear();
     Object.assign(this.state, {
@@ -1054,10 +1055,12 @@ export class Store {
       if (ensureView && await this.ensureDefaultView()) await this.refreshModel();
       await this.refreshRules();
       await this.refreshUndoState();
-      const views = this.visibleViews();
-      const saved = this.state.workspaceSummary?.saved_default_view_id;
-      const v = views.find((x) => x.id === saved) || views[0];
-      if (v) await this.openView(v.id, v.name);
+      if (autoOpen) {
+        const views = this.visibleViews();
+        const saved = this.state.workspaceSummary?.saved_default_view_id;
+        const v = views.find((x) => x.id === saved) || views[0];
+        if (v) await this.openView(v.id, v.name);
+      }
     } catch (e: any) { await alertDialog("Reload failed", e?.message || String(e)); }
   }
 
@@ -1072,6 +1075,244 @@ export class Store {
     if (!dims.length) return false;
     await this.api.createView(`View of ${cube.name}`, cube.id, [dims[0]], dims[1] ? [dims[1]] : [], ["@", ...dims.slice(2)]);
     return true;
+  }
+
+  // ---- Session descriptors (*.omsession.json) ----
+
+  /** Scroll offsets waiting for a session-restored view's first grid render — viewId → px.
+   *  Consumed by MultilevelGrid at its scroll-restore points. */
+  pendingScrollByView = new Map<string, { left: number; top: number }>();
+  /** Set by the app shell: returns a mounted grid's scroll offsets, or null when the
+   *  view is not any group's rendered tab (inactive tabs have no live scroll). */
+  scrollProbe: ((viewId: string) => { left: number; top: number } | null) | null = null;
+
+  takePendingScroll(viewId: string | null | undefined): { left: number; top: number } | null {
+    if (!viewId) return null;
+    const p = this.pendingScrollByView.get(viewId) ?? null;
+    if (p) this.pendingScrollByView.delete(viewId);
+    return p;
+  }
+
+  /** Resolve `session.model` to the `load_workspace` path arg: `om-example:` refs and
+   *  http(s) URLs pass through; a relative path resolves against the session file's
+   *  own directory (a bare filename — the web picker's shape — resolves site-relative). */
+  private sessionModelTarget(session: SessionDescriptor, sessionPath: string | null): string {
+    const kind = sessionModelKind(session.model);
+    if (kind === "example") return session.model.ref!;
+    if (kind === "url") return session.model.url!;
+    const p = session.model.path!;
+    if (/^https?:\/\//.test(p) || /^([a-zA-Z]:[\\/]|[\\/]|~)/.test(p)) return p;
+    const dir = sessionPath ? sessionPath.replace(/[\\/][^\\/]*$/, "") : "";
+    if (dir) return `${dir.replace(/[\\/]+$/, "")}/${p}`;
+    // Web: a picked session file arrives as a bare name — no directory to resolve
+    // against. Resolve site-relative instead so the backend fetches it outright:
+    // a bare name could otherwise lose to a stale pickedFile byte source.
+    if (this.api.supportsNativeExternalLinks && typeof document !== "undefined")
+      return new URL(p, document.baseURI).href;
+    return p;
+  }
+
+  /** Load the descriptor's model then overlay pane/tab/subpane/chip/selection/scroll
+   *  state. Never dirties the model; every unknown ID is skipped and reported. Returns
+   *  the skip notes (empty = fully applied). Throws on fatal model-load failures —
+   *  the caller shows the alert. */
+  async applySession(session: SessionDescriptor, sessionPath: string | null): Promise<string[]> {
+    const skips: string[] = [];
+    const target = this.sessionModelTarget(session, sessionPath);
+    // A URL reaches the engine only in the browser host (fetch → bytes); the
+    // socket/embedded engines read local paths — fail fast with a clear message.
+    if (/^https?:\/\//.test(target) && !this.api.supportsNativeExternalLinks)
+      throw new Error("URL model sources are supported in the browser build only");
+    try { await this.api.loadWorkspace(target); }
+    catch (e: any) { throw new Error(`model could not be loaded: ${e?.message || e}`); }
+    // autoOpen=false: the descriptor's own tabs open — the saved-default-view tail
+    // would flash a stray tab and load a view the session may not even list.
+    await this.resetWorkspaceUi(target, false, false);
+
+    const views = this.visibleViews();
+    const byId = new Map(views.map((v) => [v.id, v]));
+
+    // Fresh live gids — descriptor gid labels never collide with live state.
+    const gidMap = new Map<string, string>();
+    const newGroups: ViewGroupState[] = [];
+    for (const [dgid, dg] of Object.entries(session.groups ?? {})) {
+      const live = `g${++Store.gidSeq}`;
+      gidMap.set(dgid, live);
+      const tabs: { viewId: string; viewName: string }[] = [];
+      for (const vid of dg?.tabs ?? []) {
+        const sum = byId.get(vid);
+        if (sum) tabs.push({ viewId: vid, viewName: sum.name });
+        else skips.push(`view not in model: ${vid}`);
+      }
+      newGroups.push({
+        id: live, tabs,
+        activeTab: dg?.activeTab && tabs.some((t) => t.viewId === dg.activeTab) ? dg.activeTab : tabs[0]?.viewId ?? null,
+        rulesOpen: dg?.rulesOpen !== false,
+        rulesCollapsed: dg?.rulesCollapsed === true,
+        rulesH: typeof dg?.rulesH === "number" && dg.rulesH > 0 ? dg.rulesH : undefined,
+      });
+    }
+    if (!newGroups.length) newGroups.push({ id: `g${++Store.gidSeq}`, tabs: [], activeTab: null, rulesOpen: true, rulesCollapsed: false });
+
+    const mapNode = (n: SessionAreaNode | undefined): AreaNode | null => {
+      if (!n || typeof n !== "object") return null;
+      if (n.kind === "group") {
+        const live = typeof n.gid === "string" ? gidMap.get(n.gid) : undefined;
+        return live ? { kind: "group", gid: live } : null;
+      }
+      if (n.kind === "split") {
+        const children = (Array.isArray(n.children) ? n.children : []).map(mapNode).filter((c): c is AreaNode => !!c);
+        if (!children.length) return null;
+        const dir = n.dir === "y" ? "y" : "x";
+        const raw = Array.isArray(n.sizes) ? n.sizes.filter((x): x is number => typeof x === "number" && x > 0) : [];
+        const sizes = raw.length === children.length ? raw : children.map(() => 100 / children.length);
+        return { kind: "split", dir, sizes, children };
+      }
+      return null;
+    };
+    const mapped = mapNode(session.viewArea);
+    const usedGids = new Set<string>();
+    const collect = (n: AreaNode): void => { if (n.kind === "group") usedGids.add(n.gid); else n.children.forEach(collect); };
+    if (mapped) collect(mapped);
+    const area = mapped ?? { kind: "group", gid: newGroups[0].id } as AreaNode;
+    if (mapped) usedGids.size === 0 && usedGids.add(newGroups[0].id);
+    const kept = newGroups.filter((g) => !mapped || usedGids.has(g.id));
+    // Tabs of groups a partial viewArea dropped are merged into the first kept pane — never lost.
+    const dropped = newGroups.filter((g) => mapped && !usedGids.has(g.id));
+    if (dropped.length) {
+      const host = kept[0];
+      for (const g of dropped) {
+        host.tabs.push(...g.tabs.filter((t) => !host.tabs.some((h) => h.viewId === t.viewId)));
+        if (!host.activeTab && g.activeTab) host.activeTab = g.activeTab;
+      }
+      if (dropped.some((g) => g.tabs.length)) skips.push("some panes were merged — the saved layout did not reference them");
+    }
+    this.state.viewGroups = kept;
+    this.state.viewArea = area;
+    const firstGid = (n: AreaNode): string | null => n.kind === "group" ? n.gid : (n.children.map(firstGid).find(Boolean) ?? null);
+    const wantFocus = typeof session.focusedGroup === "string" ? gidMap.get(session.focusedGroup) : undefined;
+    this.state.focusedGroup = wantFocus && kept.some((g) => g.id === wantFocus) ? wantFocus : (firstGid(area) ?? kept[0].id);
+
+    // Chips first (engine-side page selection), then one loadView per unique tab —
+    // the first fetch already carries the session's selections.
+    const pendingViews = session.views ?? {};
+    const uniqueTabs = [...new Map(kept.flatMap((g) => g.tabs).map((t) => [t.viewId, t])).values()];
+    for (const t of uniqueTabs) {
+      const chips = pendingViews[t.viewId]?.chips;
+      if (!chips) continue;
+      for (const [dimId, itemId] of Object.entries(chips)) {
+        if (typeof itemId !== "string") { skips.push(`bad chip on ${t.viewId}: ${dimId}`); continue; }
+        try { await this.api.setPageItemId(t.viewId, dimId, itemId); }
+        catch { skips.push(`chip not applied on ${t.viewId}: ${dimId} → ${itemId}`); }
+      }
+    }
+    for (const t of uniqueTabs) {
+      try { await this.loadView(t.viewId); }
+      catch { skips.push(`view failed to load: ${t.viewId}`); }
+    }
+    const clamp = (x: unknown, hi: number) => typeof x === "number" && Number.isFinite(x) && x >= 0 ? Math.min(Math.floor(x), hi - 1) : 0;
+    for (const t of uniqueTabs) {
+      const sv: SessionViewState | undefined = pendingViews[t.viewId];
+      const v = this.state.viewStates[t.viewId];
+      if (!sv || !v || !v.cells) continue;
+      const sel = sv.selection;
+      if (sel && v.rowKeys.length && v.colKeys.length) {
+        if (sel.mode === "cell" || sel.mode === "row" || sel.mode === "col" || sel.mode === "all") v.selMode = sel.mode;
+        if (sel.row !== undefined) v.selectedRow = clamp(sel.row, v.rowKeys.length);
+        if (sel.col !== undefined) v.selectedCol = clamp(sel.col, v.colKeys.length);
+        if (sel.anchorRow !== undefined) v.anchorRow = clamp(sel.anchorRow, v.rowKeys.length);
+        if (sel.anchorCol !== undefined) v.anchorCol = clamp(sel.anchorCol, v.colKeys.length);
+        if (Array.isArray(sel.indices)) v.selIndices = new Set(sel.indices.filter((i): i is number => typeof i === "number"));
+      }
+      const sc = sv.scroll;
+      if (sc && (typeof sc.left === "number" || typeof sc.top === "number"))
+        this.pendingScrollByView.set(t.viewId, { left: Math.max(0, sc.left ?? 0), top: Math.max(0, sc.top ?? 0) });
+    }
+
+    // Dock zones mirror DockLayout; dockVisible derives from zone membership.
+    const dock = session.dock;
+    if (dock) {
+      const valid = new Set<DockPanelId>(["browser", "info", "format", "perf", "timeline", "rules"]);
+      const zones: DockZoneId[] = ["left", "right", "bottom"];
+      const d = this.state.layout.dock;
+      for (const z of zones) {
+        const sz = dock[z];
+        if (!sz) continue;
+        d[z].panels = (sz.panels ?? []).filter((p): p is DockPanelId => valid.has(p as DockPanelId));
+        d[z].active = d[z].panels.includes(sz.active as DockPanelId) ? sz.active as DockPanelId : d[z].panels[0] ?? null;
+      }
+      for (const [k, z] of Object.entries(dock.lastZone ?? {})) {
+        if (valid.has(k as DockPanelId) && zones.includes(z as DockZoneId)) d.lastZone[k as DockPanelId] = z as DockZoneId;
+      }
+      for (const p of ["browser", "info", "format", "perf", "timeline"] as const)
+        this.state.dockVisible[p] = zones.some((z) => d[z].panels.includes(p));
+      const szs = dock.sizes ?? {};
+      if (typeof szs.leftDockWidth === "number" && szs.leftDockWidth > 0) this.state.layout.leftDockWidth = szs.leftDockWidth;
+      if (typeof szs.rightDockWidth === "number" && szs.rightDockWidth > 0) this.state.layout.rightDockWidth = szs.rightDockWidth;
+      if (typeof szs.rulePanelHeight === "number" && szs.rulePanelHeight > 0) this.state.layout.rulePanelHeight = szs.rulePanelHeight;
+      this.saveLayout();
+    }
+
+    this.syncViewMirror();
+    this.notify();
+    return skips;
+  }
+
+  /** Live UI state → descriptor JSON. `model` points at the current file (`om-example:`
+   *  refs and URLs keep their scheme); an unsaved workspace points at a suggested name —
+   *  saving the model first gives a real path. */
+  captureSession(theme?: "light" | "dark"): SessionDescriptor {
+    const s = this.state;
+    const groups: SessionDescriptor["groups"] = {};
+    for (const g of s.viewGroups) {
+      groups[g.id] = {
+        tabs: g.tabs.map((t) => t.viewId),
+        activeTab: g.activeTab,
+        rulesOpen: g.rulesOpen,
+        rulesCollapsed: g.rulesCollapsed,
+        ...(g.rulesH !== undefined ? { rulesH: g.rulesH } : {}),
+      };
+    }
+    const views: SessionDescriptor["views"] = {};
+    for (const v of Object.values(s.viewStates)) {
+      if (v.loading || !v.cells) continue;
+      const isActive = s.viewGroups.some((g) => g.activeTab === v.viewId);
+      const scroll = isActive ? this.scrollProbe?.(v.viewId) : null;
+      views[v.viewId] = {
+        ...(Object.keys(v.pageSelections).length ? { chips: { ...v.pageSelections } } : {}),
+        ...(v.selectedRow >= 0 ? {
+          selection: {
+            mode: v.selMode, row: v.selectedRow, col: v.selectedCol,
+            anchorRow: v.anchorRow, anchorCol: v.anchorCol,
+            indices: [...v.selIndices].filter((i): i is number => typeof i === "number"),
+          },
+        } : {}),
+        ...(scroll ? { scroll } : {}),
+      };
+    }
+    const fp = s.filePath;
+    const model = fp?.startsWith("om-example:") ? { ref: fp } : /^https?:\/\//.test(fp ?? "") ? { url: fp! } : { path: fp ?? "model.json" };
+    const dock = s.layout.dock;
+    return {
+      schema: SESSION_SCHEMA,
+      model,
+      ...(theme ? { theme } : {}),
+      dock: {
+        left: { panels: [...dock.left.panels], active: dock.left.active },
+        right: { panels: [...dock.right.panels], active: dock.right.active },
+        bottom: { panels: [...dock.bottom.panels], active: dock.bottom.active },
+        lastZone: { ...dock.lastZone },
+        sizes: {
+          leftDockWidth: s.layout.leftDockWidth,
+          rightDockWidth: s.layout.rightDockWidth,
+          rulePanelHeight: s.layout.rulePanelHeight,
+        },
+      },
+      viewArea: s.viewArea as SessionAreaNode,
+      groups,
+      focusedGroup: s.focusedGroup,
+      views,
+    };
   }
 
   toggleDock(name: keyof AppState["dockVisible"]) {

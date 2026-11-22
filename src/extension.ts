@@ -578,7 +578,7 @@ function postToWebview(msg: HostToWebview) {
 async function handleRequest(req: HostRequest): Promise<HostToWebview> {
   try {
     const conn = activeConn();
-    if (!conn && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState", "openFeedback", "openExternal"].includes(req.method)) {
+    if (!conn && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState", "openFeedback", "openExternal", "readTextFile", "saveTextFile"].includes(req.method)) {
       return { type: "response", id: req.id, ok: false, error: "not connected" };
     }
     switch (req.method) {
@@ -684,6 +684,35 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         }
         void vscode.env.openExternal(vscode.Uri.parse(url));
         return { type: "response", id: req.id, ok: true };
+      }
+      case "readTextFile": {
+        // Scoped read for session descriptors — the webview cannot touch the
+        // filesystem, and we do not offer a general file-read surface.
+        const p = req.params?.path;
+        if (typeof p !== "string" || !/\.omsession\.json$/i.test(p)) {
+          return { type: "response", id: req.id, ok: false, error: "readTextFile: only *.omsession.json paths are served" };
+        }
+        try {
+          const text = await fs.promises.readFile(p, "utf8");
+          return { type: "response", id: req.id, ok: true, data: { text } };
+        } catch (e: any) {
+          return { type: "response", id: req.id, ok: false, error: `readTextFile: ${e?.message || e}` };
+        }
+      }
+      case "saveTextFile": {
+        const p = req.params;
+        if (!p || typeof p.text !== "string") {
+          return { type: "response", id: req.id, ok: false, error: "saveTextFile: missing text" };
+        }
+        const suggested = typeof p.suggestedName === "string" && /^[A-Za-z0-9_.-]+$/.test(p.suggestedName)
+          ? p.suggestedName : "session.omsession.json";
+        const uri = await vscode.window.showSaveDialog({
+          defaultUri: vscode.Uri.file(suggested),
+          filters: { "OM Session": ["omsession.json", "json"] },
+        });
+        if (!uri) return { type: "response", id: req.id, ok: true, data: { path: null } };
+        await fs.promises.writeFile(uri.fsPath, p.text, "utf8");
+        return { type: "response", id: req.id, ok: true, data: { path: uri.fsPath } };
       }
       case "pickFile": {
         const p = await pickFile((req.params || {}) as PickFileParams);

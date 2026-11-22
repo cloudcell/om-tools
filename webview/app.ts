@@ -2,6 +2,7 @@ import { OmApi } from "./api";
 import { Store } from "./state";
 import { AppShell } from "./components/appShell";
 import { applyTheme, sanitizeTheme } from "./theme";
+import { parseSession } from "../shared/session";
 import type { Transport } from "./transport";
 import "./styles.css";
 
@@ -39,6 +40,7 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
       store.setStatus(true, message || "connected");
       // A new runtime holds another model: tabs, file name and "unsaved" of the old one go (like File → New).
       (extra?.freshRuntime ? store.onRuntimeReplaced() : store.refreshModel()).catch(() => {});
+      applyPendingSession();
     } else if (status === "disconnected" || status === "error") {
       store.setStatus(false, message || status, extra?.hint);
     } else {
@@ -91,6 +93,19 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
 
   // If already connected by the time we mount (host auto-connects), load model.
   if (store.state.connected) store.refreshModel().catch(() => {});
+
+  // Web `?session=`/`#session=` links: the host stashes the fetched descriptor object on
+  // window.__omPendingSession (and fires om-session-ready if it arrives after mount).
+  // Applied once we're connected — applySessionDescriptor loads the model itself.
+  const applyPendingSession = () => {
+    const raw = (window as any).__omPendingSession;
+    if (!raw || !api.supportsNativeExternalLinks || !store.state.connected) return;
+    (window as any).__omPendingSession = null;
+    const parsed = parseSession(typeof raw === "string" ? raw : JSON.stringify(raw));
+    if (parsed.ok) void shell.applySessionDescriptor(parsed.session, null);
+  };
+  window.addEventListener("om-session-ready", applyPendingSession);
+  if (store.state.connected) applyPendingSession();
   (window as any).__om = { api, store, shell };
   return { api, store, shell };
 }

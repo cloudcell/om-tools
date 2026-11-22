@@ -91,6 +91,13 @@ export class MultilevelGrid {
   /** `gid` binds the grid to one aggregate pane (its own tab list, active tab and
    *  view state); without it the grid follows the focused group — the legacy use. */
   constructor(private store: Store, private gid?: string) {}
+
+  /** Live scroll offsets of this grid's scroll element (null when not mounted) —
+   *  session capture reads these for the view the grid currently renders. */
+  scrollOffsets(): { left: number; top: number } | null {
+    const el = this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement | null;
+    return el ? { left: el.scrollLeft, top: el.scrollTop } : null;
+  }
   root = el("div", { class: "center", tabindex: "0" }) as HTMLElement;
   private pivot = new PivotBar(this.store, this.gid);
   /** The pane this grid belongs to (its own, or the focused one when unscoped). */
@@ -266,7 +273,7 @@ export class MultilevelGrid {
     this.buildGrid(v);
     this.renderGrid(gridMount);
     const ns = gridMount.querySelector(".ml-grid-scroll") as HTMLElement | null;
-    if (ns) { ns.scrollLeft = sl; ns.scrollTop = stp; }
+    if (ns) { const p = this.store.takePendingScroll(v?.viewId); ns.scrollLeft = p?.left ?? sl; ns.scrollTop = p?.top ?? stp; }
   }
 
   // ---- Build grid entries from view data ----
@@ -846,7 +853,7 @@ export class MultilevelGrid {
     const sl = scroll.scrollLeft, stp = scroll.scrollTop;
     this.rerenderGrid();
     const ns = this.gridMount?.querySelector(".ml-grid-scroll") as HTMLElement;
-    if (ns) { ns.scrollLeft = sl; ns.scrollTop = stp; }
+    if (ns) { const p = this.store.takePendingScroll(this.store.viewOf(this.gid)?.viewId); ns.scrollLeft = p?.left ?? sl; ns.scrollTop = p?.top ?? stp; }
     this.repositionHeaderEditor();
   }
 
@@ -1562,7 +1569,7 @@ export class MultilevelGrid {
     this.buildGrid(v);
     this.renderGrid(mount);
     const ns = mount.querySelector(".ml-grid-scroll") as HTMLElement | null;
-    if (ns) { ns.scrollLeft = sl; ns.scrollTop = stp; }
+    if (ns) { const p = this.store.takePendingScroll(v?.viewId); ns.scrollLeft = p?.left ?? sl; ns.scrollTop = p?.top ?? stp; }
   }
 
   // ---- Collapse/Expand ----
