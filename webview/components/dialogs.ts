@@ -692,3 +692,81 @@ export function browseDialog(opts: {
 }
 
 function clear(node: HTMLElement) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+/** Share Session dialog (web build): two ways to hand someone a link that opens this
+ *  exact screen — a self-contained #session= link (state inside the URL, nothing to
+ *  host), or a ?session=<url> link to a self-hosted .omsession.json. Informational —
+ *  resolves when closed. `selfLink` is null when the descriptor is too big for a URL. */
+export function shareSessionDialog(opts: { selfLink: string | null; makeLink: (url: string) => string }): Promise<void> {
+  return new Promise((resolve) => {
+    const ov = ensureOverlay();
+    clear(ov);
+    const dlg = el("div", { class: "dlg", style: {
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "20px",
+      minWidth: "340px", maxWidth: "460px", boxShadow: "var(--dlg-shadow)",
+      fontFamily: "-apple-system, system-ui, sans-serif",
+    } }) as HTMLElement;
+    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "10px", color: "var(--dlg-title)" } }, ["Share Session"]));
+    dlg.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "12px", lineHeight: "1.45" } },
+      ["A session link opens this exact screen — panes, tabs, chips, selection and scroll — for anyone who clicks it."]));
+
+    const row = (label: string, value: string, readonly = true): HTMLElement => {
+      const wrap = el("div", { style: { marginBottom: "12px" } });
+      wrap.appendChild(el("div", { style: { fontSize: "12px", fontWeight: "600", marginBottom: "4px", color: "var(--dlg-title)" } }, [label]));
+      const box = el("div", { style: { display: "flex", gap: "6px" } });
+      const input = document.createElement("input") as HTMLInputElement;
+      input.type = "text"; input.value = value; input.readOnly = readonly;
+      input.style.cssText = "flex:1; box-sizing:border-box; padding:6px 10px; background:var(--input-bg); border:1px solid var(--dlg-border); border-radius:6px; font-size:12px; font-family:inherit;";
+      const copy = el("button", { style: { padding: "6px 12px", border: "1px solid var(--dlg-border)", borderRadius: "6px", background: "var(--dlg-btn-bg)", fontSize: "12px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" } }, ["Copy"]) as HTMLButtonElement;
+      copy.addEventListener("click", () => {
+        input.select();
+        const done = () => { copy.textContent = "Copied"; setTimeout(() => { copy.textContent = "Copy"; }, 1500); };
+        if (navigator.clipboard?.writeText) void navigator.clipboard.writeText(input.value).then(done, () => { document.execCommand("copy"); done(); });
+        else { document.execCommand("copy"); done(); }
+      });
+      box.appendChild(input); box.appendChild(copy);
+      wrap.appendChild(box);
+      return wrap;
+    };
+
+    if (opts.selfLink)
+      dlg.appendChild(row("Self-contained link — the session is inside the URL, nothing to host", opts.selfLink));
+
+    const hint = opts.selfLink
+      ? "Or host the session yourself: File → Save Session…, then upload the .omsession.json (and the model file) to any static host."
+      : "Host the session yourself: File → Save Session…, then upload the .omsession.json (and the model file) to any static host.";
+    dlg.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "6px", lineHeight: "1.45" } }, [hint]));
+    dlg.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "6px", lineHeight: "1.45" } },
+      ["Paste the hosted session file's URL:"]));
+
+    const urlInput = document.createElement("input") as HTMLInputElement;
+    urlInput.type = "text";
+    urlInput.placeholder = "https://your.host/my.omsession.json";
+    urlInput.style.cssText = "width:100%; box-sizing:border-box; padding:6px 10px; background:var(--input-bg); border:1px solid var(--dlg-border); border-radius:6px; font-size:12px; font-family:inherit; margin-bottom:8px;";
+    dlg.appendChild(urlInput);
+
+    const outWrap = el("div");
+    const outRow = () => {
+      clear(outWrap);
+      const u = urlInput.value.trim();
+      if (/^https?:\/\//.test(u)) outWrap.appendChild(row("Share link", opts.makeLink(u)));
+    };
+    urlInput.addEventListener("input", outRow);
+    dlg.appendChild(outWrap);
+
+    dlg.appendChild(el("div", { class: "muted", style: { fontSize: "11px", marginTop: "8px", lineHeight: "1.45" } },
+      ["The session host must allow cross-origin reads (Access-Control-Allow-Origin). A relative model.path resolves next to the session file — host them in the same directory and it just works."]));
+
+    const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: "14px" } });
+    const closeBtn = el("button", { style: { padding: "6px 16px", border: "none", borderRadius: "6px", background: "var(--dlg-primary)", color: "var(--on-accent)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500" } }, ["Done"]) as HTMLButtonElement;
+    btnRow.appendChild(closeBtn);
+    dlg.appendChild(btnRow);
+    ov.appendChild(dlg);
+    urlInput.focus();
+
+    const done = () => { closeOverlay(); resolve(); };
+    closeBtn.addEventListener("click", done);
+    dlg.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); done(); } });
+    ov.addEventListener("click", (e) => { if (e.target === ov) done(); });
+  });
+}

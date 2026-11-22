@@ -3,6 +3,7 @@ import { Store } from "./state";
 import { AppShell } from "./components/appShell";
 import { applyTheme, sanitizeTheme } from "./theme";
 import { parseSession } from "../shared/session";
+import { alertDialog } from "./components/dialogs";
 import type { Transport } from "./transport";
 import "./styles.css";
 
@@ -99,10 +100,19 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
   // Applied once we're connected — applySessionDescriptor loads the model itself.
   const applyPendingSession = () => {
     const raw = (window as any).__omPendingSession;
-    if (!raw || !api.supportsNativeExternalLinks || !store.state.connected) return;
+    const err = (window as any).__omPendingSessionError;
+    if (!api.supportsNativeExternalLinks || !store.state.connected) return;
+    if (err) {
+      (window as any).__omPendingSessionError = null;
+      void alertDialog("Session", "The session link could not be loaded.");
+      return;
+    }
+    if (!raw) return;
     (window as any).__omPendingSession = null;
     const parsed = parseSession(typeof raw === "string" ? raw : JSON.stringify(raw));
-    if (parsed.ok) void shell.applySessionDescriptor(parsed.session, null);
+    // The fetched session's own URL is the base for a relative model.path —
+    // session+model self-hosted in one directory just works.
+    if (parsed.ok) void shell.applySessionDescriptor(parsed.session, (window as any).__omPendingSessionUrl ?? null);
   };
   window.addEventListener("om-session-ready", applyPendingSession);
   if (store.state.connected) applyPendingSession();

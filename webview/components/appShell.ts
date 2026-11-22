@@ -11,7 +11,7 @@ import { StatusBar } from "./statusBar";
 import { InfoToolbox } from "./infoToolbox";
 import { FormatToolbox } from "./formatToolbox";
 import { PerformanceWatch } from "./performanceWatch";
-import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog, optionsDialog, browseDialog, examplePickerDialog, type ExampleEntry } from "./dialogs";
+import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog, optionsDialog, browseDialog, examplePickerDialog, shareSessionDialog, type ExampleEntry } from "./dialogs";
 import catalogData from "../../shared/catalog.json";
 import { Timeline } from "./timeline";
 import { ModelActions } from "./modelActions";
@@ -613,6 +613,9 @@ export class AppShell {
       { icon: msym("grid_on"), label: "Open Example…", fn: () => this.openExample() },
       { icon: msym("link"), label: "Open Session…", fn: () => this.openSession() },
       { icon: msym("save"), label: "Save Session…", fn: () => this.saveSession() },
+      ...(this.store.api.supportsNativeExternalLinks
+        ? [{ icon: msym("open_in_new"), label: "Share Session…", fn: () => this.shareSession() }]
+        : []),
       { icon: msym("save"), label: "Save…", fn: () => this.saveFile() },
       { sep: true },
       { icon: msym("logout"), label: "Quit", fn: () => alertDialog("Quit", "Quit is handled by closing the browser tab or VS Code window.") },
@@ -931,6 +934,23 @@ export class AppShell {
     const res = await this.store.api.saveTextFile(suggested, JSON.stringify(session, null, 2)).catch(() => null);
     if (res?.downloaded)
       await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the session was downloaded to your default Downloads folder.");
+  }
+
+  /** File → Share Session… (web build only — the menu item is gated on
+   *  supportsNativeExternalLinks): capture the live session and offer the two link
+   *  forms — self-contained #session=<b64> when small enough for a URL, or
+   *  ?session=<url> pointing at a self-hosted .omsession.json. */
+  private async shareSession() {
+    const session = this.store.captureSession(currentTheme());
+    const json = JSON.stringify(session);
+    // b64 must survive a URL hash and JSON can carry unicode names — encode bytes.
+    const selfLink = json.length <= 1800
+      ? `${location.origin}${location.pathname}#session=${encodeURIComponent(btoa(String.fromCharCode(...new TextEncoder().encode(json))))}`
+      : null;
+    await shareSessionDialog({
+      selfLink,
+      makeLink: (url) => `${location.origin}${location.pathname}?session=${encodeURIComponent(url)}`,
+    });
   }
 
   private async openFile() {
