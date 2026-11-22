@@ -617,7 +617,12 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         if (conn && currentSessionId) sendStatus("connected", `Connected · session ${currentSessionId.slice(0, 8)}`);
         else if (lastStatus?.status === "disconnected") sendStatus("disconnected", lastStatus.message, { hint: DISCONNECTED_HINT });
         else if (lastStatus?.status === "error") sendStatus("error", lastStatus.message);
-        return { type: "response", id: req.id, ok: true, data: getConfig() };
+        const data = getConfig();
+        // Engine build string for the status-bar version chip. Embedded: the
+        // `engine_version` session query (zig `version` RPC). Socket mode: the
+        // Python runtime has no such query — the field is simply omitted.
+        data.engine_version = await conn?.query("engine_version", {}).catch(() => undefined);
+        return { type: "response", id: req.id, ok: true, data };
       }
       case "startRuntime": {
         if (useEmbedded()) {

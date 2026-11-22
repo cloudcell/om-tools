@@ -7,3 +7,4 @@ export {
   createTransport, statusExtra, WebSocketTransport, VsCodeTransport,
   type Transport, type TransportRequest, type WebSocketLike,
 } from "./transport";
+export { guiVersion, guiVersionShort } from "./version";

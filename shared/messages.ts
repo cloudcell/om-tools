@@ -61,6 +61,8 @@ export interface AppConfig {
   serverFileBrowse?: boolean;
   /** Absolute folder for default file paths. In the bridge, relative paths for save/load resolve against it. */
   defaultDir?: string;
+  /** Connected engine's build string (zig `version` RPC), when the host can read it. */
+  engine_version?: string;
 }
 
 /** `fsList` response: directory listing for the webview's server-side file browser. */
