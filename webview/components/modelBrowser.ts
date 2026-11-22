@@ -25,12 +25,18 @@ export class ModelBrowser {
     return panel;
   }
 
+  /** Alphabetical within each group; `@` (technical channel dim) pinned first.
+   *  numeric: "Col 2" < "Col 10"; base: case-insensitive. */
+  private static byName = (a: { name: string }, b: { name: string }) =>
+    a.name === "@" ? -1 : b.name === "@" ? 1 :
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+
   private refresh(tree: HTMLElement) {
     clear(tree);
     // Dimensions root
     const dimRoot = this.makeTreeNode("Dimensions", "▦", true, () => this.dimRootMenu());
     const dimChildren = (dimRoot as any)._children as HTMLElement;
-    for (const dim of this.store.visibleDims()) {
+    for (const dim of [...this.store.visibleDims()].sort(ModelBrowser.byName)) {
       const node = this.makeTreeNode(`${dim.name} (${dim.items})`, "·", false, () => this.dimMenu(dim));
       // Sequential dimension: the same link mark as its pivot chip (issue #2; was "→").
       if (this.store.dimIsSeq(dim.id)) node.querySelector(".tree-label .tree-count")?.before(seqLinkIcon());
@@ -41,7 +47,7 @@ export class ModelBrowser {
     // Cubes root
     const cubeRoot = this.makeTreeNode("Cubes", "◼", true, () => this.cubeRootMenu());
     const cubeChildren = (cubeRoot as any)._children as HTMLElement;
-    for (const cube of this.store.visibleCubes()) {
+    for (const cube of [...this.store.visibleCubes()].sort(ModelBrowser.byName)) {
       cubeChildren.appendChild(this.makeTreeNode(`${cube.name} (${cube.dimensions})`, "·", false, () => this.cubeMenu(cube)));
     }
     tree.appendChild(cubeRoot);
@@ -49,7 +55,7 @@ export class ModelBrowser {
     // Views root
     const viewRoot = this.makeTreeNode("Views", "▲", true, () => this.viewRootMenu());
     const viewChildren = (viewRoot as any)._children as HTMLElement;
-    for (const view of this.store.visibleViews()) {
+    for (const view of [...this.store.visibleViews()].sort(ModelBrowser.byName)) {
       const viewNode = this.makeTreeNode(view.name, "·", false, () => this.viewMenu(view));
       // The view shown in the active tab gets a soft highlight (T-039 stage 3).
       if (this.store.state.activeView?.viewId === view.id) viewNode.querySelector(".tree-row")?.classList.add("active");
