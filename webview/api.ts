@@ -37,14 +37,9 @@ export interface RuleDTO {
   targets: any[]; addr_mask: any[]; specificity?: number; is_anchored?: boolean;
 }
 export interface WorkspaceRules { type: string; rules: RuleDTO[]; rule_order?: string[]; cube_ids?: string[] }
-/** Model-browser layout node: leaf `kind:id` ref or folder object. */
-export type BrowserNode = string | { name: string; children: BrowserNode[] };
-export interface BrowserTree { mode?: "flat" | "tree"; tree?: BrowserNode[] }
 export interface WorkspaceSummary {
   saved_default_view_id?: string | null;
   view_ids?: string[]; cube_ids?: string[]; dimension_ids?: string[];
-  /** Capability marker: key present (even null) = engine persists the blob; absent = unsupported. */
-  browser_tree?: BrowserTree | null;
 }
 export interface SelectionStats { sum?: number; avg?: number; count?: number; [k: string]: any }
 
@@ -109,7 +104,6 @@ export class OmApi {
   deleteRule(ruleId: string) { return this.t.request("command", { command_id: "delete_rule", params: { rule_id: ruleId } }); }
   recalc(scope = "all") { return this.t.request("command", { command_id: "run_recalculation", params: { scope } }); }
   setActiveView(viewId: string) { return this.t.request("command", { command_id: "set_active_view", params: { view_id: viewId } }); }
-  setBrowserTree(tree: BrowserTree) { return this.t.request("command", { command_id: "set_browser_tree", params: { browser_tree: tree } }); }
   moveViewDimension(viewId: string, dimId: string, dest: "row" | "col" | "page", index?: number) {
     return this.t.request("command", { command_id: "move_view_dimension", params: { view_id: viewId, dim_id: dimId, dest, index: index ?? null } });
   }
