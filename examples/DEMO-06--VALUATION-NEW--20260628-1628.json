@@ -1,0 +1,5328 @@
+{
+  "schema_version": 16,
+  "workspace": {
+    "id": "ws_d2c6f6b9d29049c281271518aed67e98",
+    "name": "Demo",
+    "dimensions": {
+      "@": {
+        "id": "@",
+        "name": "@",
+        "items": [
+          {
+            "id": "at_value",
+            "name": "value"
+          },
+          {
+            "id": "at_style",
+            "name": "style"
+          },
+          {
+            "id": "at_format_number",
+            "name": "format_number"
+          },
+          {
+            "id": "at_format_text",
+            "name": "format_text"
+          },
+          {
+            "id": "at_format_null",
+            "name": "format_null"
+          },
+          {
+            "id": "at_format_error",
+            "name": "format_error"
+          },
+          {
+            "id": "at_fill",
+            "name": "fill"
+          },
+          {
+            "id": "at_font_family",
+            "name": "font_family"
+          },
+          {
+            "id": "at_font_size",
+            "name": "font_size"
+          },
+          {
+            "id": "at_font_weight",
+            "name": "font_weight"
+          },
+          {
+            "id": "at_font_italic",
+            "name": "font_italic"
+          },
+          {
+            "id": "at_font_color",
+            "name": "font_color"
+          },
+          {
+            "id": "at_text_h_align",
+            "name": "text_h_align"
+          },
+          {
+            "id": "at_text_v_align",
+            "name": "text_v_align"
+          },
+          {
+            "id": "at_text_indent",
+            "name": "text_indent"
+          },
+          {
+            "id": "at_text_wrap",
+            "name": "text_wrap"
+          },
+          {
+            "id": "at_text_rotation",
+            "name": "text_rotation"
+          },
+          {
+            "id": "at_border_top",
+            "name": "border_top"
+          },
+          {
+            "id": "at_border_bottom",
+            "name": "border_bottom"
+          },
+          {
+            "id": "at_border_left",
+            "name": "border_left"
+          },
+          {
+            "id": "at_border_right",
+            "name": "border_right"
+          },
+          {
+            "id": "at_border_diag_up",
+            "name": "border_diag_up"
+          },
+          {
+            "id": "at_border_diag_down",
+            "name": "border_diag_down"
+          },
+          {
+            "id": "at_validation_type",
+            "name": "validation_type"
+          },
+          {
+            "id": "at_validation_rule",
+            "name": "validation_rule"
+          },
+          {
+            "id": "at_validation_message",
+            "name": "validation_message"
+          },
+          {
+            "id": "at_validation_allow_empty",
+            "name": "validation_allow_empty"
+          },
+          {
+            "id": "at_comment",
+            "name": "comment"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": true
+      },
+      "dim_da026afa0080432ea24b1eec943e2726": {
+        "id": "dim_da026afa0080432ea24b1eec943e2726",
+        "name": "%CFGITM",
+        "items": [
+          {
+            "id": "item_f7950a900d1c4d2cb3905084a4fb35c3",
+            "name": "system_table_typ"
+          },
+          {
+            "id": "item_f51c067391df44789067df2b51a571ba",
+            "name": "system_table_sig"
+          },
+          {
+            "id": "item_e474c65706ef4fcbad0b4768d9ff1086",
+            "name": "system_table_recnod"
+          },
+          {
+            "id": "item_eaab18cbd5914299a9718c5acac957f3",
+            "name": "system_table_recedg"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_a9301e05a9c84cdbbf3bb2394908e2db": {
+        "id": "dim_a9301e05a9c84cdbbf3bb2394908e2db",
+        "name": "%CFGMET",
+        "items": [
+          {
+            "id": "item_29646065ebde44319bb0487e07148af2",
+            "name": "NUL"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_897229bf1761488c9eb083f0de96751a": {
+        "id": "dim_897229bf1761488c9eb083f0de96751a",
+        "name": "%ADR",
+        "items": [
+          {
+            "id": "item_1684afa7601749de860bca081322790e",
+            "name": "ADR"
+          },
+          {
+            "id": "item_7d4ebcb1d282422a9050531144de62a0",
+            "name": "ARG"
+          },
+          {
+            "id": "item_53679acf893543a08c0faffa81e22edb",
+            "name": "SRC"
+          },
+          {
+            "id": "item_2f7bfc2199c64c3b92de772cc64168d4",
+            "name": "TGT"
+          },
+          {
+            "id": "item_633e80f23d204e0f8b9ba9da7bcd0daa",
+            "name": "FLD"
+          },
+          {
+            "id": "item_f9f426d6447a42b98fc321730079c219",
+            "name": "SIG"
+          },
+          {
+            "id": "item_deef9aa72a7d4805b8b181f275ff2913",
+            "name": "OBJ"
+          },
+          {
+            "id": "item_fc2c9f42cca1476d88bfdb21557c9202",
+            "name": "REL"
+          },
+          {
+            "id": "item_b1e1415250894d338965642587400842",
+            "name": "REI"
+          },
+          {
+            "id": "item_581c80fe1d814ebdad1c429584fe2dcb",
+            "name": "PRD"
+          },
+          {
+            "id": "item_74db4844e8c04c2588e1ecea970cf91b",
+            "name": "GRD"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_64eef4869cd14c7290eb93417e746504": {
+        "id": "dim_64eef4869cd14c7290eb93417e746504",
+        "name": "%FLD",
+        "items": [
+          {
+            "id": "item_dfd385e7c93447739537aae26b2ac1b7",
+            "name": "SRC"
+          },
+          {
+            "id": "item_70e59bc402b342d895557a1f9621dcbf",
+            "name": "TGT"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_4c704b06c00848b5b3d2a8858ef3070e": {
+        "id": "dim_4c704b06c00848b5b3d2a8858ef3070e",
+        "name": "%TYPADR",
+        "items": [
+          {
+            "id": "item_226898d6be5b4793a13bd3b7d5b59893",
+            "name": "system_type_nul"
+          },
+          {
+            "id": "item_fde723e93dcf40ddbe6377dc87d71417",
+            "name": "system_type_knd"
+          },
+          {
+            "id": "item_183de8e122b74c3fbc8dd888f068bf89",
+            "name": "system_type_dim"
+          },
+          {
+            "id": "item_d04e183d873d4afd87b15e895886a22e",
+            "name": "system_type_ref"
+          },
+          {
+            "id": "item_70dd92ca19724847810a967fba944229",
+            "name": "system_type_lbl"
+          },
+          {
+            "id": "item_3f0d4a0a7eb743d0adc3d1edc78ad099",
+            "name": "system_type_src"
+          },
+          {
+            "id": "item_36a30f2ef9a749c193adc5a72338df5f",
+            "name": "system_type_tgt"
+          },
+          {
+            "id": "item_7667852c2bea43c990391bc3e02d41ee",
+            "name": "system_type_ord"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_32f32a12da7c46e1810a405ddfa1cf78": {
+        "id": "dim_32f32a12da7c46e1810a405ddfa1cf78",
+        "name": "%TYPFLD",
+        "items": [
+          {
+            "id": "item_9345de3883164bcda0926773c6f7e66d",
+            "name": "NUL"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_f07a754e93544216a8cdfa122dd58692": {
+        "id": "dim_f07a754e93544216a8cdfa122dd58692",
+        "name": "%RECNODADR",
+        "items": [
+          {
+            "id": "item_e8862e14807f48c3b4d896c6b63901b5",
+            "name": "NUL"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_faad9f833aa84d7aa4e880edc16eeea2": {
+        "id": "dim_faad9f833aa84d7aa4e880edc16eeea2",
+        "name": "%RECNODFLD",
+        "items": [
+          {
+            "id": "item_abb0c48c6ec449b7a90d9902b520aa9d",
+            "name": "KND"
+          },
+          {
+            "id": "item_2ec8ed39d6d84e7e81c810b88a0dc575",
+            "name": "DIM"
+          },
+          {
+            "id": "item_9241370e771f45df8f4bc9933f94a255",
+            "name": "REF"
+          },
+          {
+            "id": "item_f787426f9b82499e8b3734f308d366e6",
+            "name": "LBL"
+          },
+          {
+            "id": "item_9016840687c84d0da984faa866739f95",
+            "name": "ORD"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_df80c39d568a481aa5b45d84bde7f7da": {
+        "id": "dim_df80c39d568a481aa5b45d84bde7f7da",
+        "name": "%RECEDGADR",
+        "items": [
+          {
+            "id": "item_861e7ada87dc4ee4bb86258bcbc73cf3",
+            "name": "NUL"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_734f0c14450741f2aa1301ce49702c02": {
+        "id": "dim_734f0c14450741f2aa1301ce49702c02",
+        "name": "%RECEDGFLD",
+        "items": [
+          {
+            "id": "item_bf26532531be4f11a4490c1ef6f26a1d",
+            "name": "KND"
+          },
+          {
+            "id": "item_92ec84562eed4606b66ba297bda00888",
+            "name": "SRC"
+          },
+          {
+            "id": "item_98e8ad5328ff476aa4159f15a86674b8",
+            "name": "TGT"
+          },
+          {
+            "id": "item_fc78228b65d84aa8b0ef2552679395f2",
+            "name": "DIM"
+          },
+          {
+            "id": "item_e3f7a42785e64940a958df7dfd7a0591",
+            "name": "ORD"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_693c7faa34fb450ba7c41f12614d5c4a": {
+        "id": "dim_693c7faa34fb450ba7c41f12614d5c4a",
+        "name": "A",
+        "items": [
+          {
+            "id": "item_1305b0b3e64b49c3880f0c26233ba22a",
+            "name": "8thgp"
+          },
+          {
+            "id": "item_fa5d28ecbc4a4c07a129bbbd1c2c336e",
+            "name": "5gadk"
+          },
+          {
+            "id": "item_145e6872be9b4bc8a088f31cc53e5fc4",
+            "name": "32tbx"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_7490827378c7484d908ec486e67d8547": {
+        "id": "dim_7490827378c7484d908ec486e67d8547",
+        "name": "B",
+        "items": [
+          {
+            "id": "item_01e781297ab04c87b4f784d54b22ac7c",
+            "name": "9qli8"
+          },
+          {
+            "id": "item_36feb475834a4c918485121a6b17fb6a",
+            "name": "or8da"
+          },
+          {
+            "id": "item_9402e21df34b4859846bd98c61d39ae4",
+            "name": "h9pmq"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_934e5a27bf3f41b6b37f3a6d513215ee": {
+        "id": "dim_934e5a27bf3f41b6b37f3a6d513215ee",
+        "name": "PLAccount",
+        "items": [
+          {
+            "id": "item_e826e3dddc024f9a943ca0e1e4bb5d1b",
+            "name": "Revenue"
+          },
+          {
+            "id": "item_ed1ca0fbdca34e9a89e4f4318e09046f",
+            "name": "COGS"
+          },
+          {
+            "id": "item_4ab4e3efde854402849c63264d403d9e",
+            "name": "GrossProfit"
+          },
+          {
+            "id": "item_9b8ab98f1fce4068badf24ba3bab1427",
+            "name": "SGA"
+          },
+          {
+            "id": "item_7c1de824220a40bea54d1a1599b5e266",
+            "name": "EBITDA"
+          },
+          {
+            "id": "item_cde5e085868b4d10a222a51fcbc3533b",
+            "name": "Depreciation"
+          },
+          {
+            "id": "item_7e7104155d154739be32a97a3244f789",
+            "name": "EBIT"
+          },
+          {
+            "id": "item_0d09a03e615b4d98b2bba9b8fcfc85bf",
+            "name": "InterestExpense"
+          },
+          {
+            "id": "item_f3258523486145118d05ef2828699139",
+            "name": "EBT"
+          },
+          {
+            "id": "item_e15de9494ba04e54a1505c2c95063cd3",
+            "name": "Tax"
+          },
+          {
+            "id": "item_c6582bbc57e14d648002718fb9c44557",
+            "name": "NetIncome"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_5d6a9921c6e34f4ab23cb5b0a22c8f3e": {
+        "id": "dim_5d6a9921c6e34f4ab23cb5b0a22c8f3e",
+        "name": "BSAccount",
+        "items": [
+          {
+            "id": "item_9a7ea05412b8452fb4beebc98dec123f",
+            "name": "Cash"
+          },
+          {
+            "id": "item_d234386ed38f4efda5c5fd4a1debb49a",
+            "name": "AccountsReceivable"
+          },
+          {
+            "id": "item_789de8e5f30b4f3a94b51227cc700cf0",
+            "name": "Inventory"
+          },
+          {
+            "id": "item_d0610a35fb914e3bae8024e30c65fcf2",
+            "name": "AccountsPayable"
+          },
+          {
+            "id": "item_2b467408bf534ce292d48d79c4dc2f35",
+            "name": "NetFixedAssets"
+          },
+          {
+            "id": "item_1b0a9b17b274418f8f19ef102cda94e7",
+            "name": "TotalAssets"
+          },
+          {
+            "id": "item_3a2eb58941d14375b52b95f30692e773",
+            "name": "Debt"
+          },
+          {
+            "id": "item_e98ca14b499149b6ad7477f5cfd8086b",
+            "name": "Equity"
+          },
+          {
+            "id": "item_d99c926a51924f388637ffd7de5f739c",
+            "name": "TotalLiabilitiesAndEquity"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_854f6f149a2e49198a259e5933daa632": {
+        "id": "dim_854f6f149a2e49198a259e5933daa632",
+        "name": "CFSAccount",
+        "items": [
+          {
+            "id": "item_e5896f70950a4ecda0aebc0c464cec28",
+            "name": "NetIncome"
+          },
+          {
+            "id": "item_2f122f0d74484009a9925edabf563391",
+            "name": "Depreciation"
+          },
+          {
+            "id": "item_419de11cc84f43e4a09d51b23573278c",
+            "name": "ChangeInWC"
+          },
+          {
+            "id": "item_01bcbd2970ea465096cef5afa7fd913a",
+            "name": "CapEx"
+          },
+          {
+            "id": "item_0207f5d96baa40a48c07154255a6a264",
+            "name": "FCFF"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_823263cc64c744a8bbbaeae090a03185": {
+        "id": "dim_823263cc64c744a8bbbaeae090a03185",
+        "name": "ValAccount",
+        "items": [
+          {
+            "id": "item_bee9f7f0f384491fac59547bb87cc746",
+            "name": "WACC"
+          },
+          {
+            "id": "item_4c3da58e44104a96b68df5be1594cd69",
+            "name": "CostOfEquity"
+          },
+          {
+            "id": "item_4fdce65a98e14113bd1865782e37a001",
+            "name": "CostOfDebt"
+          },
+          {
+            "id": "item_9fb18722fb8a4ae79f69e88b183ee42a",
+            "name": "DiscountFactor"
+          },
+          {
+            "id": "item_4347ff7bc75144b488b36dee628f5f32",
+            "name": "TerminalValue"
+          },
+          {
+            "id": "item_a312e46038914fe28accc154b7d30bd5",
+            "name": "PVFCFF"
+          },
+          {
+            "id": "item_e38453cf9c0046588c3ca86a35f059a4",
+            "name": "EnterpriseValue"
+          },
+          {
+            "id": "item_1f5af7091e1349b7af156d9a6ec29f94",
+            "name": "EquityValue"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_f8fe939d17f94f77ad0aa7b1bf39cd47": {
+        "id": "dim_f8fe939d17f94f77ad0aa7b1bf39cd47",
+        "name": "Check",
+        "items": [
+          {
+            "id": "item_797295809fd64a7882184adf124f26de",
+            "name": "BalanceSheetCheck"
+          },
+          {
+            "id": "item_22fdb699faae48cd8a6961cf46560a65",
+            "name": "FCFFCheck"
+          },
+          {
+            "id": "item_be83add2ad2a4cebb09c84b21ff9b1bf",
+            "name": "EnterpriseValueCheck"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_58b8084e312144ad93eba4e97be7ae6f": {
+        "id": "dim_58b8084e312144ad93eba4e97be7ae6f",
+        "name": "Driver",
+        "items": [
+          {
+            "id": "item_8f2ca7b7749c44e58fd413119d5fb3db",
+            "name": "RevenueGrowth"
+          },
+          {
+            "id": "item_9f78470291284f4b95b842fad645b86b",
+            "name": "COGSRate"
+          },
+          {
+            "id": "item_7d978bd9dcde49438cfa828905d346f4",
+            "name": "SGARate"
+          },
+          {
+            "id": "item_dac4014b2fb34c699b46252a820528c1",
+            "name": "ARDays"
+          },
+          {
+            "id": "item_bcfaf00c62eb483997017a934c25a045",
+            "name": "InventoryDays"
+          },
+          {
+            "id": "item_4fe2954943ad43109383cd4f7b8933e4",
+            "name": "APDays"
+          },
+          {
+            "id": "item_3fa6b8cd431a4b20bef8f437a811c599",
+            "name": "TaxRate"
+          },
+          {
+            "id": "item_f6f5f8a613c04905a577b72913ba1deb",
+            "name": "InterestRate"
+          },
+          {
+            "id": "item_156647fbe0784b39892887608aed782b",
+            "name": "CapEx"
+          },
+          {
+            "id": "item_e275ca3d4c2d42a28ef9d5a1f9f2f5eb",
+            "name": "UsefulLife"
+          },
+          {
+            "id": "item_aa5ecb0cd68143efa17e0c142e8efb6a",
+            "name": "Debt"
+          },
+          {
+            "id": "item_5dfa1d00f74540a89062cb17673714ea",
+            "name": "RiskFreeRate"
+          },
+          {
+            "id": "item_b8b93d754c1f48a7a1e27ef8a406332c",
+            "name": "Beta"
+          },
+          {
+            "id": "item_5186123d2c6a4b63a8f42051d4335f75",
+            "name": "MarketRiskPremium"
+          },
+          {
+            "id": "item_15fc1e38531d497187356db522362d7b",
+            "name": "TargetDE"
+          },
+          {
+            "id": "item_5bed27bee17e436ebf56fcbf600a7aaa",
+            "name": "TerminalGrowthRate"
+          },
+          {
+            "id": "item_6d056fbc7d044b37be99497e11a94e2a",
+            "name": "BaseRevenue"
+          },
+          {
+            "id": "item_750eaafc6212473983285caca1dec890",
+            "name": "BaseNetFixedAssets"
+          },
+          {
+            "id": "item_b3349cd63a21499fa30d4aaea0e63ecd",
+            "name": "BaseAccountsReceivable"
+          },
+          {
+            "id": "item_5aefc8adca6349b59ec096cc1c9b0355",
+            "name": "BaseInventory"
+          },
+          {
+            "id": "item_e1680fc7a0f14a34ab01b4650bca4b72",
+            "name": "BaseAccountsPayable"
+          },
+          {
+            "id": "item_9a40a901da59498a95a2359dd29d3181",
+            "name": "BaseEquity"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      },
+      "dim_bfc440193bc8493b82e886893938afc4": {
+        "id": "dim_bfc440193bc8493b82e886893938afc4",
+        "name": "Year",
+        "items": [
+          {
+            "id": "item_acdbaec5d577465fabd50c28808a17a0",
+            "name": "2026"
+          },
+          {
+            "id": "item_57868e7da3944986b96d8c46ff6c3187",
+            "name": "2027"
+          },
+          {
+            "id": "item_74d12cdfab2b476cbccc5a167c7f8bc9",
+            "name": "2028"
+          },
+          {
+            "id": "item_0d58dc8219e54de1ad1c8b3675b10084",
+            "name": "2029"
+          },
+          {
+            "id": "item_422b155c0d894582bfc0e6ca615e4b8e",
+            "name": "2030"
+          }
+        ],
+        "dim_type": "seq",
+        "is_technical": false
+      },
+      "dim_1914b7233dee44dfbe129b78e6619c6f": {
+        "id": "dim_1914b7233dee44dfbe129b78e6619c6f",
+        "name": "Scenario",
+        "items": [
+          {
+            "id": "item_e8086d0928cc45278c419a7bad229445",
+            "name": "Base"
+          },
+          {
+            "id": "item_e3fb0debb37f41ccb99d9aea1cb5d344",
+            "name": "Upside"
+          },
+          {
+            "id": "item_4ce15e45f712408693cb4589e708170d",
+            "name": "Downside"
+          }
+        ],
+        "dim_type": "set",
+        "is_technical": false
+      }
+    },
+    "cubes": {
+      "cube_765ba5d06363413aa4ff8608e985f579": {
+        "id": "cube_765ba5d06363413aa4ff8608e985f579",
+        "name": "%CFG",
+        "dimension_ids": [
+          "@",
+          "dim_da026afa0080432ea24b1eec943e2726",
+          "dim_a9301e05a9c84cdbbf3bb2394908e2db"
+        ],
+        "data": {
+          "at_value|item_f7950a900d1c4d2cb3905084a4fb35c3|item_29646065ebde44319bb0487e07148af2": {
+            "_type": "text",
+            "value": "%TYP",
+            "hardcoded": true
+          },
+          "at_value|item_f51c067391df44789067df2b51a571ba|item_29646065ebde44319bb0487e07148af2": {
+            "_type": "text",
+            "value": "%SIG",
+            "hardcoded": true
+          },
+          "at_value|item_e474c65706ef4fcbad0b4768d9ff1086|item_29646065ebde44319bb0487e07148af2": {
+            "_type": "text",
+            "value": "%RECNOD",
+            "hardcoded": true
+          },
+          "at_value|item_eaab18cbd5914299a9718c5acac957f3|item_29646065ebde44319bb0487e07148af2": {
+            "_type": "text",
+            "value": "%RECEDG",
+            "hardcoded": true
+          }
+        }
+      },
+      "cube_2c1a19dd067b43cbbbcd631c128b9bd3": {
+        "id": "cube_2c1a19dd067b43cbbbcd631c128b9bd3",
+        "name": "%SIG",
+        "dimension_ids": [
+          "@",
+          "dim_897229bf1761488c9eb083f0de96751a",
+          "dim_64eef4869cd14c7290eb93417e746504"
+        ],
+        "data": {
+          "at_value|item_1684afa7601749de860bca081322790e|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_1684afa7601749de860bca081322790e|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_7d4ebcb1d282422a9050531144de62a0|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_7d4ebcb1d282422a9050531144de62a0|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_53679acf893543a08c0faffa81e22edb|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_53679acf893543a08c0faffa81e22edb|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "ARG",
+            "hardcoded": true
+          },
+          "at_value|item_2f7bfc2199c64c3b92de772cc64168d4|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "ARG",
+            "hardcoded": true
+          },
+          "at_value|item_2f7bfc2199c64c3b92de772cc64168d4|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_633e80f23d204e0f8b9ba9da7bcd0daa|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_633e80f23d204e0f8b9ba9da7bcd0daa|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "ARG",
+            "hardcoded": true
+          },
+          "at_value|item_f9f426d6447a42b98fc321730079c219|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_f9f426d6447a42b98fc321730079c219|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "FLD",
+            "hardcoded": true
+          },
+          "at_value|item_deef9aa72a7d4805b8b181f275ff2913|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_deef9aa72a7d4805b8b181f275ff2913|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "SIG",
+            "hardcoded": true
+          },
+          "at_value|item_fc2c9f42cca1476d88bfdb21557c9202|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "OBJ",
+            "hardcoded": true
+          },
+          "at_value|item_fc2c9f42cca1476d88bfdb21557c9202|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "OBJ",
+            "hardcoded": true
+          },
+          "at_value|item_b1e1415250894d338965642587400842|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_b1e1415250894d338965642587400842|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "REL",
+            "hardcoded": true
+          },
+          "at_value|item_581c80fe1d814ebdad1c429584fe2dcb|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "REI",
+            "hardcoded": true
+          },
+          "at_value|item_581c80fe1d814ebdad1c429584fe2dcb|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "REI",
+            "hardcoded": true
+          },
+          "at_value|item_74db4844e8c04c2588e1ecea970cf91b|item_dfd385e7c93447739537aae26b2ac1b7": {
+            "_type": "text",
+            "value": "ADR",
+            "hardcoded": true
+          },
+          "at_value|item_74db4844e8c04c2588e1ecea970cf91b|item_70e59bc402b342d895557a1f9621dcbf": {
+            "_type": "text",
+            "value": "PRD",
+            "hardcoded": true
+          }
+        }
+      },
+      "cube_432fa0128f7d4f2db42d9bec801a59ef": {
+        "id": "cube_432fa0128f7d4f2db42d9bec801a59ef",
+        "name": "%TYP",
+        "dimension_ids": [
+          "@",
+          "dim_4c704b06c00848b5b3d2a8858ef3070e",
+          "dim_32f32a12da7c46e1810a405ddfa1cf78"
+        ],
+        "data": {
+          "at_value|item_226898d6be5b4793a13bd3b7d5b59893|item_9345de3883164bcda0926773c6f7e66d": {
+            "_type": "text",
+            "value": "NUL",
+            "hardcoded": true
+          },
+          "at_value|item_fde723e93dcf40ddbe6377dc87d71417|item_9345de3883164bcda0926773c6f7e66d": {
+            "_type": "text",
+            "value": "KND",
+            "hardcoded": true
+          },
+          "at_value|item_183de8e122b74c3fbc8dd888f068bf89|item_9345de3883164bcda0926773c6f7e66d": {
+            "_type": "text",
+            "value": "DIM",
+            "hardcoded": true
+          },
+          "at_value|item_d04e183d873d4afd87b15e895886a22e|item_9345de3883164bcda0926773c6f7e66d": {
+            "_type": "text",
+            "value": "REF",
+            "hardcoded": true
+          },
+          "at_value|item_70dd92ca19724847810a967fba944229|item_9345de3883164bcda0926773c6f7e66d": {
+            "_type": "text",
+            "value": "LBL",
+            "hardcoded": true
+          },
+          "at_value|item_3f0d4a0a7eb743d0adc3d1edc78ad099|item_9345de3883164bcda0926773c6f7e66d": {
+            "_type": "text",
+            "value": "SRC",
+            "hardcoded": true
+          },
+          "at_value|item_36a30f2ef9a749c193adc5a72338df5f|item_9345de3883164bcda0926773c6f7e66d": {
+            "_type": "text",
+            "value": "TGT",
+            "hardcoded": true
+          },
+          "at_value|item_7667852c2bea43c990391bc3e02d41ee|item_9345de3883164bcda0926773c6f7e66d": {
+            "_type": "text",
+            "value": "ORD",
+            "hardcoded": true
+          }
+        }
+      },
+      "cube_1095d92d42154f49bc0a18fe0f40ae3f": {
+        "id": "cube_1095d92d42154f49bc0a18fe0f40ae3f",
+        "name": "%RECNOD",
+        "dimension_ids": [
+          "@",
+          "dim_f07a754e93544216a8cdfa122dd58692",
+          "dim_faad9f833aa84d7aa4e880edc16eeea2"
+        ],
+        "data": {}
+      },
+      "cube_aa1cb73e790e47c2ba4b85b25edb3880": {
+        "id": "cube_aa1cb73e790e47c2ba4b85b25edb3880",
+        "name": "%RECEDG",
+        "dimension_ids": [
+          "@",
+          "dim_df80c39d568a481aa5b45d84bde7f7da",
+          "dim_734f0c14450741f2aa1301ce49702c02"
+        ],
+        "data": {}
+      },
+      "cube_7a176b339ec8403397c79cf9edb5377f": {
+        "id": "cube_7a176b339ec8403397c79cf9edb5377f",
+        "name": "C",
+        "dimension_ids": [
+          "@",
+          "dim_693c7faa34fb450ba7c41f12614d5c4a",
+          "dim_7490827378c7484d908ec486e67d8547"
+        ],
+        "data": {}
+      },
+      "cube_7a672b2f085f418db5903cd0a309c646": {
+        "id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "name": "PL",
+        "dimension_ids": [
+          "@",
+          "dim_934e5a27bf3f41b6b37f3a6d513215ee",
+          "dim_bfc440193bc8493b82e886893938afc4",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "data": {}
+      },
+      "cube_3de7963306054b35ab58dcdcca77d311": {
+        "id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "name": "BS",
+        "dimension_ids": [
+          "@",
+          "dim_5d6a9921c6e34f4ab23cb5b0a22c8f3e",
+          "dim_bfc440193bc8493b82e886893938afc4",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "data": {}
+      },
+      "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8": {
+        "id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "name": "CFS",
+        "dimension_ids": [
+          "@",
+          "dim_854f6f149a2e49198a259e5933daa632",
+          "dim_bfc440193bc8493b82e886893938afc4",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "data": {}
+      },
+      "cube_471018302c2949fb8aba6dc739c0c1cf": {
+        "id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "name": "Valuation",
+        "dimension_ids": [
+          "@",
+          "dim_823263cc64c744a8bbbaeae090a03185",
+          "dim_bfc440193bc8493b82e886893938afc4",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "data": {}
+      },
+      "cube_36873dd920ef413e8fa1a6bf11103b27": {
+        "id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "name": "Drivers",
+        "dimension_ids": [
+          "@",
+          "dim_58b8084e312144ad93eba4e97be7ae6f",
+          "dim_bfc440193bc8493b82e886893938afc4",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "data": {}
+      },
+      "cube_36c9f19899864400b0710884d4b2022c": {
+        "id": "cube_36c9f19899864400b0710884d4b2022c",
+        "name": "Checks",
+        "dimension_ids": [
+          "@",
+          "dim_f8fe939d17f94f77ad0aa7b1bf39cd47",
+          "dim_bfc440193bc8493b82e886893938afc4",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "data": {}
+      }
+    },
+    "rules": {
+      "r_2ec2f5153e8b485a9909592b2dea32ea": {
+        "id": "r_2ec2f5153e8b485a9909592b2dea32ea",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.10",
+        "addr_mask": [
+          null,
+          "item_8f2ca7b7749c44e58fd413119d5fb3db",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "RevenueGrowth"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_038f2dc4d3fb429caaf02d3937ada782": {
+        "id": "r_038f2dc4d3fb429caaf02d3937ada782",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.50",
+        "addr_mask": [
+          null,
+          "item_9f78470291284f4b95b842fad645b86b",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "COGSRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7ceb686e603645dfa303ca5144690f0c": {
+        "id": "r_7ceb686e603645dfa303ca5144690f0c",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.20",
+        "addr_mask": [
+          null,
+          "item_7d978bd9dcde49438cfa828905d346f4",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "SGARate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5c6785df6c82425f981ef1b3355e0698": {
+        "id": "r_5c6785df6c82425f981ef1b3355e0698",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "45",
+        "addr_mask": [
+          null,
+          "item_dac4014b2fb34c699b46252a820528c1",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "ARDays"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_44c4773620874e61b7937b4c400a34bf": {
+        "id": "r_44c4773620874e61b7937b4c400a34bf",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "60",
+        "addr_mask": [
+          null,
+          "item_bcfaf00c62eb483997017a934c25a045",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "InventoryDays"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_a1b1c8738cdc498488f0529767f78126": {
+        "id": "r_a1b1c8738cdc498488f0529767f78126",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "30",
+        "addr_mask": [
+          null,
+          "item_4fe2954943ad43109383cd4f7b8933e4",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "APDays"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_cabbff7eb7b544fdb5bb2e8b234be20d": {
+        "id": "r_cabbff7eb7b544fdb5bb2e8b234be20d",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.25",
+        "addr_mask": [
+          null,
+          "item_3fa6b8cd431a4b20bef8f437a811c599",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "TaxRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_8eee9f33806f4d269be371ba29b9400e": {
+        "id": "r_8eee9f33806f4d269be371ba29b9400e",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.05",
+        "addr_mask": [
+          null,
+          "item_f6f5f8a613c04905a577b72913ba1deb",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "InterestRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_81de145ac2314e1782386217fccbc57f": {
+        "id": "r_81de145ac2314e1782386217fccbc57f",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "500",
+        "addr_mask": [
+          null,
+          "item_156647fbe0784b39892887608aed782b",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "CapEx"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_dbf9c3286e6e429b97e86287dd266b06": {
+        "id": "r_dbf9c3286e6e429b97e86287dd266b06",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "10",
+        "addr_mask": [
+          null,
+          "item_e275ca3d4c2d42a28ef9d5a1f9f2f5eb",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "UsefulLife"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_96b4649acb7b47c3949dfd43c01ce3e0": {
+        "id": "r_96b4649acb7b47c3949dfd43c01ce3e0",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "5000",
+        "addr_mask": [
+          null,
+          "item_aa5ecb0cd68143efa17e0c142e8efb6a",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "Debt"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f09eadaa5a454e0487ec18bf7885ccc2": {
+        "id": "r_f09eadaa5a454e0487ec18bf7885ccc2",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.03",
+        "addr_mask": [
+          null,
+          "item_5dfa1d00f74540a89062cb17673714ea",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "RiskFreeRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_cb6e027c9d7c410f8aee896643c61d89": {
+        "id": "r_cb6e027c9d7c410f8aee896643c61d89",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "1.2",
+        "addr_mask": [
+          null,
+          "item_b8b93d754c1f48a7a1e27ef8a406332c",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "Beta"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_57d79a18a45441a0aba93068ae8a9a3b": {
+        "id": "r_57d79a18a45441a0aba93068ae8a9a3b",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.05",
+        "addr_mask": [
+          null,
+          "item_5186123d2c6a4b63a8f42051d4335f75",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "MarketRiskPremium"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3d574e30da4344ebadc70bb8fb9e0c08": {
+        "id": "r_3d574e30da4344ebadc70bb8fb9e0c08",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.50",
+        "addr_mask": [
+          null,
+          "item_15fc1e38531d497187356db522362d7b",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "TargetDE"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_31e86c552f784947b74b34e0aaa8df49": {
+        "id": "r_31e86c552f784947b74b34e0aaa8df49",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.02",
+        "addr_mask": [
+          null,
+          "item_5bed27bee17e436ebf56fcbf600a7aaa",
+          null,
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "TerminalGrowthRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_fb3d30a5b1524dfd87d090d9c567087a": {
+        "id": "r_fb3d30a5b1524dfd87d090d9c567087a",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "10000",
+        "addr_mask": [
+          null,
+          "item_6d056fbc7d044b37be99497e11a94e2a",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseRevenue"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_897cbe48a11b44d7bea7bbbb9ebd34fc": {
+        "id": "r_897cbe48a11b44d7bea7bbbb9ebd34fc",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "5000",
+        "addr_mask": [
+          null,
+          "item_750eaafc6212473983285caca1dec890",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseNetFixedAssets"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_8ffcc43bd3b745dba11e3b3fc7a391b1": {
+        "id": "r_8ffcc43bd3b745dba11e3b3fc7a391b1",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "1200",
+        "addr_mask": [
+          null,
+          "item_b3349cd63a21499fa30d4aaea0e63ecd",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseAccountsReceivable"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_8eef5152553d41c18be25285f41bd394": {
+        "id": "r_8eef5152553d41c18be25285f41bd394",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "800",
+        "addr_mask": [
+          null,
+          "item_5aefc8adca6349b59ec096cc1c9b0355",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseInventory"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_af52c4629f924c469f3a1bb6b8364009": {
+        "id": "r_af52c4629f924c469f3a1bb6b8364009",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "400",
+        "addr_mask": [
+          null,
+          "item_e1680fc7a0f14a34ab01b4650bca4b72",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseAccountsPayable"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_142c14e25d004f56b70fef84274e4366": {
+        "id": "r_142c14e25d004f56b70fef84274e4366",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "5000",
+        "addr_mask": [
+          null,
+          "item_9a40a901da59498a95a2359dd29d3181",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e8086d0928cc45278c419a7bad229445"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseEquity"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Base"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_164e5f798dfb4261ae1d1ad54037a8ea": {
+        "id": "r_164e5f798dfb4261ae1d1ad54037a8ea",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.15",
+        "addr_mask": [
+          null,
+          "item_8f2ca7b7749c44e58fd413119d5fb3db",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "RevenueGrowth"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_118129998edc4c0ba9540f4276d1918d": {
+        "id": "r_118129998edc4c0ba9540f4276d1918d",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.45",
+        "addr_mask": [
+          null,
+          "item_9f78470291284f4b95b842fad645b86b",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "COGSRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_42ded9699a724a9e92b107c8e7022ab8": {
+        "id": "r_42ded9699a724a9e92b107c8e7022ab8",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.18",
+        "addr_mask": [
+          null,
+          "item_7d978bd9dcde49438cfa828905d346f4",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "SGARate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6dbeab4465974da9b151e0ca3270f917": {
+        "id": "r_6dbeab4465974da9b151e0ca3270f917",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "35",
+        "addr_mask": [
+          null,
+          "item_dac4014b2fb34c699b46252a820528c1",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "ARDays"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_490f67f708294d529f57a90b002b41d7": {
+        "id": "r_490f67f708294d529f57a90b002b41d7",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "50",
+        "addr_mask": [
+          null,
+          "item_bcfaf00c62eb483997017a934c25a045",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "InventoryDays"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0b76f69c277c4a63aae1a6bde4fdfdc0": {
+        "id": "r_0b76f69c277c4a63aae1a6bde4fdfdc0",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "35",
+        "addr_mask": [
+          null,
+          "item_4fe2954943ad43109383cd4f7b8933e4",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "APDays"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_429f369f2d9a439da28cbfc2ef25b6ae": {
+        "id": "r_429f369f2d9a439da28cbfc2ef25b6ae",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.25",
+        "addr_mask": [
+          null,
+          "item_3fa6b8cd431a4b20bef8f437a811c599",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "TaxRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_443aa660b40145038bb75b3c3d19d3ac": {
+        "id": "r_443aa660b40145038bb75b3c3d19d3ac",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.05",
+        "addr_mask": [
+          null,
+          "item_f6f5f8a613c04905a577b72913ba1deb",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "InterestRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6898670a842c4568b0603cc2cda5772e": {
+        "id": "r_6898670a842c4568b0603cc2cda5772e",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "700",
+        "addr_mask": [
+          null,
+          "item_156647fbe0784b39892887608aed782b",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "CapEx"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ed4b2e4844fb43c3ab8a5af1a8971470": {
+        "id": "r_ed4b2e4844fb43c3ab8a5af1a8971470",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "12",
+        "addr_mask": [
+          null,
+          "item_e275ca3d4c2d42a28ef9d5a1f9f2f5eb",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "UsefulLife"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_96ad9096cf454f2680b680ff541490cc": {
+        "id": "r_96ad9096cf454f2680b680ff541490cc",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "4500",
+        "addr_mask": [
+          null,
+          "item_aa5ecb0cd68143efa17e0c142e8efb6a",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "Debt"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_c4fc607d70554da895fca82dabf0001d": {
+        "id": "r_c4fc607d70554da895fca82dabf0001d",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.03",
+        "addr_mask": [
+          null,
+          "item_5dfa1d00f74540a89062cb17673714ea",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "RiskFreeRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_60cda8ca0d4445ddb5453f96eb2fd519": {
+        "id": "r_60cda8ca0d4445ddb5453f96eb2fd519",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "1.1",
+        "addr_mask": [
+          null,
+          "item_b8b93d754c1f48a7a1e27ef8a406332c",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "Beta"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d070d693f2ba477490b0e26b76ddbe55": {
+        "id": "r_d070d693f2ba477490b0e26b76ddbe55",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.05",
+        "addr_mask": [
+          null,
+          "item_5186123d2c6a4b63a8f42051d4335f75",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "MarketRiskPremium"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_fe6729ed0f5e4db48c0a2a53b1fc94ee": {
+        "id": "r_fe6729ed0f5e4db48c0a2a53b1fc94ee",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.40",
+        "addr_mask": [
+          null,
+          "item_15fc1e38531d497187356db522362d7b",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "TargetDE"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_1d99553b06d444f7835e23347087b65b": {
+        "id": "r_1d99553b06d444f7835e23347087b65b",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.03",
+        "addr_mask": [
+          null,
+          "item_5bed27bee17e436ebf56fcbf600a7aaa",
+          null,
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "TerminalGrowthRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7739fdc68b994c0fba5d5016a1b01ab8": {
+        "id": "r_7739fdc68b994c0fba5d5016a1b01ab8",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "12000",
+        "addr_mask": [
+          null,
+          "item_6d056fbc7d044b37be99497e11a94e2a",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseRevenue"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e34e38cc828e42599657f2d8c27a0d01": {
+        "id": "r_e34e38cc828e42599657f2d8c27a0d01",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "6000",
+        "addr_mask": [
+          null,
+          "item_750eaafc6212473983285caca1dec890",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseNetFixedAssets"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_18c6706d89b94f01ab31646d90669e02": {
+        "id": "r_18c6706d89b94f01ab31646d90669e02",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "1400",
+        "addr_mask": [
+          null,
+          "item_b3349cd63a21499fa30d4aaea0e63ecd",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseAccountsReceivable"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_97734d370e664a649b5015d1bf87a604": {
+        "id": "r_97734d370e664a649b5015d1bf87a604",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "900",
+        "addr_mask": [
+          null,
+          "item_5aefc8adca6349b59ec096cc1c9b0355",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseInventory"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_139cbfd192f1410ea8b88e9090ad7188": {
+        "id": "r_139cbfd192f1410ea8b88e9090ad7188",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "500",
+        "addr_mask": [
+          null,
+          "item_e1680fc7a0f14a34ab01b4650bca4b72",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseAccountsPayable"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d678fd2186494b39971e066958bd05ab": {
+        "id": "r_d678fd2186494b39971e066958bd05ab",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "6500",
+        "addr_mask": [
+          null,
+          "item_9a40a901da59498a95a2359dd29d3181",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_e3fb0debb37f41ccb99d9aea1cb5d344"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseEquity"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Upside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_b0693cb7be8f4edc942d575e3ffaf5bf": {
+        "id": "r_b0693cb7be8f4edc942d575e3ffaf5bf",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.05",
+        "addr_mask": [
+          null,
+          "item_8f2ca7b7749c44e58fd413119d5fb3db",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "RevenueGrowth"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_cb43968ea3e94056898d84eb9fa4a62d": {
+        "id": "r_cb43968ea3e94056898d84eb9fa4a62d",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.55",
+        "addr_mask": [
+          null,
+          "item_9f78470291284f4b95b842fad645b86b",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "COGSRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_62f92d70379b41f1915f48d3e868c68d": {
+        "id": "r_62f92d70379b41f1915f48d3e868c68d",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.22",
+        "addr_mask": [
+          null,
+          "item_7d978bd9dcde49438cfa828905d346f4",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "SGARate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_fe79a5e78d834abd98f84e01a7862c44": {
+        "id": "r_fe79a5e78d834abd98f84e01a7862c44",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "55",
+        "addr_mask": [
+          null,
+          "item_dac4014b2fb34c699b46252a820528c1",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "ARDays"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_4e91ee1520a94bc0ab905e9c92be8777": {
+        "id": "r_4e91ee1520a94bc0ab905e9c92be8777",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "70",
+        "addr_mask": [
+          null,
+          "item_bcfaf00c62eb483997017a934c25a045",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "InventoryDays"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f54901fbfede4cebbd0f1b0547cc9041": {
+        "id": "r_f54901fbfede4cebbd0f1b0547cc9041",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "25",
+        "addr_mask": [
+          null,
+          "item_4fe2954943ad43109383cd4f7b8933e4",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "APDays"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ed2ce3d6d60b446281f99882f45edddf": {
+        "id": "r_ed2ce3d6d60b446281f99882f45edddf",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.25",
+        "addr_mask": [
+          null,
+          "item_3fa6b8cd431a4b20bef8f437a811c599",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "TaxRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ab74353aae364e068a4d49bf1bb16bf8": {
+        "id": "r_ab74353aae364e068a4d49bf1bb16bf8",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.06",
+        "addr_mask": [
+          null,
+          "item_f6f5f8a613c04905a577b72913ba1deb",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "InterestRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_76fdc3571c244d7eb4820689eb94ae8d": {
+        "id": "r_76fdc3571c244d7eb4820689eb94ae8d",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "300",
+        "addr_mask": [
+          null,
+          "item_156647fbe0784b39892887608aed782b",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "CapEx"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0ea24db2c3d349fdae838f38f7f163bc": {
+        "id": "r_0ea24db2c3d349fdae838f38f7f163bc",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "8",
+        "addr_mask": [
+          null,
+          "item_e275ca3d4c2d42a28ef9d5a1f9f2f5eb",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "UsefulLife"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e4ee525f4ee4447b8e2e4a906b241a37": {
+        "id": "r_e4ee525f4ee4447b8e2e4a906b241a37",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "6000",
+        "addr_mask": [
+          null,
+          "item_aa5ecb0cd68143efa17e0c142e8efb6a",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "Debt"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7cd3d4eb5e0b4068a10f1680520669fe": {
+        "id": "r_7cd3d4eb5e0b4068a10f1680520669fe",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.03",
+        "addr_mask": [
+          null,
+          "item_5dfa1d00f74540a89062cb17673714ea",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "RiskFreeRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0bef99d3b7f14fc1b1d57ab65b5e747b": {
+        "id": "r_0bef99d3b7f14fc1b1d57ab65b5e747b",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "1.4",
+        "addr_mask": [
+          null,
+          "item_b8b93d754c1f48a7a1e27ef8a406332c",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "Beta"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3df166f8b03e4cfd8dcf16038e24db1a": {
+        "id": "r_3df166f8b03e4cfd8dcf16038e24db1a",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.05",
+        "addr_mask": [
+          null,
+          "item_5186123d2c6a4b63a8f42051d4335f75",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "MarketRiskPremium"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3dc1c40e592e4e38b29b5f453f727de6": {
+        "id": "r_3dc1c40e592e4e38b29b5f453f727de6",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.70",
+        "addr_mask": [
+          null,
+          "item_15fc1e38531d497187356db522362d7b",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "TargetDE"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d7bca4aa47554064811120d4160027f2": {
+        "id": "r_d7bca4aa47554064811120d4160027f2",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "0.01",
+        "addr_mask": [
+          null,
+          "item_5bed27bee17e436ebf56fcbf600a7aaa",
+          null,
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "TerminalGrowthRate"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_695d6a2e058c4b53863de29818d24a3d": {
+        "id": "r_695d6a2e058c4b53863de29818d24a3d",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "8000",
+        "addr_mask": [
+          null,
+          "item_6d056fbc7d044b37be99497e11a94e2a",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseRevenue"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6c8a7a63a9ca4bf59b6eba4203ea564b": {
+        "id": "r_6c8a7a63a9ca4bf59b6eba4203ea564b",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "4000",
+        "addr_mask": [
+          null,
+          "item_750eaafc6212473983285caca1dec890",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseNetFixedAssets"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7391c775c8e44f4b9fa4eb4427440972": {
+        "id": "r_7391c775c8e44f4b9fa4eb4427440972",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "1000",
+        "addr_mask": [
+          null,
+          "item_b3349cd63a21499fa30d4aaea0e63ecd",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseAccountsReceivable"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_b1379555caee4ee981c237b30452d8a7": {
+        "id": "r_b1379555caee4ee981c237b30452d8a7",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "700",
+        "addr_mask": [
+          null,
+          "item_5aefc8adca6349b59ec096cc1c9b0355",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseInventory"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_327d676350d343dcb0e48fb420dfe518": {
+        "id": "r_327d676350d343dcb0e48fb420dfe518",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "300",
+        "addr_mask": [
+          null,
+          "item_e1680fc7a0f14a34ab01b4650bca4b72",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseAccountsPayable"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_87455aa3714e4d62a16395dacb6c909a": {
+        "id": "r_87455aa3714e4d62a16395dacb6c909a",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "3500",
+        "addr_mask": [
+          null,
+          "item_9a40a901da59498a95a2359dd29d3181",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          "item_4ce15e45f712408693cb4589e708170d"
+        ],
+        "targets": [
+          [
+            "Driver",
+            "BaseEquity"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "Downside"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_80a58a49a0eb4730b6509933b5b8b926": {
+        "id": "r_80a58a49a0eb4730b6509933b5b8b926",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "Drivers::[Driver.BaseRevenue]",
+        "addr_mask": [
+          null,
+          "item_e826e3dddc024f9a943ca0e1e4bb5d1b",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "Revenue"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2a2e4962b51d4494b066bfd6bd06d914": {
+        "id": "r_2a2e4962b51d4494b066bfd6bd06d914",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "PL::PLAccount.Revenue:Year[PREV] * (1 + Drivers::[Driver.RevenueGrowth])",
+        "addr_mask": [
+          null,
+          "item_e826e3dddc024f9a943ca0e1e4bb5d1b",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "Revenue"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_a42fdae0412d47619ad16fbd635f6dc9": {
+        "id": "r_a42fdae0412d47619ad16fbd635f6dc9",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "PL::[PLAccount.Revenue] * Drivers::[Driver.COGSRate]",
+        "addr_mask": [
+          null,
+          "item_ed1ca0fbdca34e9a89e4f4318e09046f",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "COGS"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_a0cff827476a458a9949cc7afd66e773": {
+        "id": "r_a0cff827476a458a9949cc7afd66e773",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "PL::[PLAccount.Revenue] - PL::[PLAccount.COGS]",
+        "addr_mask": [
+          null,
+          "item_4ab4e3efde854402849c63264d403d9e",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "GrossProfit"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_a2369985c3004aa79fb94df4e1cb20e3": {
+        "id": "r_a2369985c3004aa79fb94df4e1cb20e3",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "PL::[PLAccount.Revenue] * Drivers::[Driver.SGARate]",
+        "addr_mask": [
+          null,
+          "item_9b8ab98f1fce4068badf24ba3bab1427",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "SGA"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_41d67814c0274868b731331d1423ad1f": {
+        "id": "r_41d67814c0274868b731331d1423ad1f",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "PL::[PLAccount.GrossProfit] - PL::[PLAccount.SGA]",
+        "addr_mask": [
+          null,
+          "item_7c1de824220a40bea54d1a1599b5e266",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "EBITDA"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f877d2414ec942bba8b528d653c9aeff": {
+        "id": "r_f877d2414ec942bba8b528d653c9aeff",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "Drivers::[Driver.BaseNetFixedAssets] / Drivers::[Driver.UsefulLife]",
+        "addr_mask": [
+          null,
+          "item_cde5e085868b4d10a222a51fcbc3533b",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "Depreciation"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_96e30222b7ce4e0eb6b3949afb643934": {
+        "id": "r_96e30222b7ce4e0eb6b3949afb643934",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "BS::BSAccount.NetFixedAssets:Year[PREV] / Drivers::[Driver.UsefulLife]",
+        "addr_mask": [
+          null,
+          "item_cde5e085868b4d10a222a51fcbc3533b",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "Depreciation"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_07a235942d944efdbdc1e2cb086e27e2": {
+        "id": "r_07a235942d944efdbdc1e2cb086e27e2",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "PL::[PLAccount.EBITDA] - PL::[PLAccount.Depreciation]",
+        "addr_mask": [
+          null,
+          "item_7e7104155d154739be32a97a3244f789",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "EBIT"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_de5c417eaf4f489cb324ab902839f628": {
+        "id": "r_de5c417eaf4f489cb324ab902839f628",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "BS::[BSAccount.Debt] * Drivers::[Driver.InterestRate]",
+        "addr_mask": [
+          null,
+          "item_0d09a03e615b4d98b2bba9b8fcfc85bf",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "InterestExpense"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3310af7dd7224cf080099cd202222831": {
+        "id": "r_3310af7dd7224cf080099cd202222831",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "PL::[PLAccount.EBIT] - PL::[PLAccount.InterestExpense]",
+        "addr_mask": [
+          null,
+          "item_f3258523486145118d05ef2828699139",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "EBT"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5d3988872fbd4392b0fbc3f0c470d70f": {
+        "id": "r_5d3988872fbd4392b0fbc3f0c470d70f",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "PL::[PLAccount.EBT] * Drivers::[Driver.TaxRate]",
+        "addr_mask": [
+          null,
+          "item_e15de9494ba04e54a1505c2c95063cd3",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "Tax"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0e8ea9c327274650a7f5aa4d8e627064": {
+        "id": "r_0e8ea9c327274650a7f5aa4d8e627064",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "PL::[PLAccount.EBT] - PL::[PLAccount.Tax]",
+        "addr_mask": [
+          null,
+          "item_c6582bbc57e14d648002718fb9c44557",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "PLAccount",
+            "NetIncome"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_fda89d5f75f04f78a01c026947816952": {
+        "id": "r_fda89d5f75f04f78a01c026947816952",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "PL::[PLAccount.Revenue] * Drivers::[Driver.ARDays] / 365",
+        "addr_mask": [
+          null,
+          "item_d234386ed38f4efda5c5fd4a1debb49a",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "AccountsReceivable"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_a760196a90934b75a43b6b1114264a74": {
+        "id": "r_a760196a90934b75a43b6b1114264a74",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "PL::[PLAccount.COGS] * Drivers::[Driver.InventoryDays] / 365",
+        "addr_mask": [
+          null,
+          "item_789de8e5f30b4f3a94b51227cc700cf0",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "Inventory"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e1f0cfbc4b80484c91ef2fe9791c436e": {
+        "id": "r_e1f0cfbc4b80484c91ef2fe9791c436e",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "PL::[PLAccount.COGS] * Drivers::[Driver.APDays] / 365",
+        "addr_mask": [
+          null,
+          "item_d0610a35fb914e3bae8024e30c65fcf2",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "AccountsPayable"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6c3cd95b975447198a53041af5503e7e": {
+        "id": "r_6c3cd95b975447198a53041af5503e7e",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "Drivers::[Driver.BaseNetFixedAssets] + Drivers::[Driver.CapEx] - PL::[PLAccount.Depreciation]",
+        "addr_mask": [
+          null,
+          "item_2b467408bf534ce292d48d79c4dc2f35",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "NetFixedAssets"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_284f60704d194387a671cb5cfa34ddb7": {
+        "id": "r_284f60704d194387a671cb5cfa34ddb7",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "BS::BSAccount.NetFixedAssets:Year[PREV] + Drivers::[Driver.CapEx] - PL::[PLAccount.Depreciation]",
+        "addr_mask": [
+          null,
+          "item_2b467408bf534ce292d48d79c4dc2f35",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "NetFixedAssets"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_59f4a8d267144f448d82b8e548f99db5": {
+        "id": "r_59f4a8d267144f448d82b8e548f99db5",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "Drivers::[Driver.Debt]",
+        "addr_mask": [
+          null,
+          "item_3a2eb58941d14375b52b95f30692e773",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "Debt"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_42daa8dd66c0452daf138a53c492a924": {
+        "id": "r_42daa8dd66c0452daf138a53c492a924",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "Drivers::[Driver.BaseEquity] + PL::[PLAccount.NetIncome]",
+        "addr_mask": [
+          null,
+          "item_e98ca14b499149b6ad7477f5cfd8086b",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "Equity"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_61a90ae3fc0c4fd1b841a1d48c9e91f6": {
+        "id": "r_61a90ae3fc0c4fd1b841a1d48c9e91f6",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "BS::BSAccount.Equity:Year[PREV] + PL::[PLAccount.NetIncome]",
+        "addr_mask": [
+          null,
+          "item_e98ca14b499149b6ad7477f5cfd8086b",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "Equity"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e252e16f98d449429b5808cbde3117e2": {
+        "id": "r_e252e16f98d449429b5808cbde3117e2",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "BS::[BSAccount.AccountsPayable] + BS::[BSAccount.Debt] + BS::[BSAccount.Equity] - BS::[BSAccount.AccountsReceivable] - BS::[BSAccount.Inventory] - BS::[BSAccount.NetFixedAssets]",
+        "addr_mask": [
+          null,
+          "item_9a7ea05412b8452fb4beebc98dec123f",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "Cash"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5168388fac8444a68f1686b5e400d6fa": {
+        "id": "r_5168388fac8444a68f1686b5e400d6fa",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "BS::[BSAccount.Cash] + BS::[BSAccount.AccountsReceivable] + BS::[BSAccount.Inventory] + BS::[BSAccount.NetFixedAssets]",
+        "addr_mask": [
+          null,
+          "item_1b0a9b17b274418f8f19ef102cda94e7",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "TotalAssets"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2802a94c10a7481a880cf4cbfd6f64b8": {
+        "id": "r_2802a94c10a7481a880cf4cbfd6f64b8",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "BS::[BSAccount.AccountsPayable] + BS::[BSAccount.Debt] + BS::[BSAccount.Equity]",
+        "addr_mask": [
+          null,
+          "item_d99c926a51924f388637ffd7de5f739c",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "BSAccount",
+            "TotalLiabilitiesAndEquity"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_667c3b77a3984b858c3ef55ca4ff866f": {
+        "id": "r_667c3b77a3984b858c3ef55ca4ff866f",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "PL::[PLAccount.NetIncome]",
+        "addr_mask": [
+          null,
+          "item_e5896f70950a4ecda0aebc0c464cec28",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "CFSAccount",
+            "NetIncome"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_25074859f61443629c8d274b2a801742": {
+        "id": "r_25074859f61443629c8d274b2a801742",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "PL::[PLAccount.Depreciation]",
+        "addr_mask": [
+          null,
+          "item_2f122f0d74484009a9925edabf563391",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "CFSAccount",
+            "Depreciation"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_15e8076cbf4a402d8eb7aa6d03cf1eee": {
+        "id": "r_15e8076cbf4a402d8eb7aa6d03cf1eee",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "(BS::[BSAccount.AccountsReceivable] + BS::[BSAccount.Inventory] - BS::[BSAccount.AccountsPayable]) - (Drivers::[Driver.BaseAccountsReceivable] + Drivers::[Driver.BaseInventory] - Drivers::[Driver.BaseAccountsPayable])",
+        "addr_mask": [
+          null,
+          "item_419de11cc84f43e4a09d51b23573278c",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          null
+        ],
+        "targets": [
+          [
+            "CFSAccount",
+            "ChangeInWC"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ce6c9c05272f4c8892084213f6176b94": {
+        "id": "r_ce6c9c05272f4c8892084213f6176b94",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "(BS::[BSAccount.AccountsReceivable] + BS::[BSAccount.Inventory] - BS::[BSAccount.AccountsPayable]) - (BS::BSAccount.AccountsReceivable:Year[PREV] + BS::BSAccount.Inventory:Year[PREV] - BS::BSAccount.AccountsPayable:Year[PREV])",
+        "addr_mask": [
+          null,
+          "item_419de11cc84f43e4a09d51b23573278c",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "CFSAccount",
+            "ChangeInWC"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_8f92f2799f174e6898604cdc78cf5220": {
+        "id": "r_8f92f2799f174e6898604cdc78cf5220",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "Drivers::[Driver.CapEx]",
+        "addr_mask": [
+          null,
+          "item_01bcbd2970ea465096cef5afa7fd913a",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "CFSAccount",
+            "CapEx"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_c694a31b02c8405ea426e61540dd5732": {
+        "id": "r_c694a31b02c8405ea426e61540dd5732",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "CFS::[CFSAccount.NetIncome] + CFS::[CFSAccount.Depreciation] - CFS::[CFSAccount.ChangeInWC] - CFS::[CFSAccount.CapEx]",
+        "addr_mask": [
+          null,
+          "item_0207f5d96baa40a48c07154255a6a264",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "CFSAccount",
+            "FCFF"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_54a8156dc0ac4466acb60431be834b4a": {
+        "id": "r_54a8156dc0ac4466acb60431be834b4a",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "Drivers::[Driver.RiskFreeRate] + Drivers::[Driver.Beta] * Drivers::[Driver.MarketRiskPremium]",
+        "addr_mask": [
+          null,
+          "item_4c3da58e44104a96b68df5be1594cd69",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "CostOfEquity"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_689002c99c7d40e18702957d0cdf8362": {
+        "id": "r_689002c99c7d40e18702957d0cdf8362",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "Drivers::[Driver.InterestRate] * (1 - Drivers::[Driver.TaxRate])",
+        "addr_mask": [
+          null,
+          "item_4fdce65a98e14113bd1865782e37a001",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "CostOfDebt"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_4036f501136b4eaab80677bc5f8f77a9": {
+        "id": "r_4036f501136b4eaab80677bc5f8f77a9",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "(1 / (1 + Drivers::[Driver.TargetDE])) * Valuation::[ValAccount.CostOfEquity] + (Drivers::[Driver.TargetDE] / (1 + Drivers::[Driver.TargetDE])) * Valuation::[ValAccount.CostOfDebt]",
+        "addr_mask": [
+          null,
+          "item_bee9f7f0f384491fac59547bb87cc746",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "WACC"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_79f1e17b192346f0bf387eb7f684fca0": {
+        "id": "r_79f1e17b192346f0bf387eb7f684fca0",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "1 / (1 + Valuation::[ValAccount.WACC])",
+        "addr_mask": [
+          null,
+          "item_9fb18722fb8a4ae79f69e88b183ee42a",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "DiscountFactor"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_3743a0857ca14c9d923a2f64c4d376da": {
+        "id": "r_3743a0857ca14c9d923a2f64c4d376da",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "Valuation::ValAccount.DiscountFactor:Year[PREV] / (1 + Valuation::[ValAccount.WACC])",
+        "addr_mask": [
+          null,
+          "item_9fb18722fb8a4ae79f69e88b183ee42a",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "DiscountFactor"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_bb9a5babd4e74c1f8771689d4081c50c": {
+        "id": "r_bb9a5babd4e74c1f8771689d4081c50c",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "CFS::CFSAccount.FCFF:Year.2030 * (1 + Drivers::[Driver.TerminalGrowthRate]) / (Valuation::[ValAccount.WACC] - Drivers::[Driver.TerminalGrowthRate])",
+        "addr_mask": [
+          null,
+          "item_4347ff7bc75144b488b36dee628f5f32",
+          "item_422b155c0d894582bfc0e6ca615e4b8e",
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "TerminalValue"
+          ],
+          [
+            "Year",
+            "2030"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_762b305693c9405abe1339a925bc8e12": {
+        "id": "r_762b305693c9405abe1339a925bc8e12",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "CFS::[CFSAccount.FCFF] * Valuation::[ValAccount.DiscountFactor]",
+        "addr_mask": [
+          null,
+          "item_a312e46038914fe28accc154b7d30bd5",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "PVFCFF"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_9cdb3b6566da4cdd92f7b4850a4f02a1": {
+        "id": "r_9cdb3b6566da4cdd92f7b4850a4f02a1",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "(CFS::CFSAccount.FCFF:Year.2030 + Valuation::ValAccount.TerminalValue:Year.2030) * Valuation::ValAccount.DiscountFactor:Year.2030",
+        "addr_mask": [
+          null,
+          "item_a312e46038914fe28accc154b7d30bd5",
+          "item_422b155c0d894582bfc0e6ca615e4b8e",
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "PVFCFF"
+          ],
+          [
+            "Year",
+            "2030"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_e9cc4873a6484c788e773cb970f1e978": {
+        "id": "r_e9cc4873a6484c788e773cb970f1e978",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "Valuation::[ValAccount.PVFCFF]",
+        "addr_mask": [
+          null,
+          "item_e38453cf9c0046588c3ca86a35f059a4",
+          "item_acdbaec5d577465fabd50c28808a17a0",
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "EnterpriseValue"
+          ],
+          [
+            "Year",
+            "2026"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_c3d81ff1ce844c8dac6093544e973fee": {
+        "id": "r_c3d81ff1ce844c8dac6093544e973fee",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "Valuation::ValAccount.EnterpriseValue:Year[PREV] + Valuation::[ValAccount.PVFCFF]",
+        "addr_mask": [
+          null,
+          "item_e38453cf9c0046588c3ca86a35f059a4",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "EnterpriseValue"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_190b6ed67e0f472681795d95e12f7201": {
+        "id": "r_190b6ed67e0f472681795d95e12f7201",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "Valuation::ValAccount.EnterpriseValue:Year.2030 - BS::[BSAccount.Debt]",
+        "addr_mask": [
+          null,
+          "item_1f5af7091e1349b7af156d9a6ec29f94",
+          "item_422b155c0d894582bfc0e6ca615e4b8e",
+          null
+        ],
+        "targets": [
+          [
+            "ValAccount",
+            "EquityValue"
+          ],
+          [
+            "Year",
+            "2030"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_b72efa598b454a6b96137cd37e8b9819": {
+        "id": "r_b72efa598b454a6b96137cd37e8b9819",
+        "cube_id": "cube_36c9f19899864400b0710884d4b2022c",
+        "expression": "BS::[BSAccount.TotalAssets] - BS::[BSAccount.TotalLiabilitiesAndEquity]",
+        "addr_mask": [
+          null,
+          "item_797295809fd64a7882184adf124f26de",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "Check",
+            "BalanceSheetCheck"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2701a5a958c041149b66268e9512b434": {
+        "id": "r_2701a5a958c041149b66268e9512b434",
+        "cube_id": "cube_36c9f19899864400b0710884d4b2022c",
+        "expression": "CFS::[CFSAccount.FCFF] - (CFS::[CFSAccount.NetIncome] + CFS::[CFSAccount.Depreciation] - CFS::[CFSAccount.ChangeInWC] - CFS::[CFSAccount.CapEx])",
+        "addr_mask": [
+          null,
+          "item_22fdb699faae48cd8a6961cf46560a65",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "Check",
+            "FCFFCheck"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_afac6031b31b4d55af689e669d680b1d": {
+        "id": "r_afac6031b31b4d55af689e669d680b1d",
+        "cube_id": "cube_36c9f19899864400b0710884d4b2022c",
+        "expression": "Valuation::[ValAccount.EnterpriseValue] - (Valuation::[ValAccount.PVFCFF] + Valuation::ValAccount.EnterpriseValue:Year.2029)",
+        "addr_mask": [
+          null,
+          "item_be83add2ad2a4cebb09c84b21ff9b1bf",
+          "item_422b155c0d894582bfc0e6ca615e4b8e",
+          null
+        ],
+        "targets": [
+          [
+            "Check",
+            "EnterpriseValueCheck"
+          ],
+          [
+            "Year",
+            "2030"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0d2dba93d09c4d8692f2c19a5d6fbb13": {
+        "id": "r_0d2dba93d09c4d8692f2c19a5d6fbb13",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "PLAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_b42c29231f5745e8b00eecb589b5e1f4": {
+        "id": "r_b42c29231f5745e8b00eecb589b5e1f4",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "PLAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_9a6d32781e6245f2adafe36cb516d323": {
+        "id": "r_9a6d32781e6245f2adafe36cb516d323",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "PLAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_586da0ad91e14f4793103c604de486db": {
+        "id": "r_586da0ad91e14f4793103c604de486db",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "BSAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f1e36c7db9334b07a2cfaacfd2628f5e": {
+        "id": "r_f1e36c7db9334b07a2cfaacfd2628f5e",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "BSAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_483f654fc7554f5a9bff71fff01b58f9": {
+        "id": "r_483f654fc7554f5a9bff71fff01b58f9",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "BSAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0c3768fbacfd42a4a62183151e3cce38": {
+        "id": "r_0c3768fbacfd42a4a62183151e3cce38",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "CFSAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ee88846b4f7e47dfa6d19e2804d8d0a8": {
+        "id": "r_ee88846b4f7e47dfa6d19e2804d8d0a8",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "CFSAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_21c7fbcf3056457bb2285eb8be45a558": {
+        "id": "r_21c7fbcf3056457bb2285eb8be45a558",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "CFSAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_19e0ae4a03e54633b6e85c4e6b3cff44": {
+        "id": "r_19e0ae4a03e54633b6e85c4e6b3cff44",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "ValAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f60bbe25cc08484083a9358fea7ce0fc": {
+        "id": "r_f60bbe25cc08484083a9358fea7ce0fc",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "ValAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_5a363be3c05d494a84c31cdecc8554e0": {
+        "id": "r_5a363be3c05d494a84c31cdecc8554e0",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "ValAccount",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_1c925ad9cc5547b7b9fe3e5ea2a52dd7": {
+        "id": "r_1c925ad9cc5547b7b9fe3e5ea2a52dd7",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "Driver",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_2eb2d3ecd65048449ae077bc206cb150": {
+        "id": "r_2eb2d3ecd65048449ae077bc206cb150",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Driver",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7a52bc64934a4be9a2158a8adc52a511": {
+        "id": "r_7a52bc64934a4be9a2158a8adc52a511",
+        "cube_id": "cube_36873dd920ef413e8fa1a6bf11103b27",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "Driver",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_26a54c083cc74145a8f76995b62e5c38": {
+        "id": "r_26a54c083cc74145a8f76995b62e5c38",
+        "cube_id": "cube_36c9f19899864400b0710884d4b2022c",
+        "expression": "'preset:number(decimals=2; group=true; negative=parentheses; zero=dash)'",
+        "addr_mask": [
+          "at_format_number",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "format_number"
+          ],
+          [
+            "Check",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_8ff8601606c2460086560e98d6368e97": {
+        "id": "r_8ff8601606c2460086560e98d6368e97",
+        "cube_id": "cube_36c9f19899864400b0710884d4b2022c",
+        "expression": "\"#f7f9fb\"",
+        "addr_mask": [
+          "at_fill",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "Check",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_34cc192e4aed4501a742d5dcec5125dd": {
+        "id": "r_34cc192e4aed4501a742d5dcec5125dd",
+        "cube_id": "cube_36c9f19899864400b0710884d4b2022c",
+        "expression": "\"#2d3748\"",
+        "addr_mask": [
+          "at_font_color",
+          null,
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_color"
+          ],
+          [
+            "Check",
+            "*"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_a81b014725fe47d9b23285331f46b1fd": {
+        "id": "r_a81b014725fe47d9b23285331f46b1fd",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          "item_1b0a9b17b274418f8f19ef102cda94e7",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "BSAccount",
+            "TotalAssets"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_4db9284b05a2429983ff5303c614cc38": {
+        "id": "r_4db9284b05a2429983ff5303c614cc38",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "\"#e2e8f0\"",
+        "addr_mask": [
+          "at_fill",
+          "item_1b0a9b17b274418f8f19ef102cda94e7",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "BSAccount",
+            "TotalAssets"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_1ceb448516c6415eb9d68212beb67403": {
+        "id": "r_1ceb448516c6415eb9d68212beb67403",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          "item_d99c926a51924f388637ffd7de5f739c",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "BSAccount",
+            "TotalLiabilitiesAndEquity"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_1e5d7e58f73f45f7bcf89304039d31b4": {
+        "id": "r_1e5d7e58f73f45f7bcf89304039d31b4",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "expression": "\"#e2e8f0\"",
+        "addr_mask": [
+          "at_fill",
+          "item_d99c926a51924f388637ffd7de5f739c",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "BSAccount",
+            "TotalLiabilitiesAndEquity"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_f4ba2710edc64c1eb360f655ac632214": {
+        "id": "r_f4ba2710edc64c1eb360f655ac632214",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          "item_4ab4e3efde854402849c63264d403d9e",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "PLAccount",
+            "GrossProfit"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_7afcb08c03844e4584ee6a9256954e16": {
+        "id": "r_7afcb08c03844e4584ee6a9256954e16",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "\"#edf2f7\"",
+        "addr_mask": [
+          "at_fill",
+          "item_4ab4e3efde854402849c63264d403d9e",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "PLAccount",
+            "GrossProfit"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_0d02f4cd97b24e8f948ee941e102ce31": {
+        "id": "r_0d02f4cd97b24e8f948ee941e102ce31",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          "item_7c1de824220a40bea54d1a1599b5e266",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "PLAccount",
+            "EBITDA"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_64e0ba4bfc08450795865971624f88be": {
+        "id": "r_64e0ba4bfc08450795865971624f88be",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "\"#edf2f7\"",
+        "addr_mask": [
+          "at_fill",
+          "item_7c1de824220a40bea54d1a1599b5e266",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "PLAccount",
+            "EBITDA"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_6a4214a8ae5e4427888d4ed342e2745d": {
+        "id": "r_6a4214a8ae5e4427888d4ed342e2745d",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          "item_7e7104155d154739be32a97a3244f789",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "PLAccount",
+            "EBIT"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_ed4609fd1793477faba93a632fc3f02c": {
+        "id": "r_ed4609fd1793477faba93a632fc3f02c",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "\"#edf2f7\"",
+        "addr_mask": [
+          "at_fill",
+          "item_7e7104155d154739be32a97a3244f789",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "PLAccount",
+            "EBIT"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_69fb5da69f9c490b9f7e42b46c584c4f": {
+        "id": "r_69fb5da69f9c490b9f7e42b46c584c4f",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          "item_c6582bbc57e14d648002718fb9c44557",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "PLAccount",
+            "NetIncome"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_43b11a7ad45f44c6926594c51ce5528c": {
+        "id": "r_43b11a7ad45f44c6926594c51ce5528c",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "expression": "\"#e2e8f0\"",
+        "addr_mask": [
+          "at_fill",
+          "item_c6582bbc57e14d648002718fb9c44557",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "PLAccount",
+            "NetIncome"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_d595ae60a96e45008157f2e269a6dda7": {
+        "id": "r_d595ae60a96e45008157f2e269a6dda7",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          "item_0207f5d96baa40a48c07154255a6a264",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "CFSAccount",
+            "FCFF"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_79792eb412b54c1688d2f662c5b0b60e": {
+        "id": "r_79792eb412b54c1688d2f662c5b0b60e",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "expression": "\"#e2e8f0\"",
+        "addr_mask": [
+          "at_fill",
+          "item_0207f5d96baa40a48c07154255a6a264",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "CFSAccount",
+            "FCFF"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_67aeda6fbc494bee953317928aa72f32": {
+        "id": "r_67aeda6fbc494bee953317928aa72f32",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          "item_e38453cf9c0046588c3ca86a35f059a4",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "ValAccount",
+            "EnterpriseValue"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_a8662e9024f14161a6c3dc2d8648e0fa": {
+        "id": "r_a8662e9024f14161a6c3dc2d8648e0fa",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "\"#e2e8f0\"",
+        "addr_mask": [
+          "at_fill",
+          "item_e38453cf9c0046588c3ca86a35f059a4",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "ValAccount",
+            "EnterpriseValue"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_06a7b843fac947b6b26eba138a04caf4": {
+        "id": "r_06a7b843fac947b6b26eba138a04caf4",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "700",
+        "addr_mask": [
+          "at_font_weight",
+          "item_1f5af7091e1349b7af156d9a6ec29f94",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "font_weight"
+          ],
+          [
+            "ValAccount",
+            "EquityValue"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      },
+      "r_dd8fca99412a4f909d03ddae10339a32": {
+        "id": "r_dd8fca99412a4f909d03ddae10339a32",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "expression": "\"#e2e8f0\"",
+        "addr_mask": [
+          "at_fill",
+          "item_1f5af7091e1349b7af156d9a6ec29f94",
+          null,
+          null
+        ],
+        "targets": [
+          [
+            "@",
+            "fill"
+          ],
+          [
+            "ValAccount",
+            "EquityValue"
+          ],
+          [
+            "Year",
+            "*"
+          ],
+          [
+            "Scenario",
+            "*"
+          ]
+        ],
+        "is_anchored": false
+      }
+    },
+    "rule_order": [
+      "r_2ec2f5153e8b485a9909592b2dea32ea",
+      "r_038f2dc4d3fb429caaf02d3937ada782",
+      "r_7ceb686e603645dfa303ca5144690f0c",
+      "r_5c6785df6c82425f981ef1b3355e0698",
+      "r_44c4773620874e61b7937b4c400a34bf",
+      "r_a1b1c8738cdc498488f0529767f78126",
+      "r_cabbff7eb7b544fdb5bb2e8b234be20d",
+      "r_8eee9f33806f4d269be371ba29b9400e",
+      "r_81de145ac2314e1782386217fccbc57f",
+      "r_dbf9c3286e6e429b97e86287dd266b06",
+      "r_96b4649acb7b47c3949dfd43c01ce3e0",
+      "r_f09eadaa5a454e0487ec18bf7885ccc2",
+      "r_cb6e027c9d7c410f8aee896643c61d89",
+      "r_57d79a18a45441a0aba93068ae8a9a3b",
+      "r_3d574e30da4344ebadc70bb8fb9e0c08",
+      "r_31e86c552f784947b74b34e0aaa8df49",
+      "r_fb3d30a5b1524dfd87d090d9c567087a",
+      "r_897cbe48a11b44d7bea7bbbb9ebd34fc",
+      "r_8ffcc43bd3b745dba11e3b3fc7a391b1",
+      "r_8eef5152553d41c18be25285f41bd394",
+      "r_af52c4629f924c469f3a1bb6b8364009",
+      "r_142c14e25d004f56b70fef84274e4366",
+      "r_164e5f798dfb4261ae1d1ad54037a8ea",
+      "r_118129998edc4c0ba9540f4276d1918d",
+      "r_42ded9699a724a9e92b107c8e7022ab8",
+      "r_6dbeab4465974da9b151e0ca3270f917",
+      "r_490f67f708294d529f57a90b002b41d7",
+      "r_0b76f69c277c4a63aae1a6bde4fdfdc0",
+      "r_429f369f2d9a439da28cbfc2ef25b6ae",
+      "r_443aa660b40145038bb75b3c3d19d3ac",
+      "r_6898670a842c4568b0603cc2cda5772e",
+      "r_ed4b2e4844fb43c3ab8a5af1a8971470",
+      "r_96ad9096cf454f2680b680ff541490cc",
+      "r_c4fc607d70554da895fca82dabf0001d",
+      "r_60cda8ca0d4445ddb5453f96eb2fd519",
+      "r_d070d693f2ba477490b0e26b76ddbe55",
+      "r_fe6729ed0f5e4db48c0a2a53b1fc94ee",
+      "r_1d99553b06d444f7835e23347087b65b",
+      "r_7739fdc68b994c0fba5d5016a1b01ab8",
+      "r_e34e38cc828e42599657f2d8c27a0d01",
+      "r_18c6706d89b94f01ab31646d90669e02",
+      "r_97734d370e664a649b5015d1bf87a604",
+      "r_139cbfd192f1410ea8b88e9090ad7188",
+      "r_d678fd2186494b39971e066958bd05ab",
+      "r_b0693cb7be8f4edc942d575e3ffaf5bf",
+      "r_cb43968ea3e94056898d84eb9fa4a62d",
+      "r_62f92d70379b41f1915f48d3e868c68d",
+      "r_fe79a5e78d834abd98f84e01a7862c44",
+      "r_4e91ee1520a94bc0ab905e9c92be8777",
+      "r_f54901fbfede4cebbd0f1b0547cc9041",
+      "r_ed2ce3d6d60b446281f99882f45edddf",
+      "r_ab74353aae364e068a4d49bf1bb16bf8",
+      "r_76fdc3571c244d7eb4820689eb94ae8d",
+      "r_0ea24db2c3d349fdae838f38f7f163bc",
+      "r_e4ee525f4ee4447b8e2e4a906b241a37",
+      "r_7cd3d4eb5e0b4068a10f1680520669fe",
+      "r_0bef99d3b7f14fc1b1d57ab65b5e747b",
+      "r_3df166f8b03e4cfd8dcf16038e24db1a",
+      "r_3dc1c40e592e4e38b29b5f453f727de6",
+      "r_d7bca4aa47554064811120d4160027f2",
+      "r_695d6a2e058c4b53863de29818d24a3d",
+      "r_6c8a7a63a9ca4bf59b6eba4203ea564b",
+      "r_7391c775c8e44f4b9fa4eb4427440972",
+      "r_b1379555caee4ee981c237b30452d8a7",
+      "r_327d676350d343dcb0e48fb420dfe518",
+      "r_87455aa3714e4d62a16395dacb6c909a",
+      "r_80a58a49a0eb4730b6509933b5b8b926",
+      "r_2a2e4962b51d4494b066bfd6bd06d914",
+      "r_a42fdae0412d47619ad16fbd635f6dc9",
+      "r_a0cff827476a458a9949cc7afd66e773",
+      "r_a2369985c3004aa79fb94df4e1cb20e3",
+      "r_41d67814c0274868b731331d1423ad1f",
+      "r_f877d2414ec942bba8b528d653c9aeff",
+      "r_96e30222b7ce4e0eb6b3949afb643934",
+      "r_07a235942d944efdbdc1e2cb086e27e2",
+      "r_de5c417eaf4f489cb324ab902839f628",
+      "r_3310af7dd7224cf080099cd202222831",
+      "r_5d3988872fbd4392b0fbc3f0c470d70f",
+      "r_0e8ea9c327274650a7f5aa4d8e627064",
+      "r_fda89d5f75f04f78a01c026947816952",
+      "r_a760196a90934b75a43b6b1114264a74",
+      "r_e1f0cfbc4b80484c91ef2fe9791c436e",
+      "r_6c3cd95b975447198a53041af5503e7e",
+      "r_284f60704d194387a671cb5cfa34ddb7",
+      "r_59f4a8d267144f448d82b8e548f99db5",
+      "r_42daa8dd66c0452daf138a53c492a924",
+      "r_61a90ae3fc0c4fd1b841a1d48c9e91f6",
+      "r_e252e16f98d449429b5808cbde3117e2",
+      "r_5168388fac8444a68f1686b5e400d6fa",
+      "r_2802a94c10a7481a880cf4cbfd6f64b8",
+      "r_667c3b77a3984b858c3ef55ca4ff866f",
+      "r_25074859f61443629c8d274b2a801742",
+      "r_15e8076cbf4a402d8eb7aa6d03cf1eee",
+      "r_ce6c9c05272f4c8892084213f6176b94",
+      "r_8f92f2799f174e6898604cdc78cf5220",
+      "r_c694a31b02c8405ea426e61540dd5732",
+      "r_54a8156dc0ac4466acb60431be834b4a",
+      "r_689002c99c7d40e18702957d0cdf8362",
+      "r_4036f501136b4eaab80677bc5f8f77a9",
+      "r_79f1e17b192346f0bf387eb7f684fca0",
+      "r_3743a0857ca14c9d923a2f64c4d376da",
+      "r_bb9a5babd4e74c1f8771689d4081c50c",
+      "r_762b305693c9405abe1339a925bc8e12",
+      "r_9cdb3b6566da4cdd92f7b4850a4f02a1",
+      "r_e9cc4873a6484c788e773cb970f1e978",
+      "r_c3d81ff1ce844c8dac6093544e973fee",
+      "r_190b6ed67e0f472681795d95e12f7201",
+      "r_b72efa598b454a6b96137cd37e8b9819",
+      "r_2701a5a958c041149b66268e9512b434",
+      "r_afac6031b31b4d55af689e669d680b1d",
+      "r_0d2dba93d09c4d8692f2c19a5d6fbb13",
+      "r_b42c29231f5745e8b00eecb589b5e1f4",
+      "r_9a6d32781e6245f2adafe36cb516d323",
+      "r_586da0ad91e14f4793103c604de486db",
+      "r_f1e36c7db9334b07a2cfaacfd2628f5e",
+      "r_483f654fc7554f5a9bff71fff01b58f9",
+      "r_0c3768fbacfd42a4a62183151e3cce38",
+      "r_ee88846b4f7e47dfa6d19e2804d8d0a8",
+      "r_21c7fbcf3056457bb2285eb8be45a558",
+      "r_19e0ae4a03e54633b6e85c4e6b3cff44",
+      "r_f60bbe25cc08484083a9358fea7ce0fc",
+      "r_5a363be3c05d494a84c31cdecc8554e0",
+      "r_1c925ad9cc5547b7b9fe3e5ea2a52dd7",
+      "r_2eb2d3ecd65048449ae077bc206cb150",
+      "r_7a52bc64934a4be9a2158a8adc52a511",
+      "r_26a54c083cc74145a8f76995b62e5c38",
+      "r_8ff8601606c2460086560e98d6368e97",
+      "r_34cc192e4aed4501a742d5dcec5125dd",
+      "r_a81b014725fe47d9b23285331f46b1fd",
+      "r_4db9284b05a2429983ff5303c614cc38",
+      "r_1ceb448516c6415eb9d68212beb67403",
+      "r_1e5d7e58f73f45f7bcf89304039d31b4",
+      "r_f4ba2710edc64c1eb360f655ac632214",
+      "r_7afcb08c03844e4584ee6a9256954e16",
+      "r_0d02f4cd97b24e8f948ee941e102ce31",
+      "r_64e0ba4bfc08450795865971624f88be",
+      "r_6a4214a8ae5e4427888d4ed342e2745d",
+      "r_ed4609fd1793477faba93a632fc3f02c",
+      "r_69fb5da69f9c490b9f7e42b46c584c4f",
+      "r_43b11a7ad45f44c6926594c51ce5528c",
+      "r_d595ae60a96e45008157f2e269a6dda7",
+      "r_79792eb412b54c1688d2f662c5b0b60e",
+      "r_67aeda6fbc494bee953317928aa72f32",
+      "r_a8662e9024f14161a6c3dc2d8648e0fa",
+      "r_06a7b843fac947b6b26eba138a04caf4",
+      "r_dd8fca99412a4f909d03ddae10339a32"
+    ],
+    "views": {
+      "view_e860cdaf1db64c6abaf8ba634d785de5": {
+        "id": "view_e860cdaf1db64c6abaf8ba634d785de5",
+        "name": "%CFG",
+        "cube_id": "cube_765ba5d06363413aa4ff8608e985f579",
+        "row_dim_ids": [
+          "dim_da026afa0080432ea24b1eec943e2726"
+        ],
+        "col_dim_ids": [
+          "dim_a9301e05a9c84cdbbf3bb2394908e2db"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_6ccce4313caa442b9a8f1318f0e1dbd5": {
+        "id": "view_6ccce4313caa442b9a8f1318f0e1dbd5",
+        "name": "%SIG",
+        "cube_id": "cube_2c1a19dd067b43cbbbcd631c128b9bd3",
+        "row_dim_ids": [
+          "dim_897229bf1761488c9eb083f0de96751a"
+        ],
+        "col_dim_ids": [
+          "dim_64eef4869cd14c7290eb93417e746504"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_523ce0d67db147499e58b66418d8580e": {
+        "id": "view_523ce0d67db147499e58b66418d8580e",
+        "name": "%TYP",
+        "cube_id": "cube_432fa0128f7d4f2db42d9bec801a59ef",
+        "row_dim_ids": [
+          "dim_4c704b06c00848b5b3d2a8858ef3070e"
+        ],
+        "col_dim_ids": [
+          "dim_32f32a12da7c46e1810a405ddfa1cf78"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_d841c16aa49d402b9c658b11dae2c189": {
+        "id": "view_d841c16aa49d402b9c658b11dae2c189",
+        "name": "%RECNOD",
+        "cube_id": "cube_1095d92d42154f49bc0a18fe0f40ae3f",
+        "row_dim_ids": [
+          "dim_f07a754e93544216a8cdfa122dd58692"
+        ],
+        "col_dim_ids": [
+          "dim_faad9f833aa84d7aa4e880edc16eeea2"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_e5cdf406e7214888ab9e59358361a5c3": {
+        "id": "view_e5cdf406e7214888ab9e59358361a5c3",
+        "name": "%RECEDG",
+        "cube_id": "cube_aa1cb73e790e47c2ba4b85b25edb3880",
+        "row_dim_ids": [
+          "dim_df80c39d568a481aa5b45d84bde7f7da"
+        ],
+        "col_dim_ids": [
+          "dim_734f0c14450741f2aa1301ce49702c02"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_a7ae204fbb64463bbe86bbf8b5ed5da1": {
+        "id": "view_a7ae204fbb64463bbe86bbf8b5ed5da1",
+        "name": "C",
+        "cube_id": "cube_7a176b339ec8403397c79cf9edb5377f",
+        "row_dim_ids": [
+          "dim_693c7faa34fb450ba7c41f12614d5c4a"
+        ],
+        "col_dim_ids": [
+          "dim_7490827378c7484d908ec486e67d8547"
+        ],
+        "page_dim_ids": [
+          "@"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_8363c3fd5f894abf8656004e1b8bd4ba": {
+        "id": "view_8363c3fd5f894abf8656004e1b8bd4ba",
+        "name": "PL_View",
+        "cube_id": "cube_7a672b2f085f418db5903cd0a309c646",
+        "row_dim_ids": [
+          "dim_934e5a27bf3f41b6b37f3a6d513215ee"
+        ],
+        "col_dim_ids": [
+          "dim_bfc440193bc8493b82e886893938afc4"
+        ],
+        "page_dim_ids": [
+          "@",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "col_widths": {},
+        "row_header_widths": {
+          "0": 155
+        }
+      },
+      "view_2e1bbd548c32414a832fb87be10e40e8": {
+        "id": "view_2e1bbd548c32414a832fb87be10e40e8",
+        "name": "BS_View",
+        "cube_id": "cube_3de7963306054b35ab58dcdcca77d311",
+        "row_dim_ids": [
+          "dim_5d6a9921c6e34f4ab23cb5b0a22c8f3e"
+        ],
+        "col_dim_ids": [
+          "dim_bfc440193bc8493b82e886893938afc4"
+        ],
+        "page_dim_ids": [
+          "@",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "col_widths": {},
+        "row_header_widths": {
+          "0": 180
+        }
+      },
+      "view_540368e2c9ee465cbbecc17b757aa954": {
+        "id": "view_540368e2c9ee465cbbecc17b757aa954",
+        "name": "CFS_View",
+        "cube_id": "cube_bd1a8aca3bd54b31a09f41ad6a58b0e8",
+        "row_dim_ids": [
+          "dim_854f6f149a2e49198a259e5933daa632"
+        ],
+        "col_dim_ids": [
+          "dim_bfc440193bc8493b82e886893938afc4"
+        ],
+        "page_dim_ids": [
+          "@",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      },
+      "view_d30c26e8fe0740048b66763e10670dd3": {
+        "id": "view_d30c26e8fe0740048b66763e10670dd3",
+        "name": "Valuation_View",
+        "cube_id": "cube_471018302c2949fb8aba6dc739c0c1cf",
+        "row_dim_ids": [
+          "dim_823263cc64c744a8bbbaeae090a03185"
+        ],
+        "col_dim_ids": [
+          "dim_bfc440193bc8493b82e886893938afc4"
+        ],
+        "page_dim_ids": [
+          "@",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "col_widths": {},
+        "row_header_widths": {
+          "0": 140
+        }
+      },
+      "view_d3ecef12a5c44d50913697731fd420d5": {
+        "id": "view_d3ecef12a5c44d50913697731fd420d5",
+        "name": "Checks_View",
+        "cube_id": "cube_36c9f19899864400b0710884d4b2022c",
+        "row_dim_ids": [
+          "dim_f8fe939d17f94f77ad0aa7b1bf39cd47"
+        ],
+        "col_dim_ids": [
+          "dim_bfc440193bc8493b82e886893938afc4"
+        ],
+        "page_dim_ids": [
+          "@",
+          "dim_1914b7233dee44dfbe129b78e6619c6f"
+        ],
+        "col_widths": {},
+        "row_header_widths": {}
+      }
+    },
+    "views_order": [
+      "view_e860cdaf1db64c6abaf8ba634d785de5",
+      "view_6ccce4313caa442b9a8f1318f0e1dbd5",
+      "view_523ce0d67db147499e58b66418d8580e",
+      "view_d841c16aa49d402b9c658b11dae2c189",
+      "view_e5cdf406e7214888ab9e59358361a5c3",
+      "view_a7ae204fbb64463bbe86bbf8b5ed5da1",
+      "view_8363c3fd5f894abf8656004e1b8bd4ba",
+      "view_2e1bbd548c32414a832fb87be10e40e8",
+      "view_540368e2c9ee465cbbecc17b757aa954",
+      "view_d30c26e8fe0740048b66763e10670dd3",
+      "view_d3ecef12a5c44d50913697731fd420d5"
+    ],
+    "udfs": [],
+    "active_view_id": "view_d30c26e8fe0740048b66763e10670dd3"
+  }
+}

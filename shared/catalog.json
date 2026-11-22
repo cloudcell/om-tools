@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "examples": [
+    {
+      "id": "coffee-shop",
+      "title": "Coffee Shop",
+      "description": "A small starter model — one shop, monthly metrics, a few rules.",
+      "category": "Financial Modeling",
+      "file": "coffee.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "three-statement",
+      "title": "Three-Statement Model",
+      "description": "Income statement, balance sheet, and cash flow in one model.",
+      "category": "Financial Modeling",
+      "file": "DEMO-08--THREE-STATEMENT-MODEL--20260629-0339.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "dcf-valuation",
+      "title": "DCF Valuation",
+      "description": "Forecasting, discounted cash flow, and valuation checks.",
+      "category": "Financial Modeling",
+      "file": "DEMO-06--VALUATION-NEW--20260628-1628.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "budget-vs-actual",
+      "title": "Budget vs Actual",
+      "description": "Budget, actuals, and variance analysis.",
+      "category": "Financial Modeling",
+      "file": "DEMO-09--BUDGET-VS_ACTUAL--20260629-0352.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "multidim-pl",
+      "title": "Multidimensional P&L",
+      "description": "Financial modeling across multiple dimensions.",
+      "category": "Financial Modeling",
+      "file": "DEMO-01--MULTI-D-PL--20260623-0033.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "agroforestry",
+      "title": "Agroforestry Project",
+      "description": "Long-horizon project economics: inventory, lifecycle costs, assumptions.",
+      "category": "Financial Modeling",
+      "file": "DEMO-07--AGROFORESTRY--20260629-0136.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "payroll-headcount",
+      "title": "Payroll & Headcount",
+      "description": "Workforce cost and headcount planning.",
+      "category": "Financial Modeling",
+      "file": "DEMO-10--PAYROLL-HEADCOUNT--20260629-1050.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "dimensions",
+      "title": "Dimensions",
+      "description": "Explore dimension types and structures.",
+      "category": "Modeling Features",
+      "file": "DEMO-05--DIMENSIONS--20260628-0619.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "dimension-groups",
+      "title": "Dimension Groups",
+      "description": "Hierarchies and grouped calculations.",
+      "category": "Modeling Features",
+      "file": "DEMO-02--MULTI-GROUPS--20260622-2003.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "calculation-flow",
+      "title": "Calculation Flow",
+      "description": "Dependencies and calculation behavior across cubes.",
+      "category": "Modeling Features",
+      "file": "DEMO-03--CALC-FLOW-20260623-0057-5Y-ONLY.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "formatting",
+      "title": "Formatting Showcase",
+      "description": "Number formats and cell presentation options.",
+      "category": "Modeling Features",
+      "file": "DEMO-11--FORMATTING--20260702-1551.json",
+      "minimumEngineVersion": null
+    },
+    {
+      "id": "infinite-scroll",
+      "title": "Infinite Scroll",
+      "description": "Navigate a large model with extensive scrolling.",
+      "category": "Modeling Features",
+      "file": "DEMO-04--INFINI-SCROLL--20260621-0857.json",
+      "minimumEngineVersion": null
+    }
+  ]
+}

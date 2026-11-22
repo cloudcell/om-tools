@@ -257,6 +257,80 @@ export function pickDialog(title: string, options: string[], defaultIndex = 0): 
   });
 }
 
+/** One catalog entry shown by examplePickerDialog (shared/catalog.json rows). */
+export interface ExampleEntry { id: string; title: string; description: string; category: string; }
+
+/** Compact example picker — scrollable list: title + one-line description + dimmed category.
+ *  Click selects, double-click or Enter opens, Escape cancels. Resolves the entry or null. */
+export function examplePickerDialog(title: string, examples: ExampleEntry[]): Promise<ExampleEntry | null> {
+  return new Promise((resolve) => {
+    const ov = ensureOverlay();
+    clear(ov);
+
+    const dlg = el("div", { class: "dlg", style: {
+      background: "var(--popup-bg)", borderRadius: "10px", padding: "20px",
+      minWidth: "360px", maxWidth: "420px", boxShadow: "var(--dlg-shadow)",
+      fontFamily: "-apple-system, system-ui, sans-serif",
+    } }) as HTMLElement;
+    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "12px", color: "var(--dlg-title)" } }, [title]));
+
+    const list = el("div", { role: "listbox", "aria-label": title, tabIndex: "0", style: {
+      maxHeight: "300px", overflowY: "auto", border: "1px solid var(--dlg-border)",
+      borderRadius: "6px", marginBottom: "16px", outline: "none",
+    } }) as HTMLElement;
+
+    let sel = 0;
+    const rows: HTMLElement[] = [];
+    const paint = () => rows.forEach((r, i) => {
+      r.style.background = i === sel ? "var(--selection)" : "transparent";
+      r.setAttribute("aria-selected", String(i === sel));
+    });
+    examples.forEach((ex, i) => {
+      const row = el("div", { role: "option", style: {
+        padding: "8px 12px", cursor: "default",
+        borderBottom: i < examples.length - 1 ? "1px solid var(--dlg-border)" : "none",
+      } }, [
+        el("div", { style: { display: "flex", justifyContent: "space-between", gap: "8px" } }, [
+          el("span", { style: { fontSize: "13px", fontWeight: "500", color: "var(--dlg-title)" } }, [ex.title]),
+          el("span", { style: { fontSize: "11px", color: "var(--text-muted)", flexShrink: "0" } }, [ex.category]),
+        ]),
+        el("div", { style: { fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" } }, [ex.description]),
+      ]) as HTMLElement;
+      row.addEventListener("click", () => { sel = i; paint(); list.focus(); });
+      row.addEventListener("dblclick", () => { sel = i; done(ex); });
+      rows.push(row); list.appendChild(row);
+    });
+    paint();
+    dlg.appendChild(list);
+
+    const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
+    const cancelBtn = el("button", { style: {
+      padding: "6px 16px", border: "1px solid var(--dlg-border)", borderRadius: "6px",
+      background: "var(--dlg-btn-bg)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+    } }, ["Cancel"]) as HTMLButtonElement;
+    const openBtn = el("button", { style: {
+      padding: "6px 16px", border: "none", borderRadius: "6px",
+      background: "var(--dlg-primary)", color: "var(--on-accent)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500",
+    } }, ["Open"]) as HTMLButtonElement;
+    btnRow.appendChild(cancelBtn); btnRow.appendChild(openBtn); dlg.appendChild(btnRow);
+    ov.appendChild(dlg);
+
+    list.focus();
+    rows[sel]?.scrollIntoView({ block: "nearest" });
+
+    const done = (val: ExampleEntry | null) => { closeOverlay(); resolve(val); };
+    cancelBtn.addEventListener("click", () => done(null));
+    openBtn.addEventListener("click", () => done(examples[sel] ?? null));
+    list.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" && sel < examples.length - 1) { sel++; paint(); rows[sel].scrollIntoView({ block: "nearest" }); e.preventDefault(); }
+      else if (e.key === "ArrowUp" && sel > 0) { sel--; paint(); rows[sel].scrollIntoView({ block: "nearest" }); e.preventDefault(); }
+      else if (e.key === "Enter") { e.preventDefault(); done(examples[sel] ?? null); }
+      else if (e.key === "Escape") { e.preventDefault(); done(null); }
+    });
+    ov.addEventListener("click", (e) => { if (e.target === ov) done(null); });
+  });
+}
+
 /** One field of a formDialog. `visibleIf` hides the row; a function `options` is recomputed on every change
  *  (dependent selects, e.g. the default item of the chosen dimension). Hidden fields are still returned. */
 export type FormValues = Record<string, any>;

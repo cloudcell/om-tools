@@ -394,6 +394,7 @@
     "test:mcp": "node tools/mcp-check.mjs",
     "audit:gate": "node scripts/npm-audit.mjs",
     "test:dimcache": "esbuild ./tools/dimcache-check.ts --bundle --platform=node --format=cjs --outfile=dist/dimcache-check.js && node dist/dimcache-check.js",
+    "test:openexample": "esbuild ./tools/openexample-check.ts --bundle --platform=node --format=cjs --outfile=dist/openexample-check.js && node dist/openexample-check.js",
     "test:respawn": "esbuild ./tools/respawn-check.ts --bundle --platform=node --format=cjs --outfile=dist/respawn-check.js && node dist/respawn-check.js"
   },
   "devDependencies": {

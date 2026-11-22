@@ -8,6 +8,8 @@ import { GUI_BUTTON_KEY, RUNTIME_BUTTON_KEY, StatusSnapshot, UV_INSTALL_URL, but
 import { StatusPanel } from "./statusPanel";
 import { OmMcpServer, startOmMcpServer } from "./mcpServer";
 import { EmbeddedBackend, resolveTsRuntime } from "./backend";
+import { EXAMPLE_SCHEME, resolveExampleRef, type ExampleCatalog } from "./fileParams";
+import catalogData from "../shared/catalog.json";
 import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
@@ -590,7 +592,18 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         return { type: "response", id: req.id, ok: true, data: { session_id: sid } };
       }
       case "command": {
-        const r = await conn!.send(req.params!.command_id, req.params!.params || {});
+        let params = req.params!.params || {};
+        // `om-example:<id>` → absolute path into dist/examples/, resolved here so the command
+        // rides the normal load path for every backend (embedded reads it via the worker
+        // hook; the socket-mode Python engine reads the same absolute path).
+        if (req.params!.command_id === "load_workspace" && typeof params.path === "string" && params.path.startsWith(EXAMPLE_SCHEME)) {
+          try {
+            params = { ...params, path: resolveExampleRef(params.path, catalogData as ExampleCatalog, path.join(extContext?.extensionPath ?? "", "dist", "examples")) };
+          } catch (e: any) {
+            return { type: "response", id: req.id, ok: false, error: e?.message || String(e) };
+          }
+        }
+        const r = await conn!.send(req.params!.command_id, params);
         return { type: "response", id: req.id, ok: r.ok, data: r.data, error: r.error };
       }
       case "query": {
