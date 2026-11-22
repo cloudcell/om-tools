@@ -961,7 +961,7 @@ export class Store {
     "set_selection", "set_active_view", "set_view_col_width",
     "set_view_row_header_width", "cancel_operation",
     "clear_profiler_snapshot", "set_property", "set_engine",
-    "set_multithread_recompute", "set_page_item_id",
+    "set_multithread_recompute", "set_page_item_id", "save_workspace",
   ]);
 
   private externalRefreshTimer: ReturnType<typeof setTimeout> | null = null;

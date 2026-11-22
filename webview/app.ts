@@ -65,7 +65,11 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
   api.subscribe("event.dimension.*", () => { store.invalidateDimCache(); store.refreshModel(); });
   api.subscribe("event.cube.*", () => store.refreshModel());
   api.subscribe("event.view.*", () => store.refreshModel());
-  api.subscribe("event.workspace.*", () => { store.invalidateDimCache(); store.refreshModel(); });
+  api.subscribe("event.workspace.*", (ev) => {
+    // Saving serializes the model out — nothing changed, refreshing only repaints.
+    if (ev?.topic === "event.workspace.saved") return;
+    store.invalidateDimCache(); store.refreshModel();
+  });
   api.subscribe("command.*.succeeded", (ev) => {
     const cmd = ev.topic?.split(".")[1];
     // UI-state commands (set_selection on every click, width persists) cannot
