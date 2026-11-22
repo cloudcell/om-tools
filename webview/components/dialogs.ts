@@ -693,11 +693,21 @@ export function browseDialog(opts: {
 
 function clear(node: HTMLElement) { while (node.firstChild) node.removeChild(node.firstChild); }
 
-/** Share Session dialog (web build): two ways to hand someone a link that opens this
- *  exact screen — a self-contained #session= link (state inside the URL, nothing to
- *  host), or a ?session=<url> link to a self-hosted .omsession.json. Informational —
- *  resolves when closed. `selfLink` is null when the descriptor is too big for a URL. */
-export function shareSessionDialog(opts: { selfLink: string | null; makeLink: (url: string) => string }): Promise<void> {
+/** Share Session dialog (web build): generates a link that opens this exact screen for
+ *  the recipient. The dialog owns the reachability question — when the model is a local
+ *  file it asks once for a public model link and bakes model.url into everything it
+ *  produces (the self-contained #session= link and the downloadable session file for
+ *  self-hosting). Local model paths stay untouched when no URL is given: the session
+ *  still resolves on this machine or a shared drive. Informational — resolves on close. */
+export function shareSessionDialog(opts: {
+  /** Set when the model source is a local path (not an https URL or om-example ref). */
+  localModel: string | null;
+  /** Rebuilds the descriptor with model.url baked in; selfLink is null when too big for a URL. */
+  build: (modelUrl: string | null) => { json: string; selfLink: string | null };
+  makeLink: (sessionFileUrl: string) => string;
+  /** Hands the descriptor JSON to the host save flow (native dialog or download). */
+  onDownload: (json: string) => Promise<void>;
+}): Promise<void> {
   return new Promise((resolve) => {
     const ov = ensureOverlay();
     clear(ov);
@@ -710,59 +720,92 @@ export function shareSessionDialog(opts: { selfLink: string | null; makeLink: (u
     dlg.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "12px", lineHeight: "1.45" } },
       ["A session link opens this exact screen — panes, tabs, chips, selection and scroll — for anyone who clicks it."]));
 
-    const row = (label: string, value: string, readonly = true): HTMLElement => {
+    const row = (label: string, value: string): HTMLElement => {
       const wrap = el("div", { style: { marginBottom: "12px" } });
       wrap.appendChild(el("div", { style: { fontSize: "12px", fontWeight: "600", marginBottom: "4px", color: "var(--dlg-title)" } }, [label]));
       const box = el("div", { style: { display: "flex", gap: "6px" } });
       const input = document.createElement("input") as HTMLInputElement;
-      input.type = "text"; input.value = value; input.readOnly = readonly;
+      input.type = "text"; input.value = value; input.readOnly = true;
       input.style.cssText = "flex:1; box-sizing:border-box; padding:6px 10px; background:var(--input-bg); border:1px solid var(--dlg-border); border-radius:6px; font-size:12px; font-family:inherit;";
       const copy = el("button", { style: { padding: "6px 12px", border: "1px solid var(--dlg-border)", borderRadius: "6px", background: "var(--dlg-btn-bg)", fontSize: "12px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" } }, ["Copy"]) as HTMLButtonElement;
       copy.addEventListener("click", () => {
         input.select();
-        const done = () => { copy.textContent = "Copied"; setTimeout(() => { copy.textContent = "Copy"; }, 1500); };
-        if (navigator.clipboard?.writeText) void navigator.clipboard.writeText(input.value).then(done, () => { document.execCommand("copy"); done(); });
-        else { document.execCommand("copy"); done(); }
+        const didCopy = () => { copy.textContent = "Copied"; setTimeout(() => { copy.textContent = "Copy"; }, 1500); };
+        if (navigator.clipboard?.writeText) void navigator.clipboard.writeText(input.value).then(didCopy, () => { document.execCommand("copy"); didCopy(); });
+        else { document.execCommand("copy"); didCopy(); }
       });
       box.appendChild(input); box.appendChild(copy);
       wrap.appendChild(box);
       return wrap;
     };
-
-    if (opts.selfLink)
-      dlg.appendChild(row("Self-contained link — the session is inside the URL, nothing to host", opts.selfLink));
-
-    const hint = opts.selfLink
-      ? "Or host the session yourself: File → Save Session…, then upload the .omsession.json (and the model file) to any static host."
-      : "Host the session yourself: File → Save Session…, then upload the .omsession.json (and the model file) to any static host.";
-    dlg.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "6px", lineHeight: "1.45" } }, [hint]));
-    dlg.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "6px", lineHeight: "1.45" } },
-      ["Paste the hosted session file's URL:"]));
-
-    const urlInput = document.createElement("input") as HTMLInputElement;
-    urlInput.type = "text";
-    urlInput.placeholder = "https://your.host/my.omsession.json";
-    urlInput.style.cssText = "width:100%; box-sizing:border-box; padding:6px 10px; background:var(--input-bg); border:1px solid var(--dlg-border); border-radius:6px; font-size:12px; font-family:inherit; margin-bottom:8px;";
-    dlg.appendChild(urlInput);
-
-    const outWrap = el("div");
-    const outRow = () => {
-      clear(outWrap);
-      const u = urlInput.value.trim();
-      if (/^https?:\/\//.test(u)) outWrap.appendChild(row("Share link", opts.makeLink(u)));
+    const entry = (placeholder: string, oninput: (v: string) => void): HTMLInputElement => {
+      const input = document.createElement("input") as HTMLInputElement;
+      input.type = "text";
+      input.placeholder = placeholder;
+      input.style.cssText = "width:100%; box-sizing:border-box; padding:6px 10px; background:var(--input-bg); border:1px solid var(--dlg-border); border-radius:6px; font-size:12px; font-family:inherit; margin-bottom:8px;";
+      input.addEventListener("input", () => oninput(input.value.trim()));
+      return input;
     };
-    urlInput.addEventListener("input", outRow);
-    dlg.appendChild(outWrap);
+
+    let current = opts.build(null);
+    const dynamic = el("div");
+
+    // The model's reachability, asked once and only when it isn't already a URL.
+    let modelInput: HTMLInputElement | null = null;
+    if (opts.localModel) {
+      const name = opts.localModel.split(/[\\/]/).pop() || opts.localModel;
+      const block = el("div", { style: { marginBottom: "12px" } });
+      block.appendChild(el("div", { style: { fontSize: "12px", marginBottom: "6px", lineHeight: "1.45", color: "var(--dlg-title)" } },
+        [`The model is a local file (${name}). The link below works for anyone who can reach that path — this machine or a shared drive.`]));
+      block.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "6px", lineHeight: "1.45" } },
+        ["To share with anyone on the web: upload the model file (GitHub, cloud drive, your site — anywhere that gives a public link) and paste it here:"]));
+      modelInput = entry("https://… public link to your model file", (v) => {
+        current = opts.build(/^https?:\/\//.test(v) ? v : null);
+        renderDynamic();
+      });
+      block.appendChild(modelInput);
+      dlg.appendChild(block);
+    }
+
+    const renderDynamic = () => {
+      clear(dynamic);
+      if (current.selfLink)
+        dynamic.appendChild(row("Ready to share — everything is inside this link, nothing to host", current.selfLink));
+      else
+        dynamic.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "12px", lineHeight: "1.45" } },
+          ["This layout is too big to fit inside a link — share it as a file instead:"]));
+
+      const fileBlock = el("div", { style: { marginBottom: "10px" } });
+      fileBlock.appendChild(el("div", { style: { fontSize: "12px", fontWeight: "600", marginBottom: "6px", color: "var(--dlg-title)" } },
+        ["Share as a session file"]));
+      fileBlock.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "8px", lineHeight: "1.45" } },
+        ["Save this session file, upload it anywhere public, then paste its link below."]));
+      const dlRow = el("div", { style: { display: "flex", gap: "6px", marginBottom: "8px" } });
+      const dlBtn = el("button", { style: { padding: "6px 12px", border: "1px solid var(--dlg-border)", borderRadius: "6px", background: "var(--dlg-btn-bg)", fontSize: "12px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" } },
+        ["Save session file…"]) as HTMLButtonElement;
+      dlBtn.addEventListener("click", () => { dlBtn.disabled = true; void opts.onDownload(current.json).finally(() => { dlBtn.disabled = false; }); });
+      dlRow.appendChild(dlBtn);
+      fileBlock.appendChild(dlRow);
+      fileBlock.appendChild(entry("https://… public link to the session file", (v) => {
+        clear(outWrap);
+        if (/^https?:\/\//.test(v)) outWrap.appendChild(row("Share link", opts.makeLink(v)));
+      }));
+      fileBlock.appendChild(outWrap);
+      dynamic.appendChild(fileBlock);
+    };
+    const outWrap = el("div");
+    renderDynamic();
+    dlg.appendChild(dynamic);
 
     dlg.appendChild(el("div", { class: "muted", style: { fontSize: "11px", marginTop: "8px", lineHeight: "1.45" } },
-      ["The session host must allow cross-origin reads (Access-Control-Allow-Origin). A relative model.path resolves next to the session file — host them in the same directory and it just works."]));
+      ["If a hosted link doesn't open, that host isn't allowing browser access to the file — most static hosts and raw-file links do by default."]));
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: "14px" } });
     const closeBtn = el("button", { style: { padding: "6px 16px", border: "none", borderRadius: "6px", background: "var(--dlg-primary)", color: "var(--on-accent)", fontSize: "13px", cursor: "pointer", fontFamily: "inherit", fontWeight: "500" } }, ["Done"]) as HTMLButtonElement;
     btnRow.appendChild(closeBtn);
     dlg.appendChild(btnRow);
     ov.appendChild(dlg);
-    urlInput.focus();
+    (modelInput ?? dlg.querySelector("input"))?.focus();
 
     const done = () => { closeOverlay(); resolve(); };
     closeBtn.addEventListener("click", done);

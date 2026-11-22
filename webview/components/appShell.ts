@@ -937,19 +937,31 @@ export class AppShell {
   }
 
   /** File → Share Session… (web build only — the menu item is gated on
-   *  supportsNativeExternalLinks): capture the live session and offer the two link
-   *  forms — self-contained #session=<b64> when small enough for a URL, or
-   *  ?session=<url> pointing at a self-hosted .omsession.json. */
+   *  supportsNativeExternalLinks): capture the live session and hand it to the
+   *  share dialog, which regenerates links/files when the user supplies a public
+   *  model URL for an otherwise-local model path. */
   private async shareSession() {
     const session = this.store.captureSession(currentTheme());
-    const json = JSON.stringify(session);
-    // b64 must survive a URL hash and JSON can carry unicode names — encode bytes.
-    const selfLink = json.length <= 1800
-      ? `${location.origin}${location.pathname}#session=${encodeURIComponent(btoa(String.fromCharCode(...new TextEncoder().encode(json))))}`
-      : null;
+    const localModel = session.model.path && !/^https?:\/\//.test(session.model.path)
+      ? session.model.path : null;
+    const suggested = this.store.fileName().replace(/\.(json|msgpack)$/i, "") + ".omsession.json";
     await shareSessionDialog({
-      selfLink,
+      localModel,
+      build: (modelUrl) => {
+        if (modelUrl) session.model = { url: modelUrl };
+        const json = JSON.stringify(session);
+        // b64 must survive a URL hash and JSON can carry unicode names — encode bytes.
+        const selfLink = json.length <= 1800
+          ? `${location.origin}${location.pathname}#session=${encodeURIComponent(btoa(String.fromCharCode(...new TextEncoder().encode(json))))}`
+          : null;
+        return { json, selfLink };
+      },
       makeLink: (url) => `${location.origin}${location.pathname}?session=${encodeURIComponent(url)}`,
+      onDownload: async (json) => {
+        const res = await this.store.api.saveTextFile(suggested, json).catch(() => null);
+        if (res?.downloaded)
+          await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the session was downloaded to your default Downloads folder.");
+      },
     });
   }
 
