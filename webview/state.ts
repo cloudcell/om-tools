@@ -1,4 +1,4 @@
-import { OmApi, DimSummary, DimDetail, CubeSummary, ViewSummary, ViewDetail, CellRangeDTO, RuleDTO, WorkspaceSummary, CellDTO } from "./api";
+import { OmApi, DimSummary, DimDetail, CubeSummary, ViewSummary, ViewDetail, CellRangeDTO, RuleDTO, WorkspaceSummary, CellDTO, BrowserNode, BrowserTree } from "./api";
 import { formatCellValue } from "./formatting";
 import { alertDialog } from "./components/dialogs";
 import { DEFAULT_DOCK, DEFAULT_OPTIONS, type DockPanelId, type DockZoneId, type UiLayout, type UiOptions } from "../shared/messages";
@@ -320,6 +320,56 @@ export class Store {
     // Fetch the missing details once (the cache lives until the next model load), then redraw (issue #2).
     const missing = dims.dimensions.some((d) => !this.dimCache.has(d.id));
     if (missing) this.ensureDimCache(dims.dimensions.map((d) => d.id)).then(() => this.notify()).catch(() => {});
+    this.reconcileBrowserTree();
+  }
+
+  /** Engine persists the layout blob when the workspace_summary carries the
+   *  key at all — `null` means supported-but-unset; absent = backend can't. */
+  browserTreeSupported(): boolean {
+    return this.state.workspaceSummary != null && "browser_tree" in this.state.workspaceSummary;
+  }
+  browserTree(): BrowserTree | null { return this.state.workspaceSummary?.browser_tree ?? null; }
+  browserMode(): "flat" | "tree" { return this.browserTree()?.mode === "tree" ? "tree" : "flat"; }
+
+  /** Store a new layout: optimistic local set + engine write; the succeeded
+   *  echo re-fetches the summary so other windows sync. */
+  async pushBrowserTree(next: BrowserTree) {
+    const ws = this.state.workspaceSummary;
+    if (!ws || !("browser_tree" in ws)) return;
+    ws.browser_tree = next;
+    this.markDirty();
+    this.notify();
+    await this.api.setBrowserTree(next);
+  }
+
+  /** Self-heal the persisted tree: drop refs not in the model, dedupe leaves,
+   *  append model elements missing from the tree at root end — push back only
+   *  if anything changed (the changed-check keeps fetch→push from looping). */
+  private reconcileBrowserTree() {
+    const ws = this.state.workspaceSummary;
+    if (!ws || !("browser_tree" in ws) || !ws.browser_tree?.tree) return;
+    const known = new Set<string>();
+    for (const d of this.state.dimensions) known.add(`dim:${d.id}`);
+    for (const c of this.state.cubes) known.add(`cube:${c.id}`);
+    for (const v of this.state.views) known.add(`view:${v.id}`);
+    const seen = new Set<string>();
+    const pruneNodes = (nodes: BrowserNode[]): BrowserNode[] => {
+      const out: BrowserNode[] = [];
+      for (const n of nodes) {
+        if (typeof n === "string") { if (known.has(n) && !seen.has(n)) { seen.add(n); out.push(n); } }
+        else out.push({ ...n, children: pruneNodes(n.children ?? []) });
+      }
+      return out;
+    };
+    const pruned = pruneNodes(ws.browser_tree.tree);
+    const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+    const missing: BrowserNode[] = [
+      ...[...this.state.dimensions].sort(byName).map((d) => `dim:${d.id}` as const),
+      ...[...this.state.cubes].sort(byName).map((c) => `cube:${c.id}` as const),
+      ...[...this.state.views].sort(byName).map((v) => `view:${v.id}` as const),
+    ].filter((r) => known.has(r) && !seen.has(r));
+    const next: BrowserTree = { ...ws.browser_tree, tree: [...pruned, ...missing] };
+    if (JSON.stringify(next) !== JSON.stringify(ws.browser_tree)) void this.pushBrowserTree(next);
   }
 
   /** Tabs follow the runtime's views: a deleted view (Delete View, Delete Cube) loses its tab, a renamed one
