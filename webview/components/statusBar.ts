@@ -1,14 +1,6 @@
 import { Store } from "../state";
 import { el } from "../dom";
-import { guiVersion, guiVersionShort } from "../version";
-
-/** Compact display form of an engine build string: semver + git7. */
-function engineVersionShort(v: string): string {
-    if (!v) return "";
-    const parts = v.split("-");
-    const git = parts.find(p => /^[0-9a-f]{7}$/.test(p));
-    return git ? `${parts[0]}·${git}` : v;
-}
+import { guiVersion, guiVersionShort, shortForm } from "../version";
 
 /** StatusBar — bottom bar showing focus path, cell address, nav mode, selection stats.
  *  Mirrors lib_gui/app.py status bar. The stats widget is the Qt dropdown button
@@ -100,16 +92,26 @@ export class StatusBar {
     // places that show which file is open (document.title is not visible there).
     const file = el("span", { class: "sb-section sb-file" }, [""]);
     const dirty = el("span", { class: "sb-section dirty-marker" }, [""]);
-    // Right-aligned version chip (GUI + engine builds). Click copies both
-    // strings — the most useful data for a bug report.
+    // Right-aligned version chip (a-11-versioning.md §5): `gui {short} · eng
+    // {short}` visible; tooltip and click-to-copy list every component's full
+    // build string — the most useful data for a bug report.
     const version = el("span", { class: "sb-section sb-version", tabindex: "0", role: "button", title: "" }, [""]);
+    const fullForms = () => {
+      const s = this.store.state;
+      return [
+        `ext ${s.extVersion || "unknown"}`,
+        `gui ${guiVersion}`,
+        `tsr ${s.tsRuntimeVersion || "unknown"}`,
+        `eng ${s.engineVersion || "unknown"}`,
+      ].join("\n");
+    };
     const showVersions = () => {
       const eng = this.store.state.engineVersion;
-      version.textContent = `v${guiVersionShort}${eng ? ` · eng ${engineVersionShort(eng)}` : ""}`;
-      version.title = `om-gui ${guiVersion}\nom-engine ${eng || "unknown"}\n(click to copy)`;
+      version.textContent = `gui ${guiVersionShort}${eng ? ` · eng ${shortForm(eng)}` : ""}`;
+      version.title = `${fullForms()}\n(click to copy)`;
     };
     const copyVersions = () => {
-      navigator.clipboard?.writeText(`om-gui ${guiVersion}\nom-engine ${this.store.state.engineVersion || "unknown"}`).catch(() => {});
+      navigator.clipboard?.writeText(fullForms()).catch(() => {});
     };
     version.addEventListener("click", copyVersions);
     version.addEventListener("keydown", (e) => {

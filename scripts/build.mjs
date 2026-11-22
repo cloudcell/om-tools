@@ -1,5 +1,8 @@
-// Build script for the release bundle: stamps the build with "<version>+<git describe>" so a
-// packaged vsix can be traced back to exact source ("-dirty" when built with uncommitted changes).
+// Build script for the release bundle. Stamps every component with the
+// standard OM build string (docs/versioning.md):
+//   {semver}-{YYYYMMDD}-{HHMMSS}-{git7}-{MODE}-{toolchain}-b{seq}
+// semver comes from the component's own version file, git7 from the
+// component's own repo, seq from a gitignored per-component .build_counter.
 // Dev/watch builds (watch:ext, watch:webview) skip this and show "dev".
 // Usage: npm run build
 
@@ -7,36 +10,39 @@ import { build, version as esbuildVersion } from "esbuild";
 import { execSync } from "node:child_process";
 import { copyFileSync, readFileSync, writeFileSync, chmodSync, existsSync } from "node:fs";
 
-const version = JSON.parse(readFileSync("package.json", "utf8")).version;
-let commit = "nogit";
-try {
-  commit = execSync("git describe --always --dirty", { stdio: ["pipe", "pipe", "ignore"] }).toString().trim();
-} catch { /* not a git checkout (e.g. built from a tarball): commit stays "nogit" */ }
-const buildInfo = `${version}+${commit}`;
+const toolchain = `esb${esbuildVersion}`;
 
-// om-gui version — mirrors om-engine-zig-dev's gen_version.zig format:
-// {semver}-{YYYYMMDD}-{HHMMSS}-{git7}-{mode}-{toolchain}-b{n}. The semver
-// comes from webview/package.json (the library's own version line, not the
-// extension's); the build counter persists in webview/.build_counter.
-function guiVersionString() {
-  const guiVer = JSON.parse(readFileSync("webview/package.json", "utf8")).version;
-  const counterPath = "webview/.build_counter";
+function git7(dir) {
+  try {
+    return execSync("git rev-parse --short=7 HEAD", { cwd: dir, stdio: ["pipe", "pipe", "ignore"] }).toString().trim();
+  } catch { return "nogit"; }
+}
+
+function nextSeq(counterPath) {
   let n = 1;
   try { n = parseInt(readFileSync(counterPath, "utf8").trim(), 10) + 1 || 1; } catch { /* first build */ }
   try { writeFileSync(counterPath, `${n}\n`); } catch { /* counter is advisory only */ }
-  let git7 = "nogit";
-  try { git7 = execSync("git rev-parse --short=7 HEAD", { stdio: ["pipe", "pipe", "ignore"] }).toString().trim(); } catch {}
+  return n;
+}
+
+// The standard OM build string (docs/versioning.md). `dir` is the component's
+// repo root: its package.json supplies the semver, its .build_counter supplies
+// the sequence, its HEAD supplies git7.
+function omBuildString(dir, { semverFile = "package.json", counter = ".build_counter", mode = "REL" } = {}) {
+  const semver = JSON.parse(readFileSync(`${dir}/${semverFile}`, "utf8")).version;
   const d = new Date();
   const p = (v, w = 2) => String(v).padStart(w, "0");
   const stamp = `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}-${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}`;
-  return `${guiVer}-${stamp}-${git7}-REL-esb${esbuildVersion}-b${n}`;
+  return `${semver}-${stamp}-${git7(dir)}-${mode}-${toolchain}-b${nextSeq(`${dir}/${counter}`)}`;
 }
-const guiVersion = guiVersionString();
+
+const extVersion = omBuildString(".");
+const guiVersion = omBuildString("webview");
 const guiDefine = { OM_GUI_VERSION: JSON.stringify(guiVersion) };
 
 await build({
   entryPoints: ["src/extension.ts"], bundle: true, platform: "node", format: "cjs",
-  external: ["vscode"], define: { OM_TOOLS_BUILD: JSON.stringify(buildInfo) }, outfile: "dist/extension.js",
+  external: ["vscode"], define: { OM_TOOLS_BUILD: JSON.stringify(extVersion) }, outfile: "dist/extension.js",
 });
 await build({
   entryPoints: ["webview/main.ts"], bundle: true, platform: "browser", format: "iife",
@@ -60,14 +66,19 @@ await build({
 const tsRuntimeDir = process.env.OM_TS_RUNTIME_DIR || "../ts_runtime";
 const wasmSrc = [`${tsRuntimeDir}/assets/om_engine.wasm`, `${tsRuntimeDir}/dist/om_engine.wasm`].find(existsSync);
 let tsBundled = false;
+let tsrVersion = null;
 if (existsSync(`${tsRuntimeDir}/src/engineWorker.ts`)) {
+  // tsr gets its own build string stamped at compile time (TS_RUNTIME_BUILD);
+  // semver/git7/counter come from the ts_runtime checkout itself.
+  tsrVersion = omBuildString(tsRuntimeDir);
+  const tsrDefine = { TS_RUNTIME_BUILD: JSON.stringify(tsrVersion) };
   await build({
     entryPoints: [`${tsRuntimeDir}/src/engineWorker.ts`], bundle: true, platform: "node", format: "cjs",
-    outfile: "dist/engineWorker.cjs",
+    define: tsrDefine, outfile: "dist/engineWorker.cjs",
   });
   await build({
     entryPoints: [`${tsRuntimeDir}/src/tsEngineServer.ts`], bundle: true, platform: "node", format: "cjs",
-    banner: { js: "#!/usr/bin/env node" }, outfile: "dist/tsEngineServer.cjs",
+    define: tsrDefine, banner: { js: "#!/usr/bin/env node" }, outfile: "dist/tsEngineServer.cjs",
   });
   chmodSync("dist/tsEngineServer.cjs", 0o755);
   tsBundled = true;
@@ -84,4 +95,4 @@ if (existsSync(`${tsRuntimeDir}/src/engineWorker.ts`)) {
 }
 if (wasmSrc) copyFileSync(wasmSrc, "dist/om_engine.wasm");
 else if (tsBundled) console.warn("om_engine.wasm not found — embedded engine unavailable in this build");
-console.log(`build: ${buildInfo}  gui: ${guiVersion}  ts_runtime: ${tsBundled ? tsRuntimeDir : "not bundled"}`);
+console.log(`ext: ${extVersion}\ngui: ${guiVersion}\ntsr: ${tsBundled ? (tsrVersion ?? `${tsRuntimeDir} (prebuilt)`) : "not bundled"}`);

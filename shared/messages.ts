@@ -63,6 +63,10 @@ export interface AppConfig {
   defaultDir?: string;
   /** Connected engine's build string (zig `version` RPC), when the host can read it. */
   engine_version?: string;
+  /** Host extension's build string (OM_TOOLS_BUILD), when the host is the VS Code extension. */
+  ext_version?: string;
+  /** TS runtime's build string (`runtime_version` session query), when it can report one. */
+  ts_runtime_version?: string;
 }
 
 /** `fsList` response: directory listing for the webview's server-side file browser. */

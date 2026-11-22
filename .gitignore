@@ -23,4 +23,5 @@ Thumbs.db
 .devin/config.local.json
 
 docs
+.build_counter
 webview/.build_counter
