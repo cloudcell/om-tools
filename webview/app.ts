@@ -55,6 +55,7 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
     store.state.nativeFileDialogs = !!cfg.nativeFileDialogs;
     store.state.serverFileBrowse = !!cfg.serverFileBrowse;
     store.state.defaultDir = cfg.defaultDir || "";
+    store.state.engineVersion = cfg.engine_version || "";
     store.notify();
   }).catch(() => {});
 

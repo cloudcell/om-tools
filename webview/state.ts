@@ -95,6 +95,8 @@ export interface AppState {
   serverFileBrowse: boolean;
   /** From the host config: absolute folder for default file paths in the text field. */
   defaultDir: string;
+  /** Connected engine's build string (status-bar version chip); "" when unknown. */
+  engineVersion: string;
   canUndo: boolean;
   canRedo: boolean;
   undoDesc: string;
@@ -148,6 +150,7 @@ export class Store {
     nativeFileDialogs: false,
     serverFileBrowse: false,
     defaultDir: "",
+    engineVersion: "",
     canUndo: false,
     canRedo: false,
     undoDesc: "",

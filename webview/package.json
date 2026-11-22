@@ -1,6 +1,6 @@
 {
   "name": "om-gui",
-  "version": "0.1.4",
+  "version": "0.1.0-alpha.0",
   "private": true,
   "type": "module",
   "description": "OM Core GUI — framework-free TypeScript, host-agnostic. Hosts call mount(root, { transport }) and supply a Transport (VsCodeTransport in the extension webview, WebSocketTransport — real ws or a WebSocketLike shim — in the browser). Built artifacts live in ../dist: webview.js (iife, self-mounting entry main.ts), webview.mjs (ESM library, index.ts), webview.css.",
