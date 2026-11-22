@@ -518,7 +518,9 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 /* The view that is open in the active tab. */
 .tree-row.active { background: var(--name-badge-bg); color: var(--name-badge-fg); font-weight: 500; }
 .tree-twisty { width: 12px; text-align: center; color: var(--tree-twisty); font-size: 10px; cursor: pointer; flex-shrink: 0; }
-.tree-icon { display: none; width: 14px; height: 14px; align-items: center; justify-content: center; font-size: 10px; color: var(--tree-icon); flex-shrink: 0; }
+.tree-icon { display: flex; width: 14px; height: 14px; align-items: center; justify-content: center; font-size: 10px; color: var(--tree-icon); flex-shrink: 0; }
+.kind-icon { display: flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
+.kind-icon svg { display: block; width: 14px; height: 14px; }
 .tree-label { flex: 1; display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; }
 .tree-count { margin-left: auto; padding-left: 8px; font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .tree-row.active .tree-count { color: inherit; }
