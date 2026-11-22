@@ -96,6 +96,13 @@ GUI layout/colors from `om-core/om-gui.conf`.
 When a user asks to create, rebuild, repair, or extend a financial model in OM Core,
 use `.devin/skills/financial-model/SKILL.md` before running any OM Core commands.
 
+## Versioning
+All components follow the OM build-string standard `docs/a-standards/a-11-versioning.md`:
+`{semver}-{YYYYMMDD}-{HHMMSS}-{git7}-{MODE}-{toolchain}-b{seq}`, component tags
+`eng`/`gui`/`ext`/`tsr`/`web`. Semvers are hand-maintained per component
+(`package.json`, `webview/package.json`, engine `src/version-manual.zig`) —
+never auto-bump. Display short form is always `{tag} {semver}·{git7}`.
+
 ## Design guidelines
 All GUI work must follow `docs/design-guidelines.md` (derived from Apple HIG).
 Quick-reference rules in `docs/design-rules.md`. Devin skill in `.devin/skills/hig-design/`.

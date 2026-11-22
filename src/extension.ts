@@ -622,6 +622,8 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         // `engine_version` session query (zig `version` RPC). Socket mode: the
         // Python runtime has no such query — the field is simply omitted.
         data.engine_version = await conn?.query("engine_version", {}).catch(() => undefined);
+        data.ts_runtime_version = await conn?.query("runtime_version", {}).catch(() => undefined);
+        data.ext_version = BUILD_INFO;
         return { type: "response", id: req.id, ok: true, data };
       }
       case "startRuntime": {

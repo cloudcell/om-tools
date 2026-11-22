@@ -97,6 +97,10 @@ export interface AppState {
   defaultDir: string;
   /** Connected engine's build string (status-bar version chip); "" when unknown. */
   engineVersion: string;
+  /** Host extension's build string; "" when the host isn't the VS Code extension. */
+  extVersion: string;
+  /** TS runtime's build string; "" when the backend can't report one. */
+  tsRuntimeVersion: string;
   canUndo: boolean;
   canRedo: boolean;
   undoDesc: string;
@@ -151,6 +155,8 @@ export class Store {
     serverFileBrowse: false,
     defaultDir: "",
     engineVersion: "",
+    extVersion: "",
+    tsRuntimeVersion: "",
     canUndo: false,
     canRedo: false,
     undoDesc: "",
