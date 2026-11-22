@@ -363,10 +363,13 @@ export class Store {
     };
     const pruned = pruneNodes(ws.browser_tree.tree);
     const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+    // Newly-appearing elements append at root end — but only ones the
+    // Show System Elements filter would display; hidden elements aren't
+    // auto-added (their existing refs stay wherever the user filed them).
     const missing: BrowserNode[] = [
-      ...[...this.state.dimensions].sort(byName).map((d) => `dim:${d.id}` as const),
-      ...[...this.state.cubes].sort(byName).map((c) => `cube:${c.id}` as const),
-      ...[...this.state.views].sort(byName).map((v) => `view:${v.id}` as const),
+      ...[...this.visibleDims()].sort(byName).map((d) => `dim:${d.id}` as const),
+      ...[...this.visibleCubes()].sort(byName).map((c) => `cube:${c.id}` as const),
+      ...[...this.visibleViews()].sort(byName).map((v) => `view:${v.id}` as const),
     ].filter((r) => known.has(r) && !seen.has(r));
     const next: BrowserTree = { ...ws.browser_tree, tree: [...pruned, ...missing] };
     if (JSON.stringify(next) !== JSON.stringify(ws.browser_tree)) void this.pushBrowserTree(next);
