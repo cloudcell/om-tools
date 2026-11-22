@@ -57,10 +57,10 @@ export type MaterialIcon = keyof typeof MATERIAL_PATHS;
  *  Stroke-based (the Material set is filled outlines) — viewBox 0 -960 960 960,
  *  colored by stroke=currentColor so they follow --tree-icon in both themes. */
 const KIND_ICONS = {
-  // Three arrows branching from a junction: up, down-left, down-right.
-  dimension: `<path d="M480 -390 L480 -824 M408 -744 L480 -824 L552 -744 M480 -390 L196 -138 M272 -150 L196 -138 L212 -214 M480 -390 L764 -138 M688 -150 L764 -138 L748 -214"/>`,
+  // Three arrows branching from a junction, 120° apart: up, down-left, down-right.
+  dimension: `<path d="M480 -390 L480 -824 M408 -744 L480 -824 L552 -744 M480 -390 L104 -173 M137 -275 L104 -173 L209 -151 M480 -390 L856 -173 M751 -151 L856 -173 L823 -275"/>`,
   // Isometric cube wireframe: pointy-top hexagon + three spokes from center.
-  cube: `<path d="M480 -830 L783 -655 L783 -305 L480 -130 L177 -305 L177 -655 Z"/><path d="M480 -480 L480 -830 M480 -480 L177 -305 M480 -480 L783 -305"/>`,
+  cube: `<path d="M480 -830 L783 -655 L783 -305 L480 -130 L177 -305 L177 -655 Z"/><path d="M480 -480 L480 -130 M480 -480 L177 -655 M480 -480 L783 -655"/>`,
   // Rounded square containing a 3×3 grid.
   view: `<rect x="170" y="-790" width="620" height="620" rx="105"/><path d="M377 -790 L377 -170 M583 -790 L583 -170 M170 -377 L790 -377 M170 -583 L790 -583"/>`,
 } as const;
