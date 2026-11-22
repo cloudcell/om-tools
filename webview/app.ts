@@ -87,5 +87,6 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
 
   // If already connected by the time we mount (host auto-connects), load model.
   if (store.state.connected) store.refreshModel().catch(() => {});
+  (window as any).__om = { api, store, shell };
   return { api, store, shell };
 }

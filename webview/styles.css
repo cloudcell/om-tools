@@ -500,18 +500,6 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .dock-content { flex: 1; overflow: auto; padding: 4px; min-height: 0; }
 .dock.collapsed .dock-content { display: none; }
 
-/* Flat/Tree layout switch in the Model Browser header — mirrors .menubar .theme-switch. */
-.bt-seg { display: flex; gap: 2px; padding: 1px; border-radius: 6px; background: var(--header-bg); }
-.bt-seg-btn {
-  padding: 1px 8px; border: 0; border-radius: 4px;
-  background: transparent; color: var(--text-muted);
-  font: inherit; font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none;
-  cursor: pointer;
-}
-.bt-seg-btn:hover { color: var(--text); }
-.bt-seg-btn[aria-pressed="true"] { background: var(--panel-bg); color: var(--accent); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
-.bt-seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-
 /* ---- Model browser tree ---- */
 .tree { font-size: 12px; }
 .tree-node { padding-left: 0; }
@@ -526,10 +514,6 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
   white-space: nowrap;
 }
 .tree-row:hover { background: var(--hover-bg); }
-/* Tree-view drag indicators: insertion line before/after, row tint for into. */
-.tree-row.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
-.tree-row.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
-.tree-row.drop-into { background: var(--hover-soft); outline: 1px dashed var(--accent); outline-offset: -1px; }
 .tree-row.selected { background: var(--selection); color: #fff; }
 /* The view that is open in the active tab. */
 .tree-row.active { background: var(--name-badge-bg); color: var(--name-badge-fg); font-weight: 500; }
