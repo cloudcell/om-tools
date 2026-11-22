@@ -698,6 +698,11 @@ export class AppShell {
 
   private helpMenuItems(): MenuItem[] {
     return [
+      // Web host only: the standalone app's welcome.js listens for this event on
+      // the same window and reopens the welcome screen (informational, non-gating).
+      ...(this.store.api.supportsNativeExternalLinks
+        ? [{ icon: msym("water_drop"), label: "Welcome Screen…", fn: () => window.dispatchEvent(new CustomEvent("om-show-welcome")) } as MenuItem]
+        : []),
       { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core", "OM Core — multidimensional modeling engine GUI.\nVSCode/VSCodium extension connecting to the om-core runtime.\n\nhttps://cloudcell.github.io/om-docs/") },
     ];
   }
