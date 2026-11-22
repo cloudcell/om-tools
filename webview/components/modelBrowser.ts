@@ -73,8 +73,8 @@ export class ModelBrowser {
     // persists browser_tree.
     if (!this.segBtns && this.headerEl && this.store.browserTreeSupported()) {
       const seg = el("span", { class: "bt-seg" });
-      const flatBtn = el("button", { class: "bt-seg-btn", title: "Flat — sorted element list" }, ["Flat"]);
-      const treeBtn = el("button", { class: "bt-seg-btn", title: "Tree — folders and custom order" }, ["Tree"]);
+      const flatBtn = el("button", { class: "bt-seg-btn", title: "Flat — group by object type" }, ["Flat"]);
+      const treeBtn = el("button", { class: "bt-seg-btn", title: "Tree — organize into folders" }, ["Tree"]);
       flatBtn.addEventListener("click", () => this.setBrowserMode("flat"));
       treeBtn.addEventListener("click", () => this.setBrowserMode("tree"));
       seg.append(flatBtn, treeBtn);
@@ -260,6 +260,8 @@ export class ModelBrowser {
           if (!leaf) return;
           const node = this.makeTreeNode(leaf.label, kindIcon(leaf.kind), false,
             () => this.treeLeafMenu(n, leaf));
+          // Sequential dimension: same link mark as flat mode / pivot chip.
+          if (leaf.kind === "dimension" && this.store.dimIsSeq(leaf.id)) node.querySelector(".tree-label .tree-count")?.before(seqLinkIcon());
           if (leaf.kind === "view") {
             if (this.store.state.activeView?.viewId === leaf.id) node.querySelector(".tree-row")?.classList.add("active");
             node.addEventListener("click", () => this.store.openView(leaf.id, leaf.label));
