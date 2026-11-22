@@ -1014,6 +1014,8 @@ export class Store {
       const r: any = await this.api.saveWorkspace(path);
       this.state.filePath = (r && typeof r.path === "string" && r.path) || path;
       this.markDirty(false);
+      if (r?.downloaded) await alertDialog("Saved to Downloads",
+        "Your browser doesn't support choosing a save location — the workspace was downloaded to your default Downloads folder.");
       return true;
     } catch (e: any) { await alertDialog("Save failed", e?.message || String(e)); return false; }
   }
