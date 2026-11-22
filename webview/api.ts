@@ -67,6 +67,7 @@ export class OmApi {
    *  cannot open links natively (`supportsNativeExternalLinks === false`); in a
    *  real browser the feedback control is a plain anchor instead. */
   openFeedback() { return this.t.request("openFeedback"); }
+  openExternal(url: string) { return this.t.request("openExternal", { url }); }
   /** True in a real browser tab (native anchor navigation works); false in the VS Code webview. */
   get supportsNativeExternalLinks(): boolean { return this.t.supportsNativeExternalLinks; }
 

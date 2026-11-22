@@ -1,8 +1,8 @@
 import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText, DEFAULT_LAYOUT } from "../state";
-import { DEFAULT_DOCK, FEEDBACK_URL, type DockLayout, type DockPanelId, type DockZoneId, type UiLayout, type UiTheme } from "../../shared/messages";
+import { DEFAULT_DOCK, FEEDBACK_URL, LINKS, type DockLayout, type DockPanelId, type DockZoneId, type UiLayout, type UiTheme } from "../../shared/messages";
 import { applyTheme, currentTheme } from "../theme";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
-import { materialIconSvg as msym, type MaterialIcon } from "../menuIcons";
+import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
 import { RulePanel } from "./rulePanel";
@@ -490,6 +490,7 @@ export class AppShell {
       indicator.title = full;
     });
     mb.appendChild(this.buildFeedbackControl());
+    mb.appendChild(this.buildLinkButtons());
     mb.appendChild(indicator);
     mb.appendChild(this.buildThemeSwitch());
     return mb;
@@ -514,6 +515,33 @@ export class AppShell {
     return this.store.api.supportsNativeExternalLinks
       ? el("a", { ...attrs, href: FEEDBACK_URL, target: "_blank", rel: "noopener noreferrer" }, children)
       : el("button", { ...attrs, type: "button", onclick: () => { void this.store.api.openFeedback(); } }, children);
+  }
+
+  /** Icon-only external links (GitHub repo, Discord, documentation), grouped between Feedback
+   *  and the engine indicator. Same host split as Feedback: real anchors in a browser host
+   *  (native new-tab navigation, keyboard-focusable, no popup-blocker involvement); buttons
+   *  in the VS Code webview that ask the host to open the URL — which it only does when the
+   *  URL is one of the fixed `LINKS` destinations. */
+  private buildLinkButtons(): HTMLElement {
+    const defs: { icon: string; title: string; label: string; url: string }[] = [
+      { icon: brandIconSvg("github"), title: "Open Modeling on GitHub", label: "GitHub repository", url: LINKS.github },
+      { icon: brandIconSvg("discord"), title: "Open Modeling Discord", label: "Discord community", url: LINKS.discord },
+      { icon: msym("menu_book"), title: "Open Modeling documentation", label: "Documentation", url: LINKS.docs },
+    ];
+    const group = el("div", { class: "link-btns", role: "group", "aria-label": "External links" });
+    for (const d of defs) {
+      const attrs = {
+        class: "link-btn",
+        title: d.title,
+        "aria-label": `${d.title} — opens in your browser`,
+      };
+      const children = [el("span", { class: "link-icon", html: d.icon })];
+      group.appendChild(
+        this.store.api.supportsNativeExternalLinks
+          ? el("a", { ...attrs, href: d.url, target: "_blank", rel: "noopener noreferrer" }, children)
+          : el("button", { ...attrs, type: "button", onclick: () => { void this.store.api.openExternal(d.url); } }, children));
+    }
+    return group;
   }
 
   /** Light / dark switch at the right end of the menu bar (T-039). The choice is saved with the panel sizes. */
