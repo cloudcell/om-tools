@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { EngineClient, TransportEndpoint, parseEndpoint, endpointToString, topicMatches } from "./engineClient";
 import { EngineProcess } from "./engineProcess";
-import { HostRequest, HostToWebview, AppConfig, PickFileParams, UiState, UI_STATE_META } from "../shared/messages";
+import { HostRequest, HostToWebview, AppConfig, PickFileParams, UiState, UI_STATE_META, FEEDBACK_URL } from "../shared/messages";
 import { autoStartBlockedReason, isRemoteEndpoint } from "./runtimePolicy";
 import { sanitizeUiState } from "./uiState";
 import { GUI_BUTTON_KEY, RUNTIME_BUTTON_KEY, StatusSnapshot, UV_INSTALL_URL, buttonStates, describeOmCorePath, findUv, hasVenv, looksLikeOmCore, missingOmCoreParts, readGitCommit } from "./engineStatus";
@@ -576,7 +576,7 @@ function postToWebview(msg: HostToWebview) {
 async function handleRequest(req: HostRequest): Promise<HostToWebview> {
   try {
     const conn = activeConn();
-    if (!conn && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState"].includes(req.method)) {
+    if (!conn && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState", "openFeedback"].includes(req.method)) {
       return { type: "response", id: req.id, ok: false, error: "not connected" };
     }
     switch (req.method) {
@@ -654,6 +654,12 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         // The webview is the less trusted side: keep only known fields with sane values (T-049, DEV-16).
         const state = sanitizeUiState(req.params?.state);
         if (extContext && state) await extContext.globalState.update(UI_STATE_KEY, state);
+        return { type: "response", id: req.id, ok: true };
+      }
+      case "openFeedback": {
+        // Fixed trusted destination — the request carries no URL, so there is
+        // no arbitrary-URL surface for a hostile webview to pivot through.
+        void vscode.env.openExternal(vscode.Uri.parse(FEEDBACK_URL));
         return { type: "response", id: req.id, ok: true };
       }
       case "pickFile": {

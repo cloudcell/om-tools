@@ -2,7 +2,11 @@
  *  Kept transport-agnostic so the same webview bundle can run in a browser
  *  later (the browser transport would be a WebSocket instead of postMessage). */
 
-export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "fsList" | "setTitle" | "saveUiState";
+export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "fsList" | "setTitle" | "saveUiState" | "openFeedback";
+
+/** One-click feedback: the only external destination the webview may ask the host to open.
+ *  The `openFeedback` request carries no URL — the host always opens this. */
+export const FEEDBACK_URL = "https://github.com/cloudcell/om-tools/discussions/categories/ideas";
 
 export interface HostRequest {
   type: "request";
