@@ -1,6 +1,6 @@
 import { Store } from "../state";
 import { el, clear } from "../dom";
-import { seqLinkIcon, kindIcon, kindIconSvg, materialIconSvg, KindIcon } from "../menuIcons";
+import { seqLinkIcon, kindIcon, materialIconSvg, KindIcon } from "../menuIcons";
 import { BrowserNode } from "../api";
 import { inputDialog, alertDialog, confirmDialog } from "./dialogs";
 import { ModelActions } from "./modelActions";
@@ -22,17 +22,7 @@ export class ModelBrowser {
     content.appendChild(tree);
     panel.appendChild(content);
 
-    // Flat/Tree layout toggle — only when the engine persists browser_tree.
-    if (this.store.browserTreeSupported()) {
-      const seg = el("span", { class: "bt-seg" });
-      const flatBtn = el("button", { class: "bt-seg-btn", title: "Flat — sorted element list" }, ["Flat"]);
-      const treeBtn = el("button", { class: "bt-seg-btn", title: "Tree — folders and custom order" }, ["Tree"]);
-      flatBtn.addEventListener("click", () => this.setBrowserMode("flat"));
-      treeBtn.addEventListener("click", () => this.setBrowserMode("tree"));
-      seg.append(flatBtn, treeBtn);
-      header.appendChild(seg);
-      this.segBtns = { flat: flatBtn, tree: treeBtn };
-    }
+    this.headerEl = header;
 
     // Right-click on empty space in Tree mode → root menu (rows stopPropagation).
     tree.addEventListener("contextmenu", (e) => {
@@ -73,10 +63,24 @@ export class ModelBrowser {
     a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
 
   private segBtns?: { flat: HTMLElement; tree: HTMLElement };
+  private headerEl?: HTMLElement;
   private dragging = false;
   private drag: { parentArr: BrowserNode[]; index: number; node: BrowserNode } | null = null;
 
   private refresh(tree: HTMLElement) {
+    // Capability can arrive after the first paint (workspace_summary loads
+    // async) — build the toggle lazily once the summary says the engine
+    // persists browser_tree.
+    if (!this.segBtns && this.headerEl && this.store.browserTreeSupported()) {
+      const seg = el("span", { class: "bt-seg" });
+      const flatBtn = el("button", { class: "bt-seg-btn", title: "Flat — sorted element list" }, ["Flat"]);
+      const treeBtn = el("button", { class: "bt-seg-btn", title: "Tree — folders and custom order" }, ["Tree"]);
+      flatBtn.addEventListener("click", () => this.setBrowserMode("flat"));
+      treeBtn.addEventListener("click", () => this.setBrowserMode("tree"));
+      seg.append(flatBtn, treeBtn);
+      this.headerEl.appendChild(seg);
+      this.segBtns = { flat: flatBtn, tree: treeBtn };
+    }
     if (this.segBtns) {
       const m = this.store.browserMode();
       this.segBtns.flat.setAttribute("aria-pressed", String(m === "flat"));
@@ -240,10 +244,11 @@ export class ModelBrowser {
   private leafOf(ref: string): { kind: KindIcon; id: string; label: string } | null {
     const i = ref.indexOf(":");
     const kind = ref.slice(0, i), id = ref.slice(i + 1);
-    const st = this.store.state;
-    if (kind === "dim") { const d = st.dimensions.find((x) => x.id === id); return d ? { kind: "dimension", id, label: `${d.name} (${d.items})` } : null; }
-    if (kind === "cube") { const c = st.cubes.find((x) => x.id === id); return c ? { kind, id, label: `${c.name} (${c.dimensions})` } : null; }
-    if (kind === "view") { const v = st.views.find((x) => x.id === id); return v ? { kind, id, label: v.name } : null; }
+    // Resolve via the visible-* lists so the Show System Elements filter applies
+    // in tree mode too — a hidden element's ref stays stored but doesn't render.
+    if (kind === "dim") { const d = this.store.visibleDims().find((x) => x.id === id); return d ? { kind: "dimension", id, label: `${d.name} (${d.items})` } : null; }
+    if (kind === "cube") { const c = this.store.visibleCubes().find((x) => x.id === id); return c ? { kind, id, label: `${c.name} (${c.dimensions})` } : null; }
+    if (kind === "view") { const v = this.store.visibleViews().find((x) => x.id === id); return v ? { kind, id, label: v.name } : null; }
     return null;
   }
 
@@ -253,7 +258,7 @@ export class ModelBrowser {
         if (typeof n === "string") {
           const leaf = this.leafOf(n);
           if (!leaf) return;
-          const node = this.makeTreeNode(leaf.label, kindIconSvg(leaf.kind), false,
+          const node = this.makeTreeNode(leaf.label, kindIcon(leaf.kind), false,
             () => this.treeLeafMenu(n, leaf));
           if (leaf.kind === "view") {
             if (this.store.state.activeView?.viewId === leaf.id) node.querySelector(".tree-row")?.classList.add("active");

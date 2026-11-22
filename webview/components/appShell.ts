@@ -636,7 +636,7 @@ export class AppShell {
       { label: "Rule Panel", checked: s.options.docking ? this.store.groupRulesOpen() : s.dockVisible.rules,
         fn: () => { if (s.options.docking) this.store.toggleGroupRules(); else this.store.toggleDock("rules"); } },
       { sep: true },
-      { label: "Toggle System Elements", checked: s.showSystemElements, fn: () => { this.store.state.showSystemElements = !this.store.state.showSystemElements; this.store.notify(); this.store.refreshModel(); } },
+      { label: "Show System Elements", checked: s.showSystemElements, fn: () => { this.store.state.showSystemElements = !this.store.state.showSystemElements; this.store.notify(); this.store.refreshModel(); } },
       { sep: true },
       { icon: msym("refresh"), label: "Recalculate View (F9)", fn: () => this.store.recalc("dirty") },
       { icon: msym("sync"), label: "Recalculate Full Model (Shift+F9)", fn: () => this.store.recalc("all") },
