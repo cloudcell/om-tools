@@ -340,11 +340,10 @@ export class RulePanel {
   }
 
   private renderFlowList(list: HTMLElement, flow: FlowNode[]) {
-    const cellIndex = this.currentViewCellIndex();
     for (const node of flow) {
       const pad = 8 + 16 * (node.depth || 0);
       const head = this.flowLine(`• ${node.addr_label || "?"}${node.source ? `  [${node.source}]` : ""}`,
-        "cf-node" + ((node.depth || 0) === 0 ? " cf-root" : ""), pad, node.cube_id, node.addr, cellIndex);
+        "cf-node" + ((node.depth || 0) === 0 ? " cf-root" : ""), pad, node.cube_id, node.addr);
       list.appendChild(head);
       if (node.expression) list.appendChild(this.flowLine(`= ${node.expression}`, "cf-expr", pad + 16));
 
@@ -353,7 +352,7 @@ export class RulePanel {
         list.appendChild(this.flowLine(title, `cf-section cf-${dir}`, pad + 16));
         labels.forEach((label, i) => {
           const t = targets?.[i];
-          list.appendChild(this.flowLine(`${bullet} ${label}`, `cf-${dir}`, pad + 32, t?.cube_id, t?.addr, cellIndex));
+          list.appendChild(this.flowLine(`${bullet} ${label}`, `cf-${dir}`, pad + 32, t?.cube_id, t?.addr));
         });
       };
       section("Upstream (precedents)", node.precedents, node.precedent_targets, "upstream", "↳");
@@ -369,7 +368,6 @@ export class RulePanel {
     const { nodes, edges } = layoutFlowGraph(entry.flow || []);
     if (!nodes.length) { box.appendChild(el("div", { class: "muted" }, ["No flow information available."])); return; }
     const v = this.store.viewOf(this.gid);
-    const cellIndex = this.currentViewCellIndex();
 
     const canvas = el("div", { class: "cf-graph-canvas" });
     const svg = document.createElementNS(SVG_NS, "svg");
@@ -400,21 +398,21 @@ export class RulePanel {
     // 1. Cards. The box is in the document, so their heights can be measured right away.
     for (const n of nodes) {
       const r = n.row;
-      const navigable = !!v && r.cube_id === v.cubeId && cellIndex.has(r.addr.join("|"));
+      const navigable = !!(r.cube_id && r.addr?.length);
       const card = el("div", {
         class: "cf-gnode" + (n.root ? " root" : "") + (navigable ? " link" : ""),
         tabindex: "0",
         style: { width: `${GRAPH_NODE_W}px` },
-        title: `${r.addr_label}  [${r.source}]\n${navigable ? "Click or press Enter to select this cell" : "Not on the current page of this view"}`,
+        title: `${r.addr_label}  [${r.source}]${navigable ? "\nClick or press Enter to open this cell" : ""}`,
       }, [
         el("div", { class: "cf-gnode-title" }, [r.addr_label || "?"]),
         el("div", { class: "cf-gnode-source" }, [`[${r.source}]`]),
       ]);
       if (r.expression) card.appendChild(el("div", { class: "cf-gnode-expr" }, [`= ${r.expression}`]));
       if (navigable) {
-        card.addEventListener("click", () => this.navigateToCell(r.cube_id, r.addr));
+        card.addEventListener("click", () => void this.navigateToCell(r.cube_id, r.addr));
         card.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.navigateToCell(r.cube_id, r.addr); }
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void this.navigateToCell(r.cube_id, r.addr); }
         });
       }
       card.addEventListener("mouseenter", () => highlight(n.key));
@@ -542,37 +540,99 @@ export class RulePanel {
     }, { passive: false });
   }
 
-  /** One list line. Clickable (selects the cell) when the address is on the current grid page. */
-  private flowLine(text: string, cls: string, pad: number, cubeId?: string, addr?: string[], cellIndex?: Map<string, number>): HTMLElement {
+  /** One list line. Clickable (opens the cell's view and slice) when it carries an address. */
+  private flowLine(text: string, cls: string, pad: number, cubeId?: string, addr?: string[]): HTMLElement {
     const line = el("div", { class: `calc-flow-entry ${cls}`, style: { paddingLeft: `${pad}px` } }, [text]);
-    const v = this.store.viewOf(this.gid);
-    if (cubeId && addr && cellIndex && v && cubeId === v.cubeId && cellIndex.has(addr.join("|"))) {
+    if (cubeId && addr?.length) {
       line.classList.add("link");
-      line.title = "Select this cell";
-      line.addEventListener("click", () => this.navigateToCell(cubeId, addr));
+      line.title = "Open this cell";
+      line.addEventListener("click", () => void this.navigateToCell(cubeId, addr));
     }
     return line;
   }
 
-  /** addr ("a|b|c") → flat index into activeView.cells.cells. */
-  private currentViewCellIndex(): Map<string, number> {
+  /** addr ("a|b|c") → flat index into a view's cells. */
+  private cellIndexFor(v: { cells?: { cells?: ({ addr?: string[] } | null)[] | null } | null } | null): Map<string, number> {
     const idx = new Map<string, number>();
-    const cells = this.store.viewOf(this.gid)?.cells?.cells || [];
-    cells.forEach((c, i) => { if (c?.addr) idx.set(c.addr.join("|"), i); });
+    v?.cells?.cells?.forEach((c, i) => { if (c?.addr) idx.set(c.addr.join("|"), i); });
     return idx;
   }
 
-  /** Select the cell in the active view. Cells of other cubes or other page selections are not navigable yet. */
-  private navigateToCell(cubeId: string, addr: string[]) {
-    const v = this.store.viewOf(this.gid);
-    if (!v || v.cubeId !== cubeId || !v.colKeys.length) return;
-    const i = this.currentViewCellIndex().get(addr.join("|"));
-    if (i === undefined) return;
-    // i is a cell-DATA index; selection takes VISUAL grid coordinates.
-    const vr = this.store.visualRowIndex(v, Math.floor(i / v.colKeys.length));
-    const vc = this.store.visualColIndex(v, i % v.colKeys.length);
-    if (vr < 0 || vc < 0) return;
-    this.store.setSelectionFull(vr, vc, "cell", new Set<string>(), undefined, undefined, this.gid);
+  /** Open the cell wherever it lives: the active view, another view of the cube
+   *  (re-slicing its page dims to the node's coords), or a freshly created
+   *  default view. Extends Qt `_on_flow_navigate_requested` — Python stops at
+   *  "no view"/"not on page"; we slice and create instead. */
+  private async navigateToCell(cubeId: string, addr: string[]) {
+    if (!cubeId || !addr?.length) return;
+    // 1. Target a view: active same-cube → a tab already open on the cube →
+    //    the first view of the cube → create a default one.
+    const cur = this.store.viewOf(this.gid);
+    let viewId: string | null = cur?.cubeId === cubeId ? cur.viewId : null;
+    let viewName = cur?.viewName ?? "";
+    if (!viewId) {
+      for (const g of this.store.state.viewGroups) {
+        const t = g.tabs.find((t) => this.store.state.viewStates[t.viewId]?.cubeId === cubeId);
+        if (t) { viewId = t.viewId; viewName = t.viewName; break; }
+      }
+    }
+    // Cube dimension order maps addr positions to dims (needed to slice pages).
+    let dimIds: string[] = [];
+    try { dimIds = (await this.store.api.cubeDetail(cubeId))?.dimension_ids ?? []; } catch {}
+    const dimIdx = new Map(dimIds.map((d, i) => [d, i]));
+    if (!viewId) {
+      for (const vs of this.store.state.views) {
+        try {
+          const d = await this.store.api.viewDetail(vs.id);
+          if (d?.cube_id === cubeId) { viewId = vs.id; viewName = d?.name || vs.name || vs.id; break; }
+        } catch {}
+      }
+    }
+    if (!viewId) {
+      const user = dimIds.filter((d) => d !== "@");
+      const cubeName = this.store.state.cubes.find((c) => c.id === cubeId)?.name ?? cubeId;
+      if (!user.length) { await alertDialog("Calculation Flow", `No view could be opened for cube '${cubeName}'.`); return; }
+      viewName = `View of ${cubeName}`;
+      try {
+        const r = await this.store.api.createView(viewName, cubeId, [user[0]], user[1] ? [user[1]] : [], ["@", ...user.slice(2)]);
+        if (!r?.id) throw new Error("the engine returned no view");
+        viewId = String(r.id);
+        await this.store.afterStructureChange({ viewId: String(r.id), viewName });
+      } catch (e: any) {
+        await alertDialog("Calculation Flow", `Could not open a view for '${cubeName}' — ${e?.message || e}`);
+        return;
+      }
+    } else if (cur?.viewId !== viewId) {
+      await this.store.openView(viewId, viewName);
+    }
+    if (!viewId) return;   // every fall-through path above either assigns or returns
+
+    // 2. Slice the view's page dims to the node's coords so the cell is on the
+    //    visible page — one reload for all page changes, not one per dim.
+    let v = this.store.state.viewStates[viewId];
+    if (v) {
+      let changed = false;
+      for (const dimId of v.pageDimIds ?? []) {
+        const i = dimIdx.get(dimId);
+        const itemId = i !== undefined ? addr[i] : undefined;
+        if (itemId && v.pageSelections?.[dimId] !== itemId) {
+          try { await this.store.api.setPageItemId(viewId, dimId, itemId); changed = true; } catch {}
+        }
+      }
+      if (changed) await this.store.loadView(viewId);
+      v = this.store.state.viewStates[viewId];
+    }
+    if (!v?.cells || !v.colKeys.length) { await alertDialog("Calculation Flow", "The cell's view could not be loaded."); return; }
+
+    // 3. Select: i is a cell-DATA index; selection takes VISUAL grid coordinates.
+    const i = this.cellIndexFor(v).get(addr.join("|"));
+    const vr = i === undefined ? -1 : this.store.visualRowIndex(v, Math.floor(i / v.colKeys.length));
+    const vc = i === undefined ? -1 : this.store.visualColIndex(v, i % v.colKeys.length);
+    if (i === undefined || vr < 0 || vc < 0) {
+      await alertDialog("Calculation Flow", `The cell is not visible in '${v.viewName || "the view"}' — the item may be filtered or the address stale.`);
+      return;
+    }
+    const tgid = this.store.groupForView(viewId) ?? this.store.state.focusedGroup;
+    this.store.setSelectionFull(vr, vc, "cell", new Set<string>(), undefined, undefined, tgid);
   }
 
   // ---- Circular References tab ----
@@ -630,7 +690,7 @@ export class RulePanel {
         nodesContainer.appendChild(path);
         for (const [i, node] of nodes.entries()) {
           const entry = el("div", { class: "circ-refs-node" }, [`${i + 1}. ${node.addr_label || node.label || node.addr?.join("|") || "?"} [${node.source || ""}]`]);
-          if (node.cube_id && node.addr) entry.addEventListener("click", () => this.navigateToCell(node.cube_id, node.addr));
+          if (node.cube_id && node.addr) entry.addEventListener("click", () => void this.navigateToCell(node.cube_id, node.addr));
           nodesContainer.appendChild(entry);
         }
       };
