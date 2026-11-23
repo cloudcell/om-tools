@@ -735,7 +735,7 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         // The fallback must match the payload's real format: a bundle must
         // never default to a *.json name.
         const suggested = typeof p.suggestedName === "string" && p.suggestedName.trim().length > 0
-          && !/[\\/:*?"<>|-]/.test(p.suggestedName)
+          && !/[\\/:*?"<>|\x00-\x1f]/.test(p.suggestedName)
           ? p.suggestedName : (isBin ? "workspace.omz" : "session.omsession.json");
         const uri = await vscode.window.showSaveDialog({
           defaultUri: vscode.Uri.joinPath(defaultDirUri(), suggested),
