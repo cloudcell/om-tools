@@ -25,6 +25,6 @@ export function resolveExampleRef(rawPath: string, catalog: ExampleCatalog, exam
   if (!m) throw new Error(`invalid example reference: ${rawPath}`);
   const entry = catalog.examples.find((e) => e.id === m[1]);
   if (!entry) throw new Error(`unknown example: ${m[1]}`);
-  if (!/^[A-Za-z0-9_.-]+\.json$/.test(entry.file)) throw new Error(`bad catalog file for ${m[1]}`);
+  if (!/^[A-Za-z0-9_.-]+\.(json|omz)$/.test(entry.file)) throw new Error(`bad catalog file for ${m[1]}`);
   return path.join(examplesDir, entry.file);
 }

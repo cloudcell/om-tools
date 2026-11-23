@@ -4,7 +4,7 @@
     {
       "id": "coffee-shop",
       "title": "Coffee Shop",
-      "description": "A small starter model — one shop, monthly metrics, a few rules.",
+      "description": "A small starter model \u2014 one shop, monthly metrics, a few rules.",
       "category": "Financial Modeling",
       "file": "coffee.json",
       "minimumEngineVersion": null
@@ -14,7 +14,7 @@
       "title": "Three-Statement Model",
       "description": "Income statement, balance sheet, and cash flow in one model.",
       "category": "Financial Modeling",
-      "file": "DEMO-08--THREE-STATEMENT-MODEL--20260629-0339.json",
+      "file": "DEMO-108--THREE-STATEMENT-MODEL--20260629-0339.omz",
       "minimumEngineVersion": null
     },
     {
@@ -22,7 +22,7 @@
       "title": "DCF Valuation",
       "description": "Forecasting, discounted cash flow, and valuation checks.",
       "category": "Financial Modeling",
-      "file": "DEMO-06--VALUATION-NEW--20260628-1628.json",
+      "file": "DEMO-106--VALUATION-NEW--20260628-1628.omz",
       "minimumEngineVersion": null
     },
     {
