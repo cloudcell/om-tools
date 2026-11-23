@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.7
+
+- **Calc flow cross-cube navigation**: rule-panel calc-flow references now
+  navigate — click opens the target view, slices page dimensions to the
+  context, and selects the referenced cell.
+- CI: `actions/checkout`/`actions/setup-node` bumped to the Node 24 releases
+  (clears the Node 20 deprecation warning).
+
 ## 0.1.6
 
 - **Fixed: embedded engine missing from the Marketplace build.** The CI
