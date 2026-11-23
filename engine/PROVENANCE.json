@@ -1,0 +1,18 @@
+{
+  "schema": "cloudcell.om-engine-artifact.v1",
+  "component": "om-engine-zig",
+  "artifact": "engine/om_engine.wasm",
+  "size_bytes": 1407995,
+  "git_blob_sha1": "b478d5b564f9f9e42753f2735d46fe30ad02e7e0",
+  "sha256": null,
+  "engine_repository": "cloudcell/om-engine-zig-dev",
+  "engine_commit": null,
+  "engine_commit_verified": false,
+  "source_provenance": "Unverified: web distribution PINNED reports 1c3e005cd6ba455f00838a423d7c7d4e656a681a for a byte-identical blob; rebuild from source to establish provenance.",
+  "ts_runtime_version": "ts_runtime 0.1.0 @ 0b72d68 (vendored 2026-11-23T02:05:27Z)",
+  "binary_license": "legal/ENGINE-BINARY-LICENSE.md",
+  "third_party_notices": [
+    "legal/CORE-MATH-MIT.txt"
+  ],
+  "released_as_part_of": "official Cloudcell OM Tools distribution only"
+}

@@ -15,3 +15,10 @@ name and identity are subject to the trademark guidance in the OM Core project.
 See legal/TRADEMARKS.md for OM Tools brand guidance.
 
 This notice records attribution and does not change any applicable license.
+
+Bundled Engine Binary (engine/om_engine.wasm and dist/om_engine.wasm):
+original Zig code separately licensed under legal/ENGINE-BINARY-LICENSE.md;
+its incorporation into official distributions is subject to copyright-holder
+permissions, including the AGPL integration rights described in
+legal/ENGINE-DISTRIBUTION.md. Embedded CORE-MATH code is MIT licensed; its
+licence text is at legal/CORE-MATH-MIT.txt and in packaged dist/ artifacts.

@@ -33,4 +33,10 @@ chmod 755 "$OUT/tsEngineServer.cjs"
 VER="$(node -p "require('$TSR/package.json').version" 2>/dev/null || echo unknown)"
 GIT7="$(git -C "$TSR" rev-parse --short=7 HEAD 2>/dev/null || echo nogit)"
 printf 'ts_runtime %s @ %s (synced %s)\n' "$VER" "$GIT7" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$OUT/VERSION"
+# If a checked-out Zig source is available, update the downstream licence copies.
+ZIG_DIR="${OM_ZIG_ENGINE_DIR:-../om-engine-zig-dev}"
+if [ -f "$ZIG_DIR/BINARY-LICENSE.md" ]; then cp "$ZIG_DIR/BINARY-LICENSE.md" legal/ENGINE-BINARY-LICENSE.md; fi
+if [ -f "$ZIG_DIR/vendor/core-math/LICENSE" ]; then cp "$ZIG_DIR/vendor/core-math/LICENSE" legal/CORE-MATH-MIT.txt; fi
+node tools/write-engine-provenance.mjs "$ZIG_DIR"
+node tools/verify-engine-artifacts.mjs
 echo "engine/ synced from $TSR — $(cat "$OUT/VERSION")"

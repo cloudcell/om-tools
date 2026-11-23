@@ -278,3 +278,9 @@ The runtime configuration and integration notes are in [AGENTS.md](AGENTS.md). T
 OM Tools is distributed under the GNU Affero General Public License, version 3 or later (`AGPL-3.0-or-later`), as declared in `package.json`, except for separately licensed materials. See [LICENSE](LICENSE), [NOTICE](NOTICE), and [third-party notices](legal/THIRD-PARTY-NOTICES.md).
 
 OM Core is a separate repository with its own contributor policies and notices; signing an OM Tools agreement does not automatically sign an agreement for OM Core.
+
+## Source, licensing and the bundled engine
+
+The OM Tools GUI source is available under AGPL-3.0-or-later ([LICENSE](LICENSE)). The separately compiled Zig WebAssembly engine is supplied with its own [binary licence](legal/ENGINE-BINARY-LICENSE.md); CORE-MATH attribution is in [THIRD-PARTY-NOTICES.md](legal/THIRD-PARTY-NOTICES.md). A binary licence is not an AGPL linking exception. Official integrated distributions require the additional copyright permissions described in [ENGINE-DISTRIBUTION.md](legal/ENGINE-DISTRIBUTION.md).
+
+`engine/PROVENANCE.json` pins the distributed WASM. Rebuild and refresh with `tools/sync-engine.sh` and verify using `node tools/verify-engine-artifacts.mjs`. Before release, establish its exact source commit and the availability of corresponding source for the bundled TypeScript runtime components.

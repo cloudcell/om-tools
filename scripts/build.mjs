@@ -110,5 +110,10 @@ if (existsSync(`${tsRuntimeDir}/src/engineWorker.ts`)) {
   console.warn(`ts_runtime not found at ${tsRuntimeDir} and engine/ is empty — socket-only build (embedded mode will need omCore.tsRuntimePath)`);
 }
 if (wasmSrc) copyFileSync(wasmSrc, "dist/om_engine.wasm");
+// Ship binary terms and CORE-MATH attribution inside every VSIX. Do not
+// assume the repository-wide AGPL licence applies to the separately licensed WASM.
+copyFileSync("legal/ENGINE-BINARY-LICENSE.md", "dist/ENGINE-BINARY-LICENSE.md");
+copyFileSync("legal/CORE-MATH-MIT.txt", "dist/CORE-MATH-MIT.txt");
+copyFileSync("engine/PROVENANCE.json", "dist/engine-provenance.json");
 else if (tsBundled) console.warn("om_engine.wasm not found — embedded engine unavailable in this build");
 console.log(`ext: ${extVersion}\ngui: ${guiVersion}\ntsr: ${tsBundled ? (tsrVersion ?? `${tsRuntimeDir} (prebuilt)`) : "not bundled"}`);
