@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.9
+
+- **Delete dimension items from the grid**: select items and delete them,
+  with an `item_deletion_impact` query showing which cells and rules the
+  deletion would touch. The vendored engine was re-synced for deletion
+  parity (cascade-guard removal).
+- **`.omz` everywhere**: Save now suggests a real `OM_Workspace_<ts>.omz`
+  filename (was `*.json`), and the two heaviest bundled examples —
+  Valuation and Three-Statement Model — ship as `.omz` bundles that open
+  the **whole workspace** (model + session), not just the model.
+- **Per-pane lower panel**: each view pane remembers its own lower-panel
+  tab (Rules / Calc flow / Format) — one pane's choice no longer flips
+  another's.
+- Webview creation is deferred during workbench startup; a filename-regex
+  bug that broke activation was repaired.
+
 ## 0.1.8
 
 - **Sessions restore the lower panel**: applying a session descriptor now
