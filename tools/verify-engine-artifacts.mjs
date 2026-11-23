@@ -10,7 +10,7 @@ const m = JSON.parse(readFileSync('engine/PROVENANCE.json', 'utf8'));
 const wasm = readFileSync('engine/om_engine.wasm');
 if (wasm.subarray(0, 4).toString('hex') !== '0061736d') die('invalid WASM magic');
 if (wasm.length !== m.size_bytes) die('WASM byte count does not match pinned provenance');
-const blob = digest(Buffer.concat([Buffer.from('blob ' + wasm.length + '\\0'), wasm]), 'sha1');
+const blob = digest(Buffer.concat([Buffer.from('blob ' + wasm.length), Buffer.from([0]), wasm]), 'sha1');
 if (blob !== m.git_blob_sha1) die('WASM Git blob hash does not match pinned provenance');
 const sha256 = digest(wasm, 'sha256');
 if (m.sha256 && m.sha256 !== sha256) die('WASM SHA-256 does not match pinned provenance');

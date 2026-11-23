@@ -37,6 +37,8 @@ printf 'ts_runtime %s @ %s (synced %s)\n' "$VER" "$GIT7" "$(date -u +%Y-%m-%dT%H
 ZIG_DIR="${OM_ZIG_ENGINE_DIR:-../om-engine-zig-dev}"
 if [ -f "$ZIG_DIR/BINARY-LICENSE.md" ]; then cp "$ZIG_DIR/BINARY-LICENSE.md" legal/ENGINE-BINARY-LICENSE.md; fi
 if [ -f "$ZIG_DIR/vendor/core-math/LICENSE" ]; then cp "$ZIG_DIR/vendor/core-math/LICENSE" legal/CORE-MATH-MIT.txt; fi
+# Verify source only when a clean Zig checkout has an independently generated
+# matching manifest from scripts/emit-wasm-provenance.py.
 node tools/write-engine-provenance.mjs "$ZIG_DIR"
 node tools/verify-engine-artifacts.mjs
 echo "engine/ synced from $TSR — $(cat "$OUT/VERSION")"

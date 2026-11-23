@@ -9,12 +9,17 @@ const sourceDir = process.argv[2] || process.env.OM_ZIG_ENGINE_DIR || '../om-eng
 const data = readFileSync('engine/om_engine.wasm');
 const hex = (b, algo) => createHash(algo).update(b).digest('hex');
 const sha256 = hex(data, 'sha256');
-const gitBlob = hex(Buffer.concat([Buffer.from('blob ' + data.length + '\\0'), data]), 'sha1');
+const gitBlob = hex(Buffer.concat([Buffer.from('blob ' + data.length), Buffer.from([0]), data]), 'sha1');
 const git = (...args) => { try { return execFileSync('git', args, { encoding:'utf8', stdio:['ignore','pipe','ignore'] }).trim(); } catch { return null; } };
 const commit = existsSync(join(sourceDir, '.git')) ? git('-C', sourceDir, 'rev-parse', 'HEAD') : null;
 const sourceBinary = join(sourceDir, 'zig-out/bin/om_engine.wasm');
 const clean = commit && git('-C', sourceDir, 'status', '--porcelain') === '';
-const matched = !!(clean && existsSync(sourceBinary) && hex(readFileSync(sourceBinary), 'sha256') === sha256);
+const sourceManifest = join(sourceDir, 'zig-out/bin/om_engine.provenance.json');
+let attested = null;
+try { attested = JSON.parse(readFileSync(sourceManifest, 'utf8')); } catch {}
+const matched = !!(clean && existsSync(sourceBinary) &&
+    hex(readFileSync(sourceBinary), 'sha256') === sha256 &&
+    attested?.sha256 === sha256 && attested?.engine_commit === commit);
 const m = {
     schema: 'cloudcell.om-engine-artifact.v1',
     component: 'om-engine-zig',

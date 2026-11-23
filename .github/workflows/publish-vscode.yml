@@ -85,6 +85,7 @@ jobs:
                   "extension/dist/index.html",
                   "extension/dist/om_engine.wasm",
                   "extension/dist/engineworker.cjs",
+                  "extension/dist/tsengineserver.cjs",
                   "extension/dist/engine-provenance.json",
                   "extension/dist/engine-binary-license.md",
                   "extension/dist/core-math-mit.txt",
