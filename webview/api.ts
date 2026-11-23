@@ -68,6 +68,19 @@ export class OmApi {
    *  real browser the feedback control is a plain anchor instead. */
   openFeedback() { return this.t.request("openFeedback"); }
   openExternal(url: string) { return this.t.request("openExternal", { url }); }
+  /** Host reads a picked/given text file (webview cannot touch the filesystem). */
+  readTextFile(path: string): Promise<{ text: string | null }> { return this.t.request("readTextFile", { path }); }
+  /** Host shows a save dialog, writes `text`, returns the chosen path (or download flag). */
+  saveTextFile(suggestedName: string, text: string): Promise<{ path: string | null; downloaded?: boolean }> {
+    return this.t.request("saveTextFile", { suggestedName, text });
+  }
+  /** Same save flow for binary payloads (.omz bundles) — bytes travel base64. */
+  saveBinaryFile(suggestedName: string, bytes: Uint8Array): Promise<{ path: string | null; downloaded?: boolean }> {
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000)
+      bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return this.t.request("saveTextFile", { suggestedName, bytesB64: btoa(bin) });
+  }
   /** True in a real browser tab (native anchor navigation works); false in the VS Code webview. */
   get supportsNativeExternalLinks(): boolean { return this.t.supportsNativeExternalLinks; }
 
@@ -127,6 +140,9 @@ export class OmApi {
   renameCheckpoint(checkpointId: string, description: string) { return this.t.request("command", { command_id: "rename_checkpoint", params: { checkpoint_id: checkpointId, description } }); }
   deleteCheckpoint(checkpointId: string) { return this.t.request("command", { command_id: "delete_checkpoint", params: { checkpoint_id: checkpointId } }); }
   saveWorkspace(path?: string) { return this.t.request("command", { command_id: "save_workspace", params: { path: path || null } }); }
+  /** Engine-serialized workspace JSON — the same bytes save_workspace writes.
+   *  Used to embed the live model into an .omz bundle without touching files. */
+  serializeWorkspace(): Promise<{ json: string }> { return this.t.request("query", { query_id: "serialize_workspace" }); }
   loadWorkspace(path: string) { return this.t.request("command", { command_id: "load_workspace", params: { path } }); }
   createNewWorkspace(engineType = "python") { return this.t.request("command", { command_id: "create_new_workspace", params: { engine_type: engineType } }); }
   undo() { return this.t.request("command", { command_id: "undo", params: {} }); }

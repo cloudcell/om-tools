@@ -1,5 +1,7 @@
 import { Store, AppState, SET_RULE_PLACEHOLDER, ruleBarText, DEFAULT_LAYOUT } from "../state";
 import { DEFAULT_DOCK, FEEDBACK_URL, LINKS, type DockLayout, type DockPanelId, type DockZoneId, type UiLayout, type UiTheme } from "../../shared/messages";
+import { parseSession, type SessionDescriptor } from "../../shared/session";
+import { makeBundle, BUNDLE_MODEL_MEMBER, BUNDLE_EXT } from "../../shared/omz";
 import { applyTheme, currentTheme } from "../theme";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
@@ -10,7 +12,7 @@ import { StatusBar } from "./statusBar";
 import { InfoToolbox } from "./infoToolbox";
 import { FormatToolbox } from "./formatToolbox";
 import { PerformanceWatch } from "./performanceWatch";
-import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog, optionsDialog, browseDialog, examplePickerDialog, type ExampleEntry } from "./dialogs";
+import { inputDialog, confirmDialog, alertDialog, pickDialog, choiceDialog, optionsDialog, browseDialog, examplePickerDialog, shareSessionDialog, type ExampleEntry } from "./dialogs";
 import catalogData from "../../shared/catalog.json";
 import { Timeline } from "./timeline";
 import { ModelActions } from "./modelActions";
@@ -98,7 +100,18 @@ const NOT_IN_MVP: Pick<MenuItem, "disabled" | "title"> = { disabled: true, title
  *  center view workspace with rule bar; right docks (Performance, Timeline);
  *  bottom rule panel; status bar. Mirrors lib_gui/app.py MainWindow. */
 export class AppShell {
-  constructor(private store: Store) { this.actions = new ModelActions(store); }
+  constructor(private store: Store) {
+    this.actions = new ModelActions(store);
+    // captureSession reads live scroll only for views that are a group's rendered tab.
+    store.scrollProbe = (viewId) => {
+      const s = store.state;
+      if (s.options.docking) {
+        const g = s.viewGroups.find((g) => g.activeTab === viewId);
+        return g ? this.viewArea?.gridFor(g.id)?.scrollOffsets() ?? null : null;
+      }
+      return s.activeView?.viewId === viewId ? this.matrixGrid.scrollOffsets() : null;
+    };
+  }
   private perf: PerformanceWatch | null = null;
   private matrixGrid = new MultilevelGrid(this.store);
   private viewArea: ViewArea | null = null;
@@ -599,6 +612,14 @@ export class AppShell {
       { icon: msym("note_add"), label: "New", fn: () => this.confirmDirty(() => this.store.newWorkspace()) },
       { icon: msym("folder_open"), label: "Open…", fn: () => this.openFile() },
       { icon: msym("grid_on"), label: "Open Example…", fn: () => this.openExample() },
+      { icon: msym("link"), label: "Open Session…", fn: () => this.openSession() },
+      { icon: msym("save"), label: "Save Session…", fn: () => this.saveSession() },
+      ...(this.store.api.supportsNativeExternalLinks
+        ? [
+            { icon: msym("save"), label: "Save Bundle (.omz)…", fn: () => this.saveBundle() },
+            { icon: msym("open_in_new"), label: "Share Session…", fn: () => this.shareSession() },
+          ]
+        : []),
       { icon: msym("save"), label: "Save…", fn: () => this.saveFile() },
       { sep: true },
       { icon: msym("logout"), label: "Quit", fn: () => alertDialog("Quit", "Quit is handled by closing the browser tab or VS Code window.") },
@@ -876,6 +897,110 @@ export class AppShell {
     const ex = await examplePickerDialog("Open Example", CATALOG);
     if (!ex) return;
     await this.confirmDirty(() => this.store.loadWorkspaceFile(`om-example:${ex.id}`));
+  }
+
+  /** File → Open Session…: pick a `.omsession.json` link file, read it through the host
+   *  (the webview cannot touch the filesystem), parse, then apply — confirmDirty runs
+   *  before the model load exactly like File → Open. */
+  private async openSession() {
+    const pick = await this.store.api.pickFile({ mode: "open" });
+    if (!pick?.path) return;
+    const r = await this.store.api.readTextFile(pick.path).catch(() => null);
+    if (!r?.text) { await alertDialog("Open Session", "Could not read the session file."); return; }
+    const parsed = parseSession(r.text);
+    if (!parsed.ok) { await alertDialog("Open Session", parsed.error); return; }
+    await this.applySessionDescriptor(parsed.session, pick.path);
+  }
+
+  /** Load a parsed descriptor's model and overlay its UI state. Public so the web
+   *  build's `?session=`/`#session=` bootstrap can drive the same path — a fresh page
+   *  is never dirty, so confirmDirty just falls through there. */
+  async applySessionDescriptor(session: SessionDescriptor, sessionPath: string | null) {
+    await this.confirmDirty(async () => {
+      let skips: string[] = [];
+      try { skips = await this.store.applySession(session, sessionPath); }
+      catch (e: any) { await alertDialog("Open Session", e?.message || String(e)); return; }
+      if (session.theme && session.theme !== currentTheme()) {
+        applyTheme(session.theme);
+        this.store.api.updateUiState({ theme: session.theme });
+      }
+      if (skips.length)
+        await alertDialog("Session partly applied", skips.slice(0, 8).join("\n") + (skips.length > 8 ? `\n…and ${skips.length - 8} more` : ""));
+    });
+  }
+
+  /** File → Save Session…: capture live UI state into a descriptor and write it via the
+   *  host's save dialog (File System Access on web, native dialog in VS Code; the
+   *  download fallback announces itself like Save does). */
+  private async saveSession() {
+    const session = this.store.captureSession(currentTheme());
+    const suggested = this.store.fileName().replace(/\.(json|msgpack)$/i, "") + ".omsession.json";
+    const res = await this.store.api.saveTextFile(suggested, JSON.stringify(session, null, 2)).catch(() => null);
+    if (res?.downloaded)
+      await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the session was downloaded to your default Downloads folder.");
+  }
+
+  /** Save the current model + session as one .omz zip — the single self-contained
+   *  share artifact. The model is serialized live from the engine (so unsaved edits
+   *  ride along); the session's model source becomes the bundle's own member. */
+  private async bundleBytes(): Promise<{ suggested: string; bytes: Uint8Array } | null> {
+    const snap = await this.store.api.serializeWorkspace().catch(() => null);
+    if (!snap?.json) {
+      await alertDialog("Save Bundle", "This engine cannot serialize the workspace — bundles are supported by the browser engine.");
+      return null;
+    }
+    const session = this.store.captureSession(currentTheme());
+    session.model = { bundle: BUNDLE_MODEL_MEMBER };
+    const bytes = await makeBundle(new TextEncoder().encode(snap.json), JSON.stringify(session, null, 2));
+    const suggested = this.store.fileName().replace(/\.(json|msgpack|omz)$/i, "") + BUNDLE_EXT;
+    return { suggested, bytes };
+  }
+
+  private async saveBundle() {
+    const b = await this.bundleBytes();
+    if (!b) return;
+    const res = await this.store.api.saveBinaryFile(b.suggested, b.bytes).catch(() => null);
+    if (res?.downloaded)
+      await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the bundle was downloaded to your default Downloads folder.");
+  }
+
+  /** File → Share Session… (web build only — the menu item is gated on
+   *  supportsNativeExternalLinks): capture the live session and hand it to the
+   *  share dialog, which regenerates links/files when the user supplies a public
+   *  model URL for an otherwise-local model path. */
+  private async shareSession() {
+    const session = this.store.captureSession(currentTheme());
+    const localModel = session.model.path && !/^https?:\/\//.test(session.model.path)
+      ? session.model.path : null;
+    const suggested = this.store.fileName().replace(/\.(json|msgpack)$/i, "") + ".omsession.json";
+    await shareSessionDialog({
+      localModel,
+      build: (modelUrl) => {
+        if (modelUrl) session.model = { url: modelUrl };
+        const json = JSON.stringify(session);
+        // b64 must survive a URL hash and JSON can carry unicode names — encode bytes.
+        const selfLink = json.length <= 1800
+          ? `${location.origin}${location.pathname}#session=${encodeURIComponent(btoa(String.fromCharCode(...new TextEncoder().encode(json))))}`
+          : null;
+        return { json, selfLink };
+      },
+      makeLink: (url) => `${location.origin}${location.pathname}?session=${encodeURIComponent(url)}`,
+      onDownload: async (json) => {
+        // The self-host artifact is an .omz — the session's model pointer becomes
+        // the bundle's own member, so the uploaded file needs nothing beside it.
+        const snap = await this.store.api.serializeWorkspace().catch(() => null);
+        if (!snap?.json) {
+          await alertDialog("Share Session", "This engine cannot serialize the workspace — bundles are supported by the browser engine.");
+          return;
+        }
+        const s = JSON.parse(json) as SessionDescriptor;
+        s.model = { bundle: BUNDLE_MODEL_MEMBER };
+        const bytes = await makeBundle(new TextEncoder().encode(snap.json), JSON.stringify(s, null, 2));
+        const res = await this.store.api.saveBinaryFile(suggested.replace(/\.omsession\.json$/i, "") + BUNDLE_EXT, bytes).catch(() => null);
+        if (res?.downloaded)
+          await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the bundle was downloaded to your default Downloads folder.");
+      },
+    });
   }
 
   private async openFile() {

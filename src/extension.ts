@@ -10,6 +10,7 @@ import { OmMcpServer, startOmMcpServer } from "./mcpServer";
 import { EmbeddedBackend, resolveTsRuntime } from "./backend";
 import { EXAMPLE_SCHEME, resolveExampleRef, type ExampleCatalog } from "./fileParams";
 import catalogData from "../shared/catalog.json";
+import { isZip, readBundle } from "../shared/omz";
 import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
@@ -142,7 +143,7 @@ function defaultDirUri(): vscode.Uri {
 /** Native Open/Save dialog for a workspace file. The runtime reads and writes the file itself, so the
  *  webview only needs the absolute path (`fsPath`); null when the user cancels. */
 async function pickFile(p: PickFileParams): Promise<string | null> {
-  const filters = { "OpenM JSON": ["json"], "All Files": ["*"] };
+  const filters = { "OpenM JSON": ["json"], "OM Bundle": ["omz"], "All Files": ["*"] };
   const current = p.current && path.isAbsolute(p.current) ? p.current : null;
   if (p.mode === "save") {
     const defaultUri = current
@@ -578,7 +579,7 @@ function postToWebview(msg: HostToWebview) {
 async function handleRequest(req: HostRequest): Promise<HostToWebview> {
   try {
     const conn = activeConn();
-    if (!conn && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState", "openFeedback", "openExternal"].includes(req.method)) {
+    if (!conn && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState", "openFeedback", "openExternal", "readTextFile", "saveTextFile"].includes(req.method)) {
       return { type: "response", id: req.id, ok: false, error: "not connected" };
     }
     switch (req.method) {
@@ -601,6 +602,20 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
             params = { ...params, path: resolveExampleRef(params.path, catalogData as ExampleCatalog, path.join(extContext?.extensionPath ?? "", "dist", "examples")) };
           } catch (e: any) {
             return { type: "response", id: req.id, ok: false, error: e?.message || String(e) };
+          }
+        }
+        // `.omz` bundle → the model member is extracted to a temp file so every engine
+        // (socket or embedded) rides the plain load path. The session member stays
+        // inside the file — engines ignore it the way a link would be.
+        if (req.params!.command_id === "load_workspace" && typeof params.path === "string" && /\.omz$/i.test(params.path)) {
+          try {
+            const b = await readBundle(await fs.promises.readFile(params.path));
+            if (!b.modelBytes) throw new Error("bundle has no model member");
+            const tmp = path.join(os.tmpdir(), `omz-${crypto.createHash("sha1").update(params.path).digest("hex").slice(0, 12)}.json`);
+            await fs.promises.writeFile(tmp, b.modelBytes);
+            params = { ...params, path: tmp };
+          } catch (e: any) {
+            return { type: "response", id: req.id, ok: false, error: `load_workspace: ${e?.message || e}` };
           }
         }
         const r = await conn!.send(req.params!.command_id, params);
@@ -684,6 +699,42 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         }
         void vscode.env.openExternal(vscode.Uri.parse(url));
         return { type: "response", id: req.id, ok: true };
+      }
+      case "readTextFile": {
+        // Scoped read for session descriptors — the webview cannot touch the
+        // filesystem, and we do not offer a general file-read surface.
+        const p = req.params?.path;
+        if (typeof p !== "string" || !/\.(omsession\.json|omz)$/i.test(p)) {
+          return { type: "response", id: req.id, ok: false, error: "readTextFile: only *.omsession.json and *.omz paths are served" };
+        }
+        try {
+          const bytes = await fs.promises.readFile(p);
+          // An .omz serves its session member — the GUI's session flow is unchanged.
+          if (isZip(bytes)) {
+            const b = await readBundle(bytes);
+            if (!b.sessionText) return { type: "response", id: req.id, ok: false, error: "readTextFile: bundle has no session member" };
+            return { type: "response", id: req.id, ok: true, data: { text: b.sessionText } };
+          }
+          return { type: "response", id: req.id, ok: true, data: { text: bytes.toString("utf8") } };
+        } catch (e: any) {
+          return { type: "response", id: req.id, ok: false, error: `readTextFile: ${e?.message || e}` };
+        }
+      }
+      case "saveTextFile": {
+        const p = req.params;
+        const isBin = typeof p?.bytesB64 === "string";
+        if (!isBin && typeof p?.text !== "string") {
+          return { type: "response", id: req.id, ok: false, error: "saveTextFile: missing text" };
+        }
+        const suggested = typeof p.suggestedName === "string" && /^[A-Za-z0-9_.-]+$/.test(p.suggestedName)
+          ? p.suggestedName : "session.omsession.json";
+        const uri = await vscode.window.showSaveDialog({
+          defaultUri: vscode.Uri.file(suggested),
+          filters: isBin ? { "OM Bundle": ["omz"] } : { "OM Session": ["omsession.json", "json"] },
+        });
+        if (!uri) return { type: "response", id: req.id, ok: true, data: { path: null } };
+        await fs.promises.writeFile(uri.fsPath, isBin ? Buffer.from(p.bytesB64, "base64") : p.text, isBin ? undefined : "utf8");
+        return { type: "response", id: req.id, ok: true, data: { path: uri.fsPath } };
       }
       case "pickFile": {
         const p = await pickFile((req.params || {}) as PickFileParams);
