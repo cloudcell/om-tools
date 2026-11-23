@@ -730,10 +730,17 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         if (!isBin && typeof p?.text !== "string") {
           return { type: "response", id: req.id, ok: false, error: "saveTextFile: missing text" };
         }
-        const suggested = typeof p.suggestedName === "string" && /^[A-Za-z0-9_.-]+$/.test(p.suggestedName)
-          ? p.suggestedName : "session.omsession.json";
+        // Reject only path-unsafe characters (separators, Windows-illegal
+        // chars, control bytes) — spaces and unicode are legal in filenames.
+        // The fallback must match the payload's real format: a bundle must
+        // never default to a *.json name.
+        const d = new Date();
+        const ts = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}_${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}${String(d.getSeconds()).padStart(2, "0")}`;
+        const suggested = typeof p.suggestedName === "string" && p.suggestedName.trim().length > 0
+          && !/[\\/:*?"<>|\x00-\x1f]/.test(p.suggestedName)
+          ? p.suggestedName : (isBin ? `OM_Workspace_${ts}.omz` : "session.omsession.json");
         const uri = await vscode.window.showSaveDialog({
-          defaultUri: vscode.Uri.file(suggested),
+          defaultUri: vscode.Uri.joinPath(defaultDirUri(), suggested),
           filters: isBin ? { "OM Bundle": ["omz"] } : { "OM Session": ["omsession.json", "json"] },
         });
         if (!uri) return { type: "response", id: req.id, ok: true, data: { path: null } };
