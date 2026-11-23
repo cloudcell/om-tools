@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.6
+
+- **Fixed: embedded engine missing from the Marketplace build.** The CI
+  package for 0.1.5 was built without the ts_runtime checkout, so the
+  published vsix fell back to a socket-only bundle and Start Runtime failed
+  with "ts_runtime not bundled". The engine artifacts (worker, wasm, engine
+  server) are now vendored in `engine/` — refreshed from a checkout via
+  `tools/sync-engine.sh` — so every build ships self-contained, and a
+  checkout-free build only warns when the vendored copy is also absent.
+
 ## 0.1.5
 
 - **Embedded engine**: the OM Core engine is now bundled inside the extension

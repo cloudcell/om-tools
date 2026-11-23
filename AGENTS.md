@@ -18,8 +18,10 @@ over its newline-delimited JSON envelope socket protocol.
   must not block the extension thread), `tsEngineServer.ts` is the same engine behind the
   framed-RPC socket protocol — drop-in `OM_ENGINE_SERVER_BIN` for the remote test path
   (`./run_engine_tests.sh --ts-remote`). om-tools' build.mjs bundles it from
-  `../ts_runtime` (`OM_TS_RUNTIME_DIR` override) into `dist/`, so the vsix ships
-  self-contained.
+  `../ts_runtime` (`OM_TS_RUNTIME_DIR` override) into `dist/`; without the
+  checkout it falls back to the vendored copy in `engine/` (refresh with
+  `tools/sync-engine.sh`, provenance in `engine/VERSION`), so the vsix always
+  ships self-contained.
 - `omCore.engineMode`: `auto` (default — socket if an endpoint is configured, else embedded),
   `embedded`, `socket`. `omCore.engineStateBytes`/`engineScratchBytes` bound wasm arenas.
   `omCore.enginePreload` (default off) spawns on activate instead of first need.

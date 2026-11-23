@@ -70,7 +70,7 @@ await build({
 // Absent on machines without the checkout (e.g. CI): build a socket-only
 // extension — embedded mode then needs omCore.tsRuntimePath at runtime.
 const tsRuntimeDir = process.env.OM_TS_RUNTIME_DIR || "../ts_runtime";
-const wasmSrc = [`${tsRuntimeDir}/assets/om_engine.wasm`, `${tsRuntimeDir}/dist/om_engine.wasm`].find(existsSync);
+const wasmSrc = [`${tsRuntimeDir}/assets/om_engine.wasm`, `${tsRuntimeDir}/dist/om_engine.wasm`, "engine/om_engine.wasm"].find(existsSync);
 let tsBundled = false;
 let tsrVersion = null;
 if (existsSync(`${tsRuntimeDir}/src/engineWorker.ts`)) {
@@ -96,8 +96,18 @@ if (existsSync(`${tsRuntimeDir}/src/engineWorker.ts`)) {
     chmodSync("dist/tsEngineServer.cjs", 0o755);
   }
   tsBundled = true;
+} else if (existsSync("engine/engineWorker.cjs")) {
+  // No checkout (CI, contributors) — fall back to the vendored build in
+  // engine/ (refresh it with tools/sync-engine.sh).
+  copyFileSync("engine/engineWorker.cjs", "dist/engineWorker.cjs");
+  if (existsSync("engine/tsEngineServer.cjs")) {
+    copyFileSync("engine/tsEngineServer.cjs", "dist/tsEngineServer.cjs");
+    chmodSync("dist/tsEngineServer.cjs", 0o755);
+  }
+  tsBundled = true;
+  tsrVersion = readFileSync("engine/VERSION", "utf8").trim().replace(/^ts_runtime /, "");
 } else {
-  console.warn(`ts_runtime not found at ${tsRuntimeDir} — socket-only build (embedded mode will need omCore.tsRuntimePath)`);
+  console.warn(`ts_runtime not found at ${tsRuntimeDir} and engine/ is empty — socket-only build (embedded mode will need omCore.tsRuntimePath)`);
 }
 if (wasmSrc) copyFileSync(wasmSrc, "dist/om_engine.wasm");
 else if (tsBundled) console.warn("om_engine.wasm not found — embedded engine unavailable in this build");

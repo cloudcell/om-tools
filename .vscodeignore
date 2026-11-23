@@ -32,3 +32,5 @@ CONTRIBUTORS.md
 SECURITY.md
 legal/**
 !legal/THIRD-PARTY-NOTICES.md
+engine/
+tools/
