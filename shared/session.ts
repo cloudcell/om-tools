@@ -83,6 +83,9 @@ export interface SessionDescriptor {
   groups?: Record<string, SessionGroup>;
   focusedGroup?: string;
   views?: Record<string, SessionViewState>;
+  /** Shared lower panel (Rules / Calculation Flow): which tab is shown and
+   *  whether the panel is collapsed. Unknown tab ids fall back to Rules. */
+  lower?: { tab?: string; collapsed?: boolean };
 }
 
 export type SessionParseResult =
