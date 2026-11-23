@@ -610,17 +610,14 @@ export class AppShell {
   private fileMenuItems(): MenuItem[] {
     return [
       { icon: msym("note_add"), label: "New", fn: () => this.confirmDirty(() => this.store.newWorkspace()) },
-      { icon: msym("folder_open"), label: "Open…", fn: () => this.openFile() },
+      { icon: msym("folder_open"), label: "Open…", fn: () => this.openAny() },
       { icon: msym("grid_on"), label: "Open Example…", fn: () => this.openExample() },
-      { icon: msym("link"), label: "Open Session…", fn: () => this.openSession() },
-      { icon: msym("save"), label: "Save Session…", fn: () => this.saveSession() },
+      { sep: true },
+      { icon: msym("save"), label: "Save Model (json)…", fn: () => this.saveFile() },
+      { icon: msym("save"), label: "Save Workspace (omz)…", fn: () => this.saveWorkspaceBundle() },
       ...(this.store.api.supportsNativeExternalLinks
-        ? [
-            { icon: msym("save"), label: "Save Bundle (.omz)…", fn: () => this.saveBundle() },
-            { icon: msym("open_in_new"), label: "Share Session…", fn: () => this.shareSession() },
-          ]
+        ? [{ icon: msym("open_in_new"), label: "Share…", fn: () => this.shareSession() }]
         : []),
-      { icon: msym("save"), label: "Save…", fn: () => this.saveFile() },
       { sep: true },
       { icon: msym("logout"), label: "Quit", fn: () => alertDialog("Quit", "Quit is handled by closing the browser tab or VS Code window.") },
     ];
@@ -899,17 +896,30 @@ export class AppShell {
     await this.confirmDirty(() => this.store.loadWorkspaceFile(`om-example:${ex.id}`));
   }
 
-  /** File → Open Session…: pick a `.omsession.json` link file, read it through the host
-   *  (the webview cannot touch the filesystem), parse, then apply — confirmDirty runs
-   *  before the model load exactly like File → Open. */
-  private async openSession() {
-    const pick = await this.store.api.pickFile({ mode: "open" });
-    if (!pick?.path) return;
-    const r = await this.store.api.readTextFile(pick.path).catch(() => null);
-    if (!r?.text) { await alertDialog("Open Session", "Could not read the session file."); return; }
-    const parsed = parseSession(r.text);
-    if (!parsed.ok) { await alertDialog("Open Session", parsed.error); return; }
-    await this.applySessionDescriptor(parsed.session, pick.path);
+  /** File → Open…: one dialog for every openable file — a model `.json`/`.msgpack`,
+   *  a session `.omsession.json`, or a `.omz` bundle. The file's extension picks the
+   *  route; a session route that fails on `.omz` falls back to opening it as a model
+   *  (a missing/corrupt session member never blocks a valid bundle). */
+  private async openAny() {
+    const path = await this.pickWorkspacePath("open");
+    if (!path) return;
+    if (/\.(omz|omsession\.json)$/i.test(path)) {
+      const r = await this.store.api.readTextFile(path).catch(() => null);
+      if (r?.text) {
+        const parsed = parseSession(r.text);
+        if (parsed.ok) { await this.applySessionDescriptor(parsed.session, path); return; }
+        if (!/\.omz$/i.test(path)) { await alertDialog("Open Session", parsed.error); return; }
+      }
+      if (!/\.omz$/i.test(path)) { await alertDialog("Open Session", "Could not read the session file."); return; }
+      await this.confirmDirty(() => this.store.loadWorkspaceFile(path));
+      return;
+    }
+    // load_workspace reads only JSON; an .openm script is run by om-core's REPL or `main.py --batch` (T-012, finding 1)
+    if (/\.openm$/i.test(path)) {
+      await alertDialog("Open Workspace", `"${path.split(/[\\/]/).pop()}" is an OpenM script, not a saved workspace. Open a workspace file (.json) instead. Scripts run in om-core with main.py --batch <file>.`);
+      return;
+    }
+    await this.confirmDirty(() => this.store.loadWorkspaceFile(path));
   }
 
   /** Load a parsed descriptor's model and overlay its UI state. Public so the web
@@ -929,13 +939,12 @@ export class AppShell {
     });
   }
 
-  /** File → Save Session…: capture live UI state into a descriptor and write it via the
-   *  host's save dialog (File System Access on web, native dialog in VS Code; the
-   *  download fallback announces itself like Save does). */
-  private async saveSession() {
-    const session = this.store.captureSession(currentTheme());
-    const suggested = this.store.fileName().replace(/\.(json|msgpack)$/i, "") + ".omsession.json";
-    const res = await this.store.api.saveTextFile(suggested, JSON.stringify(session, null, 2)).catch(() => null);
+  /** Write a session descriptor through the host's save dialog (File System Access
+   *  on web, native dialog in VS Code; the download fallback announces itself like
+   *  Save does). Used by the share dialog's "session file only" action. */
+  private async writeSessionJson(json: string) {
+    const suggested = this.store.fileName().replace(/\.(json|msgpack|omz)$/i, "") + ".omsession.json";
+    const res = await this.store.api.saveTextFile(suggested, json).catch(() => null);
     if (res?.downloaded)
       await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the session was downloaded to your default Downloads folder.");
   }
@@ -946,7 +955,7 @@ export class AppShell {
   private async bundleBytes(): Promise<{ suggested: string; bytes: Uint8Array } | null> {
     const snap = await this.store.api.serializeWorkspace().catch(() => null);
     if (!snap?.json) {
-      await alertDialog("Save Bundle", "This engine cannot serialize the workspace — bundles are supported by the browser engine.");
+      await alertDialog("Save Workspace", "This engine cannot serialize the workspace — bundles need an engine that supports it.");
       return null;
     }
     const session = this.store.captureSession(currentTheme());
@@ -956,7 +965,7 @@ export class AppShell {
     return { suggested, bytes };
   }
 
-  private async saveBundle() {
+  private async saveWorkspaceBundle() {
     const b = await this.bundleBytes();
     if (!b) return;
     const res = await this.store.api.saveBinaryFile(b.suggested, b.bytes).catch(() => null);
@@ -990,7 +999,7 @@ export class AppShell {
         // the bundle's own member, so the uploaded file needs nothing beside it.
         const snap = await this.store.api.serializeWorkspace().catch(() => null);
         if (!snap?.json) {
-          await alertDialog("Share Session", "This engine cannot serialize the workspace — bundles are supported by the browser engine.");
+          await alertDialog("Share", "This engine cannot serialize the workspace — bundles need an engine that supports it.");
           return;
         }
         const s = JSON.parse(json) as SessionDescriptor;
@@ -1000,21 +1009,11 @@ export class AppShell {
         if (res?.downloaded)
           await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the bundle was downloaded to your default Downloads folder.");
       },
+      onDownloadSession: (json) => this.writeSessionJson(json),
     });
   }
 
-  private async openFile() {
-    await this.confirmDirty(async () => {
-      const path = await this.pickWorkspacePath("open");
-      if (!path) return;
-      // load_workspace reads only JSON; an .openm script is run by om-core's REPL or `main.py --batch` (T-012, finding 1)
-      if (/\.openm$/i.test(path)) {
-        await alertDialog("Open Workspace", `"${path.split(/[\\/]/).pop()}" is an OpenM script, not a saved workspace. Open a workspace file (.json) instead. Scripts run in om-core with main.py --batch <file>.`);
-        return;
-      }
-      await this.store.loadWorkspaceFile(path);
-    });
-  }
+
 
   /** Qt `_on_save`: always asks for the path (prefilled), appends `.json` when missing. Returns true when saved. */
   private async saveFile(): Promise<boolean> {

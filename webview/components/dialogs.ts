@@ -705,8 +705,11 @@ export function shareSessionDialog(opts: {
   /** Rebuilds the descriptor with model.url baked in; selfLink is null when too big for a URL. */
   build: (modelUrl: string | null) => { json: string; selfLink: string | null };
   makeLink: (sessionFileUrl: string) => string;
-  /** Hands the descriptor JSON to the host save flow (native dialog or download). */
+  /** Bundles the descriptor + live model into an .omz and saves it via the host flow. */
   onDownload: (json: string) => Promise<void>;
+  /** Saves the bare .omsession.json — the live-reference variant for places where
+   *  the model path/URL is already reachable. */
+  onDownloadSession: (json: string) => Promise<void>;
 }): Promise<void> {
   return new Promise((resolve) => {
     const ov = ensureOverlay();
@@ -716,7 +719,7 @@ export function shareSessionDialog(opts: {
       minWidth: "340px", maxWidth: "460px", boxShadow: "var(--dlg-shadow)",
       fontFamily: "-apple-system, system-ui, sans-serif",
     } }) as HTMLElement;
-    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "10px", color: "var(--dlg-title)" } }, ["Share Session"]));
+    dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "10px", color: "var(--dlg-title)" } }, ["Share"]));
     dlg.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "12px", lineHeight: "1.45" } },
       ["A session link opens this exact screen — panes, tabs, chips, selection and scroll — for anyone who clicks it."]));
 
@@ -780,11 +783,15 @@ export function shareSessionDialog(opts: {
         ["Share as a file — one upload, nothing else needed"]));
       fileBlock.appendChild(el("div", { class: "muted", style: { fontSize: "12px", marginBottom: "8px", lineHeight: "1.45" } },
         ["An .omz bundle has the model and this session inside one file. Save it, upload it anywhere public, then paste its link below."]));
-      const dlRow = el("div", { style: { display: "flex", gap: "6px", marginBottom: "8px" } });
+      const dlRow = el("div", { style: { display: "flex", gap: "6px", marginBottom: "8px", flexWrap: "wrap" } });
       const dlBtn = el("button", { style: { padding: "6px 12px", border: "1px solid var(--dlg-border)", borderRadius: "6px", background: "var(--dlg-btn-bg)", fontSize: "12px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" } },
         ["Save bundle (.omz)…"]) as HTMLButtonElement;
       dlBtn.addEventListener("click", () => { dlBtn.disabled = true; void opts.onDownload(current.json).finally(() => { dlBtn.disabled = false; }); });
-      dlRow.appendChild(dlBtn);
+      const sessBtn = el("button", { style: { padding: "6px 12px", border: "1px solid var(--dlg-border)", borderRadius: "6px", background: "var(--dlg-btn-bg)", fontSize: "12px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" } },
+        ["Save session file only…"]) as HTMLButtonElement;
+      sessBtn.title = "Just the layout — points at the model. Share it where the model path/link is reachable.";
+      sessBtn.addEventListener("click", () => { sessBtn.disabled = true; void opts.onDownloadSession(current.json).finally(() => { sessBtn.disabled = false; }); });
+      dlRow.appendChild(dlBtn); dlRow.appendChild(sessBtn);
       fileBlock.appendChild(dlRow);
       fileBlock.appendChild(entry("https://… public link to the .omz file", (v) => {
         clear(outWrap);
