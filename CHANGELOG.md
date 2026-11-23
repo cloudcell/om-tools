@@ -1,6 +1,66 @@
 # Changelog
 
-## Unreleased
+## 0.1.5
+
+- **Embedded engine**: the OM Core engine is now bundled inside the extension
+  as WebAssembly and runs in-process — no Python, no uv, no install step.
+  `omCore.engineMode` picks the backend: `auto` (default — embedded unless a
+  runtime endpoint is explicitly configured), `embedded`, `socket`. The worker
+  spawns lazily on first need and respawns automatically after a crash (open
+  views reload; in-flight mutations error instead of replaying).
+  `omCore.tsRuntimePath`/`OM_TS_RUNTIME_DIR` point at an external runtime
+  build — ignored in Restricted Mode. **Install Engine and its commands are
+  removed** — an external Python om-core runtime is still supported via
+  `engineMode: "socket"`, `omCore.runtimeEndpoint`, and `omCore.omCorePath`.
+- **Sessions and sharing**: session descriptor files capture the full UI state
+  (open views, layout, options) and link back to their model; share-session
+  links are self-hosted session files; `.omz` bundles zip model + session into
+  one shareable file. The Share dialog owns the model-reachability question,
+  and the File menu was consolidated around Open / Open Example / Save / Share.
+- **File > Open Example**: a bundled catalog of demo models (three-statement,
+  budget vs actual, payroll, valuation, formatting and more) opens read-only
+  via the `om-example:` scheme.
+- **om-gui**: the webview is now a host-agnostic library (`mount(root,
+  { transport })`) shipped as `webview.js` (self-mounting iife) and
+  `webview.mjs` (ESM) + `webview.css`. `WebSocketTransport` accepts a real URL
+  or a `WebSocketLike` shim, so in-process backends can drive the same GUI —
+  this is the seam the standalone web build mounts on.
+- **Model browser**: alphabetical sort within groups ("Col 2" < "Col 10"),
+  hand-drawn kind icons for dimensions/cubes/views, sequential-dimension link
+  marks.
+- **Community**: Feedback button in the top toolbar (GitHub Discussions →
+  Ideas), GitHub / Discord / Docs links in the menubar, Help > Welcome Screen.
+- **Build stamps**: every component (extension, om-gui, ts_runtime) is stamped
+  at build time with `{semver}-{date}-{time}-{git7}-{mode}-{toolchain}-b{n}`;
+  the status-bar version chip shows the GUI + engine builds and copies all
+  four full strings for bug reports.
+- **Fixes**: the views area no longer flashes on Save (save_workspace events
+  skip the model refresh), accounting-formatted columns pad the missing `)`
+  so digits align with parenthesized negatives, the Circular References tab
+  is hidden.
+- **MCP server**: the extension now exposes the connected om-core runtime to AI
+  agents over MCP Streamable HTTP at `http://127.0.0.1:<port>/mcp`. Two tools —
+  `om_query` and `om_command` — forward any om-core query/command through the
+  same session the GUI uses, so an agent's edits refresh open views and its
+  reads see your live workspace. VS Code ≥ 1.102 picks the server up
+  automatically via the MCP definition provider; other clients register the URL
+  manually — **OM Core: MCP Server Info** copies the URL or a `mcp.json`
+  snippet. Localhost-only on an ephemeral port; the tools return a clean
+  "not connected" error while the runtime is down. Settings: `omCore.mcp.enabled`
+  (default on) and `omCore.mcp.port` (default `0` = ephemeral). Relative paths in
+  `save_workspace`/`load_workspace` resolve against the workspace folder.
+  End-to-end check: `npm run test:mcp` spawns a throwaway runtime and drives the
+  tools through the real MCP client transport.
+- **Fixed: raw `item_…` ids on stacked axes after external edits.** Item adds,
+  renames, or recreations made by another client (an MCP agent, a second GUI)
+  only re-ran `refreshModel`, which never re-fetched a cached dimension — so
+  stacked row/column headers fell back to truncated item ids. `refreshModel`
+  now reconciles the dimension cache against `dimension_list` (dropping stale
+  or deleted entries), `event.dimension.*`/`event.workspace.*` invalidate the
+  cache outright, and the stacked-axis renderer falls back to the
+  server-resolved `view_*_header` labels. Check: `npm run test:dimcache`.
+
+## 0.1.4
 
 - **MCP server**: the extension now exposes the connected om-core runtime to AI
   agents over MCP Streamable HTTP at `http://127.0.0.1:<port>/mcp`. Two tools —
