@@ -380,10 +380,10 @@
   "scripts": {
     "vscode:prepublish": "npm run build",
     "build": "node scripts/build.mjs",
-    "build:ext": "esbuild ./src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
+    "build:ext": "esbuild ./src/extension.ts --bundle --platform=node --format=cjs --external:vscode --loader:.md=text --outfile=dist/extension.js",
     "build:webview": "esbuild ./webview/main.ts --bundle --platform=browser --format=iife --outfile=dist/webview.js && node -e \"require('fs').copyFileSync('webview/index.html','dist/index.html')\"",
     "build:bridge": "esbuild ./bridge/server.ts --bundle --platform=node --format=cjs --external:ws --outfile=dist/bridge.js",
-    "watch:ext": "esbuild ./src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js --watch",
+    "watch:ext": "esbuild ./src/extension.ts --bundle --platform=node --format=cjs --external:vscode --loader:.md=text --outfile=dist/extension.js --watch",
     "watch:webview": "esbuild ./webview/main.ts --bundle --platform=browser --format=iife --outfile=dist/webview.js --watch",
     "compile": "tsc --noEmit",
     "test": "esbuild ./test-harness.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/test-harness.js && node dist/test-harness.js",
