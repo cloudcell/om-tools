@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.8
+
+- **Sessions restore the lower panel**: applying a session descriptor now
+  brings back which lower-panel tab (Rules / Calc flow / Format) was open
+  and whether the pane was collapsed.
+
 ## 0.1.7
 
 - **Calc flow cross-cube navigation**: rule-panel calc-flow references now
