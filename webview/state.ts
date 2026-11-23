@@ -111,6 +111,8 @@ export interface AppState {
   mtEnabled: boolean;
   isRemote: boolean;
   dockVisible: { browser: boolean; info: boolean; format: boolean; perf: boolean; timeline: boolean; rules: boolean };
+  /** Shared lower panel's active tab ("rules" | "calcflow" | "circrefs") — session-restored. */
+  rulesTab: string;
   /** Aggregate panes (Quantrix editor groups): each group owns a tab list, an active
    *  tab and its own rules subpane. `openTabs`/`activeTab`/`activeView` remain the
    *  FOCUSED group's mirrors — kept in sync by syncViewMirror() so unscoped readers
@@ -168,6 +170,7 @@ export class Store {
     isRemote: false,
     // perf/timeline are outside the MVP (their View menu items are disabled), so start hidden.
     dockVisible: { browser: true, info: false, format: false, perf: false, timeline: false, rules: true },
+    rulesTab: "rules",
     viewGroups: [{ id: "g0", tabs: [], activeTab: null, rulesOpen: true, rulesCollapsed: false }],
     viewStates: {},
     focusedGroup: "g0",
@@ -1261,6 +1264,11 @@ export class Store {
       if (typeof szs.rulePanelHeight === "number" && szs.rulePanelHeight > 0) this.state.layout.rulePanelHeight = szs.rulePanelHeight;
       this.saveLayout();
     }
+    const lower = session.lower;
+    if (lower) {
+      if (typeof lower.tab === "string") this.state.rulesTab = lower.tab;
+      if (typeof lower.collapsed === "boolean") { this.state.layout.rulePanelCollapsed = lower.collapsed; this.saveLayout(); }
+    }
 
     this.syncViewMirror();
     this.notify();
@@ -1321,6 +1329,7 @@ export class Store {
       groups,
       focusedGroup: s.focusedGroup,
       views,
+      lower: { tab: s.rulesTab, collapsed: s.layout.rulePanelCollapsed },
     };
   }
 

@@ -19,7 +19,9 @@ export class RulePanel {
       ? this.store.group(this.gid)?.rulesCollapsed ?? false
       : this.store.state.layout.rulePanelCollapsed;
   }
-  private activeTab = "rules";
+  /** The shared lower panel's tab lives in AppState so sessions restore it. */
+  private get activeTab(): string { return this.store.state.rulesTab; }
+  private set activeTab(id: string) { this.store.state.rulesTab = id; }
   private activeCubeId: string | null = null;
   /** Channel pills in use (Qt `ChannelFilterBar.selected_channels`); empty = all channels. */
   private selectedChannels = new Set<string>();
@@ -31,10 +33,12 @@ export class RulePanel {
     const panel = el("div", { class: "rule-panel" });
     const tabs = el("div", { class: "lower-tabs" });
     const tabNames = [["rules", "Rules"], ["calcflow", "Calculation Flow"]]; // circrefs hidden for now — tab + renderCircRefs kept below
+    // A session may restore a tab this build doesn't render (e.g. circrefs) → Rules.
+    const shownTab = tabNames.some(([id]) => id === this.activeTab) ? this.activeTab : tabNames[0][0];
     for (const [id, label] of tabNames) {
       const off = disabledTabs.has(id);
       const t = el("div", {
-        class: "lower-tab" + (id === this.activeTab ? " active" : "") + (off ? " disabled" : ""),
+        class: "lower-tab" + (id === shownTab ? " active" : "") + (off ? " disabled" : ""),
         title: off ? NOT_IN_MVP_TITLE : label,
       }, [label]);
       if (!off) t.addEventListener("click", () => {
@@ -57,19 +61,20 @@ export class RulePanel {
     const content = panel.querySelector(".lower-content") as HTMLElement;
     if (!content) return;
     clear(content);
-    // update tab active states
+    // update tab active states — a session may restore a tab this build doesn't render → Rules
     const collapsed = this.isCollapsed();
+    const shownTab = tabNames.some(([id]) => id === this.activeTab) ? this.activeTab : tabNames[0][0];
     panel.querySelectorAll(".lower-tab").forEach((t, i) => {
       if (!tabNames[i]) return;
-      t.classList.toggle("active", tabNames[i][0] === this.activeTab);
+      t.classList.toggle("active", tabNames[i][0] === shownTab);
       if (!disabledTabs.has(tabNames[i][0])) (t as HTMLElement).title = collapsed ? `Show ${tabNames[i][1]}` : tabNames[i][1];
     });
     // Collapsed to its tab row (T-045): render nothing, so Calculation Flow does not trace cells unseen.
     if (collapsed) return;
 
-    if (this.activeTab === "rules") this.renderRules(content);
-    else if (this.activeTab === "calcflow") this.renderCalcFlow(content);
-    else if (this.activeTab === "circrefs") this.renderCircRefs(content);
+    if (shownTab === "rules") this.renderRules(content);
+    else if (shownTab === "calcflow") this.renderCalcFlow(content);
+    else if (shownTab === "circrefs") this.renderCircRefs(content);
   }
 
   // ---- Rules tab ----
