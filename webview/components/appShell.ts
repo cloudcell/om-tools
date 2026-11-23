@@ -893,7 +893,24 @@ export class AppShell {
   private async openExample() {
     const ex = await examplePickerDialog("Open Example", CATALOG);
     if (!ex) return;
-    await this.confirmDirty(() => this.store.loadWorkspaceFile(`om-example:${ex.id}`));
+    const ref = `om-example:${ex.id}`;
+    // .omz examples carry a saved session — apply it the way File → Open does
+    // for a picked bundle; anything unreadable falls back to the model load.
+    if (/\.omz$/i.test(ex.file ?? "") && await this.applyBundleSession(ref)) return;
+    await this.confirmDirty(() => this.store.loadWorkspaceFile(ref));
+  }
+
+  /** Serve an .omz's session member and apply it, as File → Open does for a
+   *  picked bundle. Returns true when a session was applied — false means the
+   *  caller should fall back to a plain model load (unreadable member, not a
+   *  session, unreadable file — never a hard error for an otherwise valid bundle). */
+  private async applyBundleSession(path: string): Promise<boolean> {
+    const r = await this.store.api.readTextFile(path).catch(() => null);
+    if (!r?.text) return false;
+    const parsed = parseSession(r.text);
+    if (!parsed.ok) return false;
+    await this.applySessionDescriptor(parsed.session, path);
+    return true;
   }
 
   /** File → Open…: one dialog for every openable file — a model `.json`/`.msgpack`,

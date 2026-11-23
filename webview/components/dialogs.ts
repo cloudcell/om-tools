@@ -258,7 +258,7 @@ export function pickDialog(title: string, options: string[], defaultIndex = 0): 
 }
 
 /** One catalog entry shown by examplePickerDialog (shared/catalog.json rows). */
-export interface ExampleEntry { id: string; title: string; description: string; category: string; }
+export interface ExampleEntry { id: string; title: string; description: string; category: string; file?: string; }
 
 /** Compact example picker — scrollable list: title + one-line description + dimmed category.
  *  Click selects, double-click or Enter opens, Escape cancels. Resolves the entry or null. */

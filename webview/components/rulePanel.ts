@@ -19,9 +19,21 @@ export class RulePanel {
       ? this.store.group(this.gid)?.rulesCollapsed ?? false
       : this.store.state.layout.rulePanelCollapsed;
   }
-  /** The shared lower panel's tab lives in AppState so sessions restore it. */
-  private get activeTab(): string { return this.store.state.rulesTab; }
-  private set activeTab(id: string) { this.store.state.rulesTab = id; }
+  /** The lower-panel tab is per-pane (gid-scoped) so one pane's clicks or cell
+   *  selection never flip another pane's subpane; the shared AppState field is
+   *  the fallback/default and the unscoped legacy layout's store. */
+  private get activeTab(): string {
+    return this.gid !== undefined
+      ? this.store.group(this.gid)?.rulesTab ?? this.store.state.rulesTab
+      : this.store.state.rulesTab;
+  }
+  private set activeTab(id: string) {
+    if (this.gid !== undefined) {
+      const g = this.store.group(this.gid);
+      if (g) { g.rulesTab = id; return; }
+    }
+    this.store.state.rulesTab = id;
+  }
   private activeCubeId: string | null = null;
   /** Channel pills in use (Qt `ChannelFilterBar.selected_channels`); empty = all channels. */
   private selectedChannels = new Set<string>();
