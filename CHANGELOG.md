@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.10
+
+- **MCP: financial-model skill built in.** The MCP server now advertises the
+  financial-modeling playbook — server instructions describe it, an
+  `om-skill://` resource serves the full text, and a prompt entry point lets
+  agents load it on demand. AI clients get correct modeling conventions
+  (separate statement cubes, explicit formulas, scenarios, checks) without
+  any local setup.
+
 ## 0.1.9
 
 - **Delete dimension items from the grid**: select items and delete them,
