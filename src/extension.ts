@@ -707,7 +707,16 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
       case "readTextFile": {
         // Scoped read for session descriptors — the webview cannot touch the
         // filesystem, and we do not offer a general file-read surface.
-        const p = req.params?.path;
+        let p = req.params?.path;
+        // `om-example:<id>` resolves to the bundled asset so a catalog .omz can
+        // serve its session member exactly like a picked bundle does.
+        if (typeof p === "string" && p.startsWith(EXAMPLE_SCHEME)) {
+          try {
+            p = resolveExampleRef(p, catalogData as ExampleCatalog, path.join(extContext?.extensionPath ?? "", "dist", "examples"));
+          } catch (e: any) {
+            return { type: "response", id: req.id, ok: false, error: `readTextFile: ${e?.message || e}` };
+          }
+        }
         if (typeof p !== "string" || !/\.(omsession\.json|omz)$/i.test(p)) {
           return { type: "response", id: req.id, ok: false, error: "readTextFile: only *.omsession.json and *.omz paths are served" };
         }
