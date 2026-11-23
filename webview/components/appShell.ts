@@ -961,7 +961,11 @@ export class AppShell {
     const session = this.store.captureSession(currentTheme());
     session.model = { bundle: BUNDLE_MODEL_MEMBER };
     const bytes = await makeBundle(new TextEncoder().encode(snap.json), JSON.stringify(session, null, 2));
-    const suggested = this.store.fileName().replace(/\.(json|msgpack|omz)$/i, "") + BUNDLE_EXT;
+    // Untitled models get the Qt timestamped default (New_Model_<ts>.omz) —
+    // a fixed "New_Model.omz" collides on every save.
+    const suggested = (this.store.state.filePath
+      ? this.store.fileName().replace(/\.(json|msgpack|omz)$/i, "")
+      : `New_Model_${timestamp()}`) + BUNDLE_EXT;
     return { suggested, bytes };
   }
 
