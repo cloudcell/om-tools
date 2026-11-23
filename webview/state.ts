@@ -1102,11 +1102,12 @@ export class Store {
     if (kind === "url") return session.model.url!;
     if (kind === "bundle") {
       // The model is a zip member next to the session inside the .omz it came
-      // from. A filesystem sessionPath (VS Code) loads that .omz — the host
-      // extracts the model member. On web the backend stashed the bundle bytes
-      // when it served the session; om-bundle: reads the member from the stash.
-      if (sessionPath && !/^https?:\/\//.test(sessionPath)) return sessionPath;
-      return `om-bundle:${session.model.bundle || "model.json"}`;
+      // from. On web the backend stashed the bundle bytes when it served the
+      // session — the om-bundle: token reads the member from the stash and
+      // never re-triggers the picked-file stash (that would reenter the apply).
+      // Filesystem hosts get the .omz path; the host extracts the model member.
+      if (this.api.supportsNativeExternalLinks) return `om-bundle:${session.model.bundle || "model.json"}`;
+      return sessionPath!;
     }
     const p = session.model.path!;
     if (/^https?:\/\//.test(p) || /^([a-zA-Z]:[\\/]|[\\/]|~)/.test(p)) return p;

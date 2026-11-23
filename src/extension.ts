@@ -606,14 +606,18 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         }
         // `.omz` bundle → the model member is extracted to a temp file so every engine
         // (socket or embedded) rides the plain load path. The session member stays
-        // inside the file — engines ignore it the way a link would be.
+        // inside the file — engines ignore it the way a link would be. A non-zip file
+        // merely named .omz falls through to the plain path (same tolerance as web).
         if (req.params!.command_id === "load_workspace" && typeof params.path === "string" && /\.omz$/i.test(params.path)) {
           try {
-            const b = await readBundle(await fs.promises.readFile(params.path));
-            if (!b.modelBytes) throw new Error("bundle has no model member");
-            const tmp = path.join(os.tmpdir(), `omz-${crypto.createHash("sha1").update(params.path).digest("hex").slice(0, 12)}.json`);
-            await fs.promises.writeFile(tmp, b.modelBytes);
-            params = { ...params, path: tmp };
+            const raw = await fs.promises.readFile(params.path);
+            if (isZip(raw)) {
+              const b = await readBundle(raw);
+              if (!b.modelBytes) throw new Error("bundle has no model member");
+              const tmp = path.join(os.tmpdir(), `omz-${crypto.createHash("sha1").update(params.path).digest("hex").slice(0, 12)}.json`);
+              await fs.promises.writeFile(tmp, b.modelBytes);
+              params = { ...params, path: tmp };
+            }
           } catch (e: any) {
             return { type: "response", id: req.id, ok: false, error: `load_workspace: ${e?.message || e}` };
           }
