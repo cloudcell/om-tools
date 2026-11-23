@@ -54,6 +54,9 @@ export interface SessionGroup {
   rulesOpen?: boolean;
   rulesCollapsed?: boolean;
   rulesH?: number;
+  /** The pane's own lower-panel tab — panes do not share it (one pane's
+   *  selection must not flip another pane's subpane). */
+  rulesTab?: string;
 }
 
 export interface SessionViewSel {

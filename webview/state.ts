@@ -56,6 +56,9 @@ export interface ViewGroupState {
   rulesCollapsed: boolean;
   /** rules subpane height in px (session state — each pane owns its own, like split sizes). */
   rulesH?: number;
+  /** The pane's lower-panel tab ("rules" | "calcflow" | "circrefs") — per-pane,
+   *  unset groups fall back to the shared state.rulesTab default. */
+  rulesTab?: string;
 }
 
 /** Where a dropped view tab lands relative to its target pane. */
@@ -1162,6 +1165,7 @@ export class Store {
         rulesOpen: dg?.rulesOpen !== false,
         rulesCollapsed: dg?.rulesCollapsed === true,
         rulesH: typeof dg?.rulesH === "number" && dg.rulesH > 0 ? dg.rulesH : undefined,
+        rulesTab: typeof dg?.rulesTab === "string" ? dg.rulesTab : undefined,
       });
     }
     if (!newGroups.length) newGroups.push({ id: `g${++Store.gidSeq}`, tabs: [], activeTab: null, rulesOpen: true, rulesCollapsed: false });
@@ -1287,7 +1291,8 @@ export class Store {
         activeTab: g.activeTab,
         rulesOpen: g.rulesOpen,
         rulesCollapsed: g.rulesCollapsed,
-        ...(g.rulesH !== undefined ? { rulesH: g.rulesH } : {}),
+        rulesH: g.rulesH,
+        rulesTab: g.rulesTab,
       };
     }
     const views: SessionDescriptor["views"] = {};
