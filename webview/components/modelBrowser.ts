@@ -33,8 +33,9 @@ export class ModelBrowser {
 
   private refresh(tree: HTMLElement) {
     clear(tree);
-    // Dimensions root
+    // Dimensions root — data-tour anchors the guided tour's concept step.
     const dimRoot = this.makeTreeNode("Dimensions", kindIcon("dimension"), true, () => this.dimRootMenu());
+    (dimRoot.querySelector(".tree-row") as HTMLElement).dataset.tour = "dims";
     const dimChildren = (dimRoot as any)._children as HTMLElement;
     for (const dim of [...this.store.visibleDims()].sort(ModelBrowser.byName)) {
       const node = this.makeTreeNode(`${dim.name} (${dim.items})`, kindIcon("dimension"), false, () => this.dimMenu(dim));
@@ -46,6 +47,7 @@ export class ModelBrowser {
 
     // Cubes root
     const cubeRoot = this.makeTreeNode("Cubes", kindIcon("cube"), true, () => this.cubeRootMenu());
+    (cubeRoot.querySelector(".tree-row") as HTMLElement).dataset.tour = "cubes";
     const cubeChildren = (cubeRoot as any)._children as HTMLElement;
     for (const cube of [...this.store.visibleCubes()].sort(ModelBrowser.byName)) {
       cubeChildren.appendChild(this.makeTreeNode(`${cube.name} (${cube.dimensions})`, kindIcon("cube"), false, () => this.cubeMenu(cube)));
@@ -54,6 +56,7 @@ export class ModelBrowser {
 
     // Views root
     const viewRoot = this.makeTreeNode("Views", kindIcon("view"), true, () => this.viewRootMenu());
+    (viewRoot.querySelector(".tree-row") as HTMLElement).dataset.tour = "views";
     const viewChildren = (viewRoot as any)._children as HTMLElement;
     for (const view of [...this.store.visibleViews()].sort(ModelBrowser.byName)) {
       const viewNode = this.makeTreeNode(view.name, kindIcon("view"), false, () => this.viewMenu(view));
