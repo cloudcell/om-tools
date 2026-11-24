@@ -14,7 +14,7 @@ import { ViewTabDrag } from "./viewTabDrag";
  *  The tree is rebuilt ONLY when the group structure changes (signature compare) —
  *  grids and rule panels keep living DOM/subscriptions across ordinary notifies. */
 export class ViewArea {
-  private root = el("div", { class: "view-area" });
+  private root = el("div", { class: "view-area", "data-tour": "view-area" });
   private grids = new Map<string, MultilevelGrid>();
   private drag: ViewTabDrag;
   private sig = "";
@@ -139,6 +139,7 @@ export class ViewArea {
       const rp = new RulePanel(this.store, gid);
       const rules = rp.render();
       rules.classList.add("va-rules");
+      rules.dataset.tour = "rules";
       const layout = this.store.state.layout;
       const sep = new Splitter({
         axis: "y", grow: -1, min: 60, collapsedSize: 28,

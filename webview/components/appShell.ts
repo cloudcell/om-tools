@@ -5,6 +5,8 @@ import { makeBundle, BUNDLE_MODEL_MEMBER, BUNDLE_EXT } from "../../shared/omz";
 import { applyTheme, currentTheme } from "../theme";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
+import { tipsEnabled, setTipsEnabled, resetTips } from "../tips";
+import { startTour } from "../tour";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
 import { RulePanel } from "./rulePanel";
@@ -437,7 +439,7 @@ export class AppShell {
 
   // ---- Menu bar ----
   private menuBar(): HTMLElement {
-    const mb = el("div", { class: "menubar" });
+    const mb = el("div", { class: "menubar", "data-tour": "menubar" });
     // Item lists are produced on each open so checked/disabled states reflect current store state.
     const menus: [string, () => MenuItem[]][] = [
       ["File", () => this.fileMenuItems()],
@@ -450,7 +452,7 @@ export class AppShell {
       ["Help", () => this.helpMenuItems()],
     ];
     for (const [label, getItems] of menus) {
-      const mi = el("div", { class: "menu-item" }, [label]);
+      const mi = el("div", { class: "menu-item", ...(label === "Help" ? { "data-tour": "help-menu" } : {}) }, [label]);
       let dd = this.buildMenuList(getItems(), "menu-dropdown");
       mi.appendChild(dd);
       const open = () => {
@@ -730,7 +732,7 @@ export class AppShell {
   }
 
   private async openOptions() {
-    const result = await optionsDialog(this.store.state.options);
+    const result = await optionsDialog(this.store.state.options, () => resetTips());
     if (result) this.store.setOptions(result);
   }
 
@@ -755,6 +757,10 @@ export class AppShell {
       ...(this.store.api.supportsNativeExternalLinks
         ? [{ icon: msym("water_drop"), label: "Welcome Screen…", fn: () => window.dispatchEvent(new CustomEvent("om-show-welcome")) } as MenuItem]
         : []),
+      { icon: msym("menu_book"), label: "Take the Tour…", fn: () => startTour() },
+      { icon: msym("info"), label: "Show Tips", checked: tipsEnabled(), fn: () => setTipsEnabled(!tipsEnabled()) },
+      { icon: msym("refresh"), label: "Reset Tips…", fn: () => resetTips() },
+      { sep: true },
       { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core", "OM Core — multidimensional modeling engine GUI.\nVSCode/VSCodium extension connecting to the om-core runtime.\n\nhttps://cloudcell.github.io/om-docs/") },
     ];
   }
@@ -947,6 +953,8 @@ export class AppShell {
       let skips: string[] = [];
       try { skips = await this.store.applySession(session, sessionPath); }
       catch (e: any) { await alertDialog("Open Session", e?.message || String(e)); return; }
+      // example-opened fires only on real apply success — errors are swallowed above (F4).
+      if (sessionPath?.startsWith("om-example:")) this.store.emitUiEvent("example-opened");
       if (session.theme && session.theme !== currentTheme()) {
         applyTheme(session.theme);
         this.store.api.updateUiState({ theme: session.theme });
@@ -991,6 +999,7 @@ export class AppShell {
     const res = await this.store.api.saveBinaryFile(b.suggested, b.bytes).catch(() => null);
     if (res?.downloaded)
       await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the bundle was downloaded to your default Downloads folder.");
+    if (res) this.store.emitUiEvent("bundle-saved");
   }
 
   /** File → Share Session… (web build only — the menu item is gated on

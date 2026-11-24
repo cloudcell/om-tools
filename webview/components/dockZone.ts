@@ -33,7 +33,7 @@ export class DockZone {
 
   constructor(readonly id: DockZoneId, private ctl: DockController) {
     this.el = el("div", { class: `dock-zone dock-${id}` });
-    this.tabsEl = el("div", { class: "lower-tabs dock-tabs" });
+    this.tabsEl = el("div", { class: "lower-tabs dock-tabs", "data-tour": "dock-tabs" });
     this.bodyEl = el("div", { class: "dock-body" });
     this.el.append(this.tabsEl, this.bodyEl);
   }

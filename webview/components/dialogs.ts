@@ -456,7 +456,7 @@ export function formDialog(title: string, fields: FormField[], opts: { okLabel?:
 /** Tools → Options… — display preferences, persisted in UiState. Each row shows
  *  what the default setup uses; "Restore defaults" resets every control.
  *  Resolves with the full options map on OK, or null on Cancel/Escape/outside click. */
-export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions | null> {
+export function optionsDialog(current: Required<UiOptions>, onResetTips?: () => void): Promise<UiOptions | null> {
   return new Promise((resolve) => {
     const ov = ensureOverlay();
     clear(ov);
@@ -537,6 +537,27 @@ export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions |
       advDefault,
     ]));
 
+    // — Contextual tips —
+    const tipsCb = document.createElement("input");
+    tipsCb.type = "checkbox"; tipsCb.checked = current.showTips;
+    const tipsDefault = el("span", { style: { fontSize: "11px", color: "var(--text-label)", marginLeft: "auto" } },
+      [`default: ${DEFAULT_OPTIONS.showTips ? "on" : "off"}`]);
+    dlg.appendChild(el("label", { style: { display: "flex", gap: "6px", alignItems: "center", fontSize: "13px", marginBottom: "16px", cursor: "pointer" } }, [
+      tipsCb,
+      document.createTextNode("Show contextual tips"),
+      el("span", { style: { fontSize: "11px", color: "var(--text-label)" } }, ["first-use hints — Help → Reset Tips… replays them"]),
+      tipsDefault,
+    ]));
+    if (onResetTips) {
+      const tipsReset = el("button", { style: {
+        padding: "4px 10px", border: "1px solid var(--dlg-border)", borderRadius: "6px",
+        background: "var(--dlg-btn-bg)", fontSize: "12px", cursor: "pointer", fontFamily: "inherit",
+        color: "var(--text)", margin: "-6px 0 16px 22px", display: "block",
+      } }, ["Reset tips…"]) as HTMLButtonElement;
+      tipsReset.addEventListener("click", () => { onResetTips(); });
+      dlg.appendChild(tipsReset);
+    }
+
     // — Buttons —
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
     const resetBtn = el("button", { style: {
@@ -561,6 +582,7 @@ export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions |
       aiCb.checked = DEFAULT_OPTIONS.assistant;
       dockCb.checked = DEFAULT_OPTIONS.docking;
       advCb.checked = DEFAULT_OPTIONS.advancedPanels;
+      tipsCb.checked = DEFAULT_OPTIONS.showTips;
       signTag.textContent = "(default)";
     });
     signSelect.addEventListener("change", () => {
@@ -569,7 +591,7 @@ export function optionsDialog(current: Required<UiOptions>): Promise<UiOptions |
 
     const done = (v: UiOptions | null) => { closeOverlay(); resolve(v); };
     cancelBtn.addEventListener("click", () => done(null));
-    okBtn.addEventListener("click", () => done({ markHardvalues: hvCb.checked, aggregateSign: signSelect.value, assistant: aiCb.checked, docking: dockCb.checked, advancedPanels: advCb.checked }));
+    okBtn.addEventListener("click", () => done({ markHardvalues: hvCb.checked, aggregateSign: signSelect.value, assistant: aiCb.checked, docking: dockCb.checked, advancedPanels: advCb.checked, showTips: tipsCb.checked }));
     dlg.addEventListener("keydown", (e) => {
       if (e.key === "Escape") { e.preventDefault(); done(null); }
     });

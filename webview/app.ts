@@ -4,6 +4,8 @@ import { AppShell } from "./components/appShell";
 import { applyTheme, sanitizeTheme } from "./theme";
 import { parseSession } from "../shared/session";
 import { alertDialog } from "./components/dialogs";
+import { initTips } from "./tips";
+import { initTour } from "./tour";
 import type { Transport } from "./transport";
 import "./styles.css";
 
@@ -34,6 +36,11 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
   // Render the shell first so the GUI is visible even while connecting.
   const shell = new AppShell(store);
   root.replaceWith(shell.render());
+
+  // Contextual first-use tips (T-tips): subscribes to the store's UI-event channel.
+  initTips(store);
+  // First-run guided tour: registers the tips suppression gate + first-run invite.
+  initTour(store);
 
   // Status updates from the host (connecting/connected/disconnected/error).
   transport.onStatus((status, message, extra) => {
