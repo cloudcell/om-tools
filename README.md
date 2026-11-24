@@ -278,3 +278,7 @@ The runtime configuration and integration notes are in [AGENTS.md](AGENTS.md). T
 OM Tools is distributed under the GNU Affero General Public License, version 3 or later (`AGPL-3.0-or-later`), as declared in `package.json`, except for separately licensed materials. See [LICENSE](LICENSE), [NOTICE](NOTICE), and [third-party notices](legal/THIRD-PARTY-NOTICES.md).
 
 OM Core is a separate repository with its own contributor policies and notices; signing an OM Tools agreement does not automatically sign an agreement for OM Core.
+
+### Commercial Licensing
+
+Alternative commercial licensing arrangements are available upon request. Please contact Cloudcell Limited for licensing inquiries.
