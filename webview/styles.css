@@ -909,12 +909,20 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .om-tour-skip:hover { color: var(--text); }
 /* The highlight IS the ring — a static accent outline, no backdrop, no pulse. */
 .om-tour-mark { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-/* Arrow sits on the callout edge facing the anchor — ties callout to target. */
-.om-tour-arrow { position: absolute; width: 0; height: 0; border: 7px solid transparent; }
-.om-tour-arrow.edge-top { top: -13px; margin-left: -7px; border-bottom: 7px solid var(--popup-bg); }
-.om-tour-arrow.edge-bottom { bottom: -13px; margin-left: -7px; border-top: 7px solid var(--popup-bg); }
-.om-tour-arrow.edge-left { left: -13px; margin-top: -7px; border-right: 7px solid var(--popup-bg); }
-.om-tour-arrow.edge-right { right: -13px; margin-top: -7px; border-left: 7px solid var(--popup-bg); }
+/* Arrow sits on the callout edge facing the anchor — ties callout to target.
+ *  Element = border-coloured triangle; ::after = fill triangle inset 1px, so the
+ *  slants read as an outline. Origin is the apex: JS sets left/top to the anchor
+ *  centre directly. */
+.om-tour-arrow { position: absolute; width: 0; height: 0; border: 8px solid transparent; }
+.om-tour-arrow::after { content: ""; position: absolute; border: 7px solid transparent; }
+.om-tour-arrow.edge-top { top: -16px; margin-left: -8px; border-bottom-color: var(--border-strong); }
+.om-tour-arrow.edge-bottom { bottom: -16px; margin-left: -8px; border-top-color: var(--border-strong); }
+.om-tour-arrow.edge-left { left: -16px; margin-top: -8px; border-right-color: var(--border-strong); }
+.om-tour-arrow.edge-right { right: -16px; margin-top: -8px; border-left-color: var(--border-strong); }
+.om-tour-arrow.edge-top::after { left: 0; top: 1px; border-bottom-color: var(--popup-bg); }
+.om-tour-arrow.edge-bottom::after { left: 0; top: -1px; border-top-color: var(--popup-bg); }
+.om-tour-arrow.edge-left::after { left: 1px; top: 0; border-right-color: var(--popup-bg); }
+.om-tour-arrow.edge-right::after { left: -1px; top: 0; border-left-color: var(--popup-bg); }
 .om-tour-invite { max-width: 460px; }
 .ctx-item.disabled:hover { background: transparent; color: var(--text-disabled); }
 .ctx-sep { height: 1px; background: var(--border); margin: 2px 0; }
