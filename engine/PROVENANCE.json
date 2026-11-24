@@ -6,9 +6,9 @@
   "git_blob_sha1": "7e25ccbe056a4fd881e212b66bd16c239f06f39b",
   "sha256": "bba9178528c18a17430fd176f28bf93adf70566eff76b7493fc0b16d7e5f850c",
   "engine_repository": "cloudcell/om-engine-zig-dev",
-  "engine_commit": null,
-  "engine_commit_verified": false,
-  "source_provenance": "NOT VERIFIED: rebuild the matching Zig source to verify",
+  "engine_commit": "156ca496a7b50816801c7cc46a47d54a7c081fd1",
+  "engine_commit_verified": true,
+  "source_provenance": "Matched local clean Zig repository build and git commit",
   "ts_runtime_version": "ts_runtime 0.1.0 @ 9564c6f (synced 2026-11-24T22:07:13Z)",
   "binary_license": "legal/ENGINE-BINARY-LICENSE.md",
   "third_party_notices": [
