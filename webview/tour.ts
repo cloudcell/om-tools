@@ -19,6 +19,7 @@ export interface TourStep {
   fallbackAnchor?: string;   // used when the primary anchor is absent from the DOM
   place?: Placement;         // preferred side (default bottom)
   fallbackPlace?: Placement; // placement when the fallback anchor is used
+  activeTab?: string;        // prefer the match whose active .lower-tab shows this label
   title: string;
   text: string;
 }
@@ -34,7 +35,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: "File opens models and bundles; View, Tools, and Help hold the rest." },
   { id: "views", anchor: "view-area", place: "inside", title: "Views",
     text: "Each tab is a live view into the model — drag a tab to split." },
-  { id: "rules", anchor: "rules", fallbackAnchor: "view-area", place: "left", fallbackPlace: "inside", title: "Rules",
+  { id: "rules", anchor: "rules", fallbackAnchor: "view-area", place: "left", fallbackPlace: "inside", activeTab: "Rules", title: "Rules",
     text: "Rules attach a formula to a region of cells — select one here to inspect or edit it." },
   { id: "calc-flow", anchor: "view-area", place: "inside", title: "Calculation flow",
     text: "Changing an input recomputes every dependent cell in order — that dependency chain is the calculation flow." },
@@ -176,11 +177,30 @@ export class TourManager {
 
   private anchorEl(step: TourStep): { el: HTMLElement; fallback: boolean } | null {
     if (!step.anchor) return null;
-    const primary = document.querySelector(`[data-tour="${step.anchor}"]`);
-    if (primary) return { el: primary as HTMLElement, fallback: false };
-    if (!step.fallbackAnchor) return null;
-    const fb = document.querySelector(`[data-tour="${step.fallbackAnchor}"]`);
-    return fb ? { el: fb as HTMLElement, fallback: true } : null;
+    const qsa = (name: string) => [...document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`)];
+    let els = qsa(step.anchor);
+    let fallback = false;
+    if (!els.length && step.fallbackAnchor) { els = qsa(step.fallbackAnchor); fallback = true; }
+    if (!els.length) return null;
+    return { el: this.pickAnchor(els, step), fallback };
+  }
+
+  /** Multiple view panes can carry the same anchor — each pane has its own
+   *  rules subpane, and a collapsed pane stays in the DOM as a thin tab strip.
+   *  Point at the one that is actually open: prefer an expanded pane showing
+   *  the step's active tab, then any expanded pane, then the largest match.
+   *  The 40px floor never eliminates every candidate (collapsed ≈ 28px). */
+  private pickAnchor(els: HTMLElement[], step: TourStep): HTMLElement {
+    const area = (e: HTMLElement) => { const r = e.getBoundingClientRect(); return r.width * r.height; };
+    const biggest = (pool: HTMLElement[]) => pool.reduce((a, b) => (area(b) > area(a) ? b : a));
+    const expanded = els.filter((e) => e.getBoundingClientRect().height > 40);
+    const pool = expanded.length ? expanded : els;
+    if (step.activeTab) {
+      const tabbed = pool.filter((e) =>
+        (e.querySelector(".lower-tab.active")?.textContent ?? "").trim() === step.activeTab);
+      if (tabbed.length) return biggest(tabbed);
+    }
+    return biggest(pool);
   }
 
   private render() {
