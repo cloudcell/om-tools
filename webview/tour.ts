@@ -36,15 +36,19 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: "browser-dims", anchor: "dims", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Dimensions",
     text: "Dimensions are the model's axes — Year, Account. Their items become the rows and columns." },
   { id: "browser-cubes", anchor: "cubes", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Cubes",
-    text: "A cube stores the data — each cell is addressed by items of its dimensions." },
+    text: "A cube stores the data — cells addressed by items of its dimensions — and the rules that compute them." },
   { id: "browser-views", anchor: "views", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Views",
     text: "A view is a live window into a cube — opening one adds a tab to the workspace." },
   { id: "views", anchor: "view-area", place: "inside", title: "View tabs",
     text: "Each tab is a live view into the model — drag a tab to split." },
   { id: "chips", anchor: "pivot", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "Dimension chips",
     text: "Drag chips between Page, Rows and Columns to rearrange a view; Page chips filter the slice." },
+  { id: "at-dim", anchor: "at-dim", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "The @ dimension",
+    text: "Every cube's channel axis — 'value' holds the data; the other items carry formatting (fill, fonts, number formats)." },
   { id: "rules", anchor: "rules", fallbackAnchor: "view-area", place: "left", fallbackPlace: "inside", activeTab: "Rules", title: "Rules",
     text: "Rules attach a formula to a region of cells — select one here to inspect or edit it." },
+  { id: "channel-pills", anchor: "channel-filter", fallbackAnchor: "view-area", place: "left", fallbackPlace: "inside", activeTab: "Rules", title: "Channel pills",
+    text: "Click a pill to show only that channel's rules — Ctrl-click to combine; none selected shows all." },
   { id: "calc-flow", anchor: "view-area", place: "inside", title: "Calculation flow",
     text: "Changing an input recomputes every dependent cell in order — that dependency chain is the calculation flow." },
   { id: "status", anchor: "engine-status", fallbackAnchor: "statusbar", place: "bottom", title: "Engine status",
@@ -197,15 +201,22 @@ export class TourManager {
    *  rules subpane, and a collapsed pane stays in the DOM as a thin tab strip.
    *  Point at the one that is actually open: prefer an expanded pane showing
    *  the step's active tab, then any expanded pane, then the largest match.
-   *  The 40px floor never eliminates every candidate (collapsed ≈ 28px). */
+   *  The 40px floor never eliminates every candidate (collapsed ≈ 28px);
+   *  anchors that are thin themselves (chips, the pill bar) fall back to the
+   *  largest *rendered* match so a collapsed pane's zero-size leftovers lose.
+   *  Tab matching scopes to the .va-rules ancestor so anchors nested inside
+   *  the pane (which don't contain the tab labels) still match. */
   private pickAnchor(els: HTMLElement[], step: TourStep): HTMLElement {
     const area = (e: HTMLElement) => { const r = e.getBoundingClientRect(); return r.width * r.height; };
     const biggest = (pool: HTMLElement[]) => pool.reduce((a, b) => (area(b) > area(a) ? b : a));
-    const expanded = els.filter((e) => e.getBoundingClientRect().height > 40);
-    const pool = expanded.length ? expanded : els;
+    const visible = els.filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+    const expanded = visible.filter((e) => e.getBoundingClientRect().height > 40);
+    const pool = expanded.length ? expanded : (visible.length ? visible : els);
     if (step.activeTab) {
-      const tabbed = pool.filter((e) =>
-        (e.querySelector(".lower-tab.active")?.textContent ?? "").trim() === step.activeTab);
+      const tabbed = pool.filter((e) => {
+        const scope = e.closest(".va-rules") ?? e;
+        return (scope.querySelector(".lower-tab.active")?.textContent ?? "").trim() === step.activeTab;
+      });
       if (tabbed.length) return biggest(tabbed);
     }
     return biggest(pool);

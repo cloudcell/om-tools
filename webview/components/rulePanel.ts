@@ -128,7 +128,7 @@ export class RulePanel {
     // Channel pills (Qt `ChannelFilterBar`): a filter on the `@` system dimension, not on cubes (issue #3).
     // Click selects one channel (click again clears), Ctrl/Cmd+click adds or removes; none selected = all rules.
     // Qt disables the bar while a rule is edited.
-    const filterBar = el("div", { class: "channel-filter", role: "group", "aria-label": "Filter rules by channel" });
+    const filterBar = el("div", { class: "channel-filter", role: "group", "aria-label": "Filter rules by channel", "data-tour": "channel-filter" });
     for (const ch of RULE_CHANNELS) {
       const n = counts.get(ch.id) || 0, on = this.selectedChannels.has(ch.id);
       const short = ch.id.replace("@.", "");

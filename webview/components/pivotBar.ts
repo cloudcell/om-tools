@@ -117,7 +117,7 @@ export class PivotBar {
       const curName = items.find((it) => it.id === curId)?.name || (items[0]?.name || "\u2014");
       const label = el("span", {}, [`${name}: ${curName}`]);
       const arrow = el("span", { class: "chip-arrow" });
-      const chip = el("div", { class: cls, draggable: "true", title: `Drag to move; click to pick ${name} item` },
+      const chip = el("div", { class: cls, draggable: "true", title: `Drag to move; click to pick ${name} item`, "data-tour": dimId === "@" ? "at-dim" : null },
         [grip, label, seqMark, arrow].filter(Boolean) as HTMLElement[]);
       chip.addEventListener("click", (e) => { e.stopPropagation(); this.showPageDropdown(chip, dimId, items); });
       this.setupChipDrag(chip, dimId, zone);
@@ -125,7 +125,7 @@ export class PivotBar {
     }
 
     // AxisChip / HeaderChip: grip + name
-    const chip = el("div", { class: cls, draggable: "true", title: `Drag to move ${name}` },
+    const chip = el("div", { class: cls, draggable: "true", title: `Drag to move ${name}`, "data-tour": dimId === "@" ? "at-dim" : null },
       [grip, el("span", {}, [name]), seqMark].filter(Boolean) as HTMLElement[]);
     this.setupChipDrag(chip, dimId, zone);
     return chip;
