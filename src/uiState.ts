@@ -50,13 +50,17 @@ export function sanitizeUiState(input: unknown): UiState | null {
   }
   const tips = src.tips;
   if (tips && typeof tips === "object" && !Array.isArray(tips)) {
+    const cleanTips: UiTips = {};
     const seen = (tips as Record<string, unknown>).seen;
     if (Array.isArray(seen)) {
       const clean = seen.filter((s): s is string => typeof s === "string" && s.length > 0 && s.length <= TIP_ID_MAX_CHARS);
       // Bound by serialized size, not entry count — drop oldest (FIFO) until it fits.
       while (clean.length && JSON.stringify(clean).length > TIPS_MAX_BYTES) clean.shift();
-      if (clean.length) out.tips = { seen: clean };
+      if (clean.length) cleanTips.seen = clean;
     }
+    // tourDone is only meaningful when true; absent/false both mean "not done".
+    if ((tips as Record<string, unknown>).tourDone === true) cleanTips.tourDone = true;
+    if (Object.keys(cleanTips).length) out.tips = cleanTips;
   }
   if (!out.theme && !out.layout && !out.options && !out.tips) return null;
   return JSON.stringify(out).length <= UI_STATE_MAX_BYTES ? out : null;

@@ -200,6 +200,8 @@ export const AGGREGATE_SIGN_CHOICES: { value: string; label: string }[] = [
  *  tips are absent, so they may re-fire — `seen` is deliberately small. */
 export interface UiTips {
   seen?: string[];
+  /** First-run guided tour completed/skipped/declined — suppresses the invite. */
+  tourDone?: boolean;
 }
 
 /** Everything the webview persists. `saveUiState` params: `{ state: UiState }`.

@@ -66,6 +66,27 @@ export class TipQueue {
 
 const AUTO_DISMISS_MS = 8000;
 
+/** Onboarding-wide suppression probes shared by tips and the tour: never over
+ *  the welcome gate, during session restore, or while any view is still loading. */
+export function suppressedForOnboarding(store: Store): boolean {
+  if (store.isRestoring()) return true;
+  if (typeof document !== "undefined" && document.querySelector(".welcome-overlay")) return true;
+  return Object.values(store.state.viewStates).some((v) => v.loading);
+}
+
+/** Nested read-modify-write of `UiState.tips` — `updateUiState` shallow-merges
+ *  top-level keys only, so the `seen` writer (tips) and the `tourDone` writer
+ *  (tour) must go through one merge helper or they wipe each other. */
+export function updateTipsState(store: Store, patch: { seen?: string[]; tourDone?: boolean }): void {
+  const cur = store.api.loadUiState()?.tips ?? {};
+  store.api.updateUiState({ tips: { ...cur, ...patch } });
+}
+
+/** Extra suppression injected by the tour module (tour running or invite up)
+ *  — kept as a hook rather than an import so tips.ts has no dependency on tour.ts. */
+let extraSuppression: (() => boolean) | null = null;
+export function setTipSuppression(fn: (() => boolean) | null): void { extraSuppression = fn; }
+
 export class TipManager {
   private queue: TipQueue;
   private toast: HTMLElement | null = null;
@@ -89,15 +110,20 @@ export class TipManager {
     if (!on) { this.queue.cancel(); this.teardown(); }
   }
 
-  reset() { this.queue.clearSeen(); this.persist(); }
+  /** Reset = fresh onboarding: clears seen tips AND the tour-done flag, so the
+   *  invite re-fires next run ("show me everything again" semantics). */
+  reset() { this.queue.clearSeen(); updateTipsState(this.store, { seen: [], tourDone: false }); }
 
-  /** Suppression (3e): never over the welcome gate, during session restore, or
-   *  while any view is still loading. Disabled drops everything. */
+  /** Drops the visible tip and the queue without marking seen — used when the
+   *  tour starts so no two floating elements collide (T5). */
+  dismiss() { this.queue.cancel(); this.teardown(); }
+
+  /** Suppression (3e): shared onboarding probes + enabled + tour/invite gate. */
   private suppressed(): boolean {
     if (!this.enabled()) return true;
-    if (this.store.isRestoring()) return true;
-    if (typeof document !== "undefined" && document.querySelector(".welcome-overlay")) return true;
-    return Object.values(this.store.state.viewStates).some((v) => v.loading);
+    if (suppressedForOnboarding(this.store)) return true;
+    if (extraSuppression?.()) return true;
+    return false;
   }
 
   show(id: string) {
@@ -116,7 +142,7 @@ export class TipManager {
 
   private persist() {
     const seen = this.queue.seenIds;
-    this.store.api.updateUiState({ tips: { seen } });
+    updateTipsState(this.store, { seen });
     // Transports swallow save errors — detect failure by read-back (P2).
     const rb = this.store.api.loadUiState()?.tips?.seen;
     if (!this.warned && (!Array.isArray(rb) || rb.length !== seen.length)) {
@@ -177,3 +203,5 @@ export function initTips(store: Store): TipManager {
 export function tipsEnabled(): boolean { return mgr?.enabled() ?? false; }
 export function setTipsEnabled(on: boolean) { mgr?.setEnabled(on); }
 export function resetTips() { mgr?.reset(); }
+/** Drops any visible/queued tip without marking seen — the tour calls this on start. */
+export function dismissTip() { mgr?.dismiss(); }

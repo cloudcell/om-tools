@@ -6,6 +6,7 @@ import { applyTheme, currentTheme } from "../theme";
 import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
 import { tipsEnabled, setTipsEnabled, resetTips } from "../tips";
+import { startTour } from "../tour";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
 import { RulePanel } from "./rulePanel";
@@ -438,7 +439,7 @@ export class AppShell {
 
   // ---- Menu bar ----
   private menuBar(): HTMLElement {
-    const mb = el("div", { class: "menubar" });
+    const mb = el("div", { class: "menubar", "data-tour": "menubar" });
     // Item lists are produced on each open so checked/disabled states reflect current store state.
     const menus: [string, () => MenuItem[]][] = [
       ["File", () => this.fileMenuItems()],
@@ -451,7 +452,7 @@ export class AppShell {
       ["Help", () => this.helpMenuItems()],
     ];
     for (const [label, getItems] of menus) {
-      const mi = el("div", { class: "menu-item" }, [label]);
+      const mi = el("div", { class: "menu-item", ...(label === "Help" ? { "data-tour": "help-menu" } : {}) }, [label]);
       let dd = this.buildMenuList(getItems(), "menu-dropdown");
       mi.appendChild(dd);
       const open = () => {
@@ -756,6 +757,7 @@ export class AppShell {
       ...(this.store.api.supportsNativeExternalLinks
         ? [{ icon: msym("water_drop"), label: "Welcome Screen…", fn: () => window.dispatchEvent(new CustomEvent("om-show-welcome")) } as MenuItem]
         : []),
+      { icon: msym("menu_book"), label: "Take the Tour…", fn: () => startTour() },
       { icon: msym("info"), label: "Show Tips", checked: tipsEnabled(), fn: () => setTipsEnabled(!tipsEnabled()) },
       { icon: msym("refresh"), label: "Reset Tips…", fn: () => resetTips() },
       { sep: true },

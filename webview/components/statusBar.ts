@@ -79,7 +79,7 @@ export class StatusBar {
   }
 
   render(): HTMLElement {
-    const bar = el("div", { class: "statusbar" });
+    const bar = el("div", { class: "statusbar", "data-tour": "statusbar" });
     const focusPath = el("span", { class: "sb-section" }, ["OM Core"]);
     const sep1 = el("span", { class: "sb-sep" }, ["|"]);
     const cellAddr = el("span", { class: "sb-section" }, ["—"]);
