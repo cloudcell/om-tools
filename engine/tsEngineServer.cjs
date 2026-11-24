@@ -23,12 +23,12 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// ts_runtime/src/tsEngineServer.ts
+// src/tsEngineServer.ts
 var net = __toESM(require("net"));
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
 
-// ts_runtime/src/omEngine.ts
+// src/omEngine.ts
 var enc = new TextEncoder();
 var dec = new TextDecoder();
 async function createOmEngine(wasmBytes, logSink) {
@@ -168,7 +168,7 @@ async function createOmEngine(wasmBytes, logSink) {
   return { memory, exports: x, limits, setStateBytes, create, evaluate, loadWorkspace, destroy, serverCreate, rpc, serverDestroy };
 }
 
-// ts_runtime/src/msgpack.ts
+// src/msgpack.ts
 var te = new TextEncoder();
 var td = new TextDecoder();
 function encode(v, out = []) {
@@ -412,7 +412,7 @@ function decode(buf, pos = { i: 0 }) {
   throw new Error(`msgpack: unknown byte 0x${b.toString(16)} at ${pos.i - 1}`);
 }
 
-// ts_runtime/src/tsEngineServer.ts
+// src/tsEngineServer.ts
 var args = process.argv.slice(2);
 var endpoint = null;
 var stateBytes = 8 << 20;

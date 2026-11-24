@@ -29,6 +29,13 @@ let statusPanel: StatusPanel | null = null;
 let lastStatus: { status: string; message?: string } | null = null;
 /** For globalState (saved panel sizes, T-045). Set in activate(). */
 let extContext: vscode.ExtensionContext | null = null;
+/** When the extension activated — the webview startup race guard below needs it. */
+let activatedAt = 0;
+/** VS Code cannot register a webview's service worker while the workbench is
+ *  still starting — the panel dies with "Failed to register a ServiceWorker:
+ *  The document is in an invalid state" (upstream microsoft/vscode#125993).
+ *  Open GUI invoked right after activation waits out this settle window. */
+const WEBVIEW_STARTUP_SETTLE_MS = 2000;
 const UI_STATE_KEY = "omCore.uiState";
 
 /** "<version>+<git describe>" stamped by scripts/build.mjs; "dev" for watch builds. */
@@ -707,7 +714,16 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
       case "readTextFile": {
         // Scoped read for session descriptors — the webview cannot touch the
         // filesystem, and we do not offer a general file-read surface.
-        const p = req.params?.path;
+        let p = req.params?.path;
+        // `om-example:<id>` resolves to the bundled asset so a catalog .omz can
+        // serve its session member exactly like a picked bundle does.
+        if (typeof p === "string" && p.startsWith(EXAMPLE_SCHEME)) {
+          try {
+            p = resolveExampleRef(p, catalogData as ExampleCatalog, path.join(extContext?.extensionPath ?? "", "dist", "examples"));
+          } catch (e: any) {
+            return { type: "response", id: req.id, ok: false, error: `readTextFile: ${e?.message || e}` };
+          }
+        }
         if (typeof p !== "string" || !/\.(omsession\.json|omz)$/i.test(p)) {
           return { type: "response", id: req.id, ok: false, error: "readTextFile: only *.omsession.json and *.omz paths are served" };
         }
@@ -730,10 +746,17 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         if (!isBin && typeof p?.text !== "string") {
           return { type: "response", id: req.id, ok: false, error: "saveTextFile: missing text" };
         }
-        const suggested = typeof p.suggestedName === "string" && /^[A-Za-z0-9_.-]+$/.test(p.suggestedName)
-          ? p.suggestedName : "session.omsession.json";
+        // Reject only path-unsafe characters (separators, Windows-illegal
+        // chars, control bytes) — spaces and unicode are legal in filenames.
+        // The fallback must match the payload's real format: a bundle must
+        // never default to a *.json name.
+        const d = new Date();
+        const ts = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}_${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}${String(d.getSeconds()).padStart(2, "0")}`;
+        const suggested = typeof p.suggestedName === "string" && p.suggestedName.trim().length > 0
+          && !/[\\/:*?"<>|\x00-\x1f]/.test(p.suggestedName)
+          ? p.suggestedName : (isBin ? `OM_Workspace_${ts}.omz` : "session.omsession.json");
         const uri = await vscode.window.showSaveDialog({
-          defaultUri: vscode.Uri.file(suggested),
+          defaultUri: vscode.Uri.joinPath(defaultDirUri(), suggested),
           filters: isBin ? { "OM Bundle": ["omz"] } : { "OM Session": ["omsession.json", "json"] },
         });
         if (!uri) return { type: "response", id: req.id, ok: true, data: { path: null } };
@@ -767,6 +790,7 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
 
 export function activate(context: vscode.ExtensionContext) {
   extContext = context;
+  activatedAt = Date.now();
   // Status bar button — always visible, click to open GUI
   statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBar.command = "omCore.openGui";
@@ -888,8 +912,26 @@ export function activate(context: vscode.ExtensionContext) {
   }
 }
 
+/** Defer webview creation until the workbench has settled — creating a panel
+ *  while VS Code is still starting makes service-worker registration fail and
+ *  leaves a dead blank panel. Waits for window focus, then the settle window. */
+async function waitForWebviewHost(): Promise<void> {
+  if (Date.now() - activatedAt >= WEBVIEW_STARTUP_SETTLE_MS) return;
+  if (!vscode.window.state.focused) {
+    await new Promise<void>((resolve) => {
+      const t = setTimeout(resolve, WEBVIEW_STARTUP_SETTLE_MS);
+      const sub = vscode.window.onDidChangeWindowState((s) => {
+        if (s.focused) { clearTimeout(t); sub.dispose(); resolve(); }
+      });
+    });
+  }
+  const remaining = WEBVIEW_STARTUP_SETTLE_MS - (Date.now() - activatedAt);
+  if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
+}
+
 async function openGui(context: vscode.ExtensionContext) {
   if (panel) { panel.reveal(vscode.ViewColumn.One); return; }
+  await waitForWebviewHost();
   panel = vscode.window.createWebviewPanel("omCoreGui", "OM Core", vscode.ViewColumn.One, {
     enableScripts: true,
     // Only the bundle may be loaded from disk, not the whole extension folder or the workspace (default roots).

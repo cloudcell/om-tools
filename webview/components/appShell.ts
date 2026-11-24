@@ -666,7 +666,7 @@ export class AppShell {
       { sep: true },
       { icon: msym("label"), label: "Convert Selection to Dimension Labels…", fn: () => this.convertSelectionToDimLabels(), ...NOT_IN_MVP },
       { icon: msym("new_label"), label: "Assign Item Labels from Selection…", fn: () => this.assignItemLabels(), ...NOT_IN_MVP },
-      { icon: msym("delete"), label: "Delete Selected Dimension Items…", fn: () => this.deleteSelectedDimItems(), ...NOT_IN_MVP },
+      { icon: msym("delete"), label: "Delete Selected Dimension Items…", fn: () => this.deleteSelectedDimItems() },
       { sep: true },
       // As in Qt: enabled only when the active cell holds an override; clears that cell only.
       { icon: msym("format_clear"), label: "Clear Override", fn: () => this.store.clearActiveOverride(), disabled: this.store.activeCell()?.explain?.source !== "override" },
@@ -893,7 +893,24 @@ export class AppShell {
   private async openExample() {
     const ex = await examplePickerDialog("Open Example", CATALOG);
     if (!ex) return;
-    await this.confirmDirty(() => this.store.loadWorkspaceFile(`om-example:${ex.id}`));
+    const ref = `om-example:${ex.id}`;
+    // .omz examples carry a saved session — apply it the way File → Open does
+    // for a picked bundle; anything unreadable falls back to the model load.
+    if (/\.omz$/i.test(ex.file ?? "") && await this.applyBundleSession(ref)) return;
+    await this.confirmDirty(() => this.store.loadWorkspaceFile(ref));
+  }
+
+  /** Serve an .omz's session member and apply it, as File → Open does for a
+   *  picked bundle. Returns true when a session was applied — false means the
+   *  caller should fall back to a plain model load (unreadable member, not a
+   *  session, unreadable file — never a hard error for an otherwise valid bundle). */
+  private async applyBundleSession(path: string): Promise<boolean> {
+    const r = await this.store.api.readTextFile(path).catch(() => null);
+    if (!r?.text) return false;
+    const parsed = parseSession(r.text);
+    if (!parsed.ok) return false;
+    await this.applySessionDescriptor(parsed.session, path);
+    return true;
   }
 
   /** File → Open…: one dialog for every openable file — a model `.json`/`.msgpack`,
@@ -961,7 +978,10 @@ export class AppShell {
     const session = this.store.captureSession(currentTheme());
     session.model = { bundle: BUNDLE_MODEL_MEMBER };
     const bytes = await makeBundle(new TextEncoder().encode(snap.json), JSON.stringify(session, null, 2));
-    const suggested = this.store.fileName().replace(/\.(json|msgpack|omz)$/i, "") + BUNDLE_EXT;
+    // Workspace bundles always default to OM_Workspace_<ts>.omz — a fixed
+    // name collides on every save and a model-derived name misdescribes
+    // the bundle (model + session, not the model file).
+    const suggested = `OM_Workspace_${timestamp()}${BUNDLE_EXT}`;
     return { suggested, bytes };
   }
 
@@ -1105,5 +1125,72 @@ export class AppShell {
   private async pasteAsNewCube() { await alertDialog("Paste as New Cube", "Requires clipboard data with row/col dimension structure."); }
   private async convertSelectionToDimLabels() { await alertDialog("Convert Selection", "Select cells first, then use this."); }
   private async assignItemLabels() { await alertDialog("Assign Item Labels", "Select rows/columns first."); }
-  private async deleteSelectedDimItems() { await alertDialog("Delete Items", "Select items in the Model Browser."); }
+
+  /** Qt `_on_delete_selected_dimension_items`: a whole row-header or
+   *  column-header selection resolves to leaf items of that axis' first
+   *  dimension (item_id = the key's last element, like Qt's `key[-1]`).
+   *  Anything else — cell selection, non-leaf rows — refuses with the Qt
+   *  warning text. Then the Qt `_confirm_and_delete_dimension_items` flow:
+   *  impact query → item/cube/rule counts → confirm → delete. */
+  private async deleteSelectedDimItems() {
+    const v = this.store.state.activeView;
+    let dimId: string | null = null;
+    const itemIds: string[] = [];
+    if (v && v.selMode === "row" && v.rowDimIds.length) {
+      dimId = v.rowDimIds[0];
+      for (const i of [...(v.selIndices as Set<number>)].sort((a, b) => a - b)) {
+        const dr = this.store.dataRowIndex(v, i);
+        if (dr < 0 || dr >= v.rowKeys.length) { dimId = null; break; }
+        const key = v.rowKeys[dr];
+        if (!key.length) { dimId = null; break; }
+        itemIds.push(key[key.length - 1]);
+      }
+    } else if (v && v.selMode === "col" && v.colDimIds.length) {
+      dimId = v.colDimIds[0];
+      for (const i of [...(v.selIndices as Set<number>)].sort((a, b) => a - b)) {
+        const dc = this.store.dataColIndex(v, i);
+        if (dc < 0 || dc >= v.colKeys.length) { dimId = null; break; }
+        const key = v.colKeys[dc];
+        if (!key.length) { dimId = null; break; }
+        itemIds.push(key[key.length - 1]);
+      }
+    }
+    if (!dimId || !itemIds.length) {
+      await alertDialog("Delete Dimension Items", "Select row headers or column headers in the active view to delete their dimension items.");
+      return;
+    }
+
+    let impact;
+    try { impact = await this.store.api.dimensionItemDeletionImpact(dimId, itemIds); }
+    catch (e: any) { await alertDialog("Delete Dimension Items", e?.message || String(e)); return; }
+    const deleteIds = impact.item_ids ?? [];
+    if (!deleteIds.length) {
+      await alertDialog("Delete Dimension Items", "No dimension items are selected for deletion.");
+      return;
+    }
+
+    const names = impact.item_names ?? [];
+    let itemLines = names.slice(0, 12).map((n) => `- ${n}`).join("\n");
+    if (names.length > 12) itemLines += `\n- … and ${names.length - 12} more`;
+    const cubeLines = (impact.impacted_cubes ?? []).map((c) => `- ${c.cube_name}: ${c.data_cell_count} data cells`).join("\n") || "- No stored data cells found";
+    const ruleLines = (impact.total_affected_rules ?? 0) > 0
+      ? `- Anchored rules: ${impact.affected_anchored_rules}\n- Rules: ${impact.affected_rules}`
+      : "- No rules will be affected";
+    const message =
+      `Delete ${deleteIds.length} item(s) from dimension '${impact.dim_name}'?\n\n` +
+      `Items:\n${itemLines}\n\n` +
+      `Affected cubes (${impact.cube_count}) and data cells to be deleted (${impact.total_data_cell_count} total):\n${cubeLines}\n\n` +
+      `Rules to be affected (${impact.total_affected_rules} total):\n${ruleLines}\n\n` +
+      `Note: Rules referencing deleted items will show #REF! errors.`;
+    if (!(await confirmDialog("Delete Dimension Items", message, "Delete", true))) return;
+
+    try { await this.store.api.deleteDimensionItems(dimId, deleteIds); }
+    catch (e: any) { await alertDialog("Delete Dimension Items", e?.message || String(e)); return; }
+    // Qt refreshes every view whose cube uses the dim — the deleted items
+    // may appear on any loaded view, so reload all of them.
+    await this.store.afterStructureChange();
+    for (const vid of Object.keys(this.store.state.viewStates)) {
+      if (vid !== this.store.state.activeView?.viewId) await this.store.loadView(vid);
+    }
+  }
 }

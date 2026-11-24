@@ -21,6 +21,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 import { resolveFileParams } from "./fileParams";
+// Inlined at bundle time (esbuild --loader:.md=text); .devin/skills/ is the
+// canonical copy — the same skill repo agents use.
+import financialModelSkill from "../.devin/skills/financial-model/SKILL.md";
 
 /** Minimal connection surface the tools use — EngineClient (socket) and
  *  EmbeddedBackend (wasm worker) both satisfy it. */
@@ -55,6 +58,20 @@ const QUERY_TOOL_DESC =
   "params is the query's parameter object (see om-core lib_command/commands/query.py). " +
   "Returns the query's data payload as JSON text.";
 
+const FINANCIAL_MODEL_SKILL_URI = "om-skill://financial-model";
+
+/** Sent to every client in the initialize handshake — keep it short; the full
+ *  workflow lives in the om-skill://financial-model resource / prompt. */
+const SERVER_INSTRUCTIONS =
+  "This server drives a connected OM Core multidimensional-model runtime through two generic " +
+  "tools: om_query (read) and om_command (mutate). Command/query ids and params follow om-core " +
+  "lib_command — the tool descriptions list the common ids and required-parameter gotchas. " +
+  `Before creating, rebuilding, or repairing a financial model (P&L, balance sheet, cash flow, ` +
+  `forecast, scenarios, valuation, DCF), read ${FINANCIAL_MODEL_SKILL_URI} or invoke the ` +
+  `"financial-model" prompt and follow it — it defines the required cube/dimension architecture ` +
+  "and slice-first rule style. Mutations refresh open GUI views automatically; prefer " +
+  "workspace_summary/dimension_list/cube_list to orient before writing.";
+
 const COMMAND_TOOL_DESC =
   "Run an om-core command against the connected runtime (mutates the live workspace — " +
   "open GUI views refresh automatically). command_id is an om-core command name " +
@@ -76,7 +93,19 @@ function toolOk(data: unknown) {
 
 /** One McpServer per request (stateless transport). Handlers close over getClient/dir. */
 function buildMcpServer(opts: OmMcpServerOptions): McpServer {
-  const mcp = new McpServer({ name: "om-tools", version: "0.1.0" });
+  const mcp = new McpServer(
+    { name: "om-tools", version: "0.1.0" },
+    { instructions: SERVER_INSTRUCTIONS });
+
+  // The financial-model workflow as attachable context and an invocable prompt —
+  // same SKILL.md the repo's agents use (.devin/skills/financial-model/).
+  mcp.registerResource("financial-model", FINANCIAL_MODEL_SKILL_URI,
+    { title: "OM Core Financial Model Skill", description: "Required architecture and slice-first rule style for building integrated financial models in OM Core.", mimeType: "text/markdown" },
+    async () => ({ contents: [{ uri: FINANCIAL_MODEL_SKILL_URI, mimeType: "text/markdown", text: financialModelSkill }] }));
+
+  mcp.registerPrompt("financial-model",
+    { title: "Financial Model Skill", description: "OM Core financial-model build/repair rules — separate statement cubes, slice-first rules, scenarios, checks." },
+    () => ({ messages: [{ role: "user" as const, content: { type: "text" as const, text: financialModelSkill } }] }));
 
   mcp.tool("om_query", QUERY_TOOL_DESC,
     { query_id: z.string(), params: z.record(z.string(), z.any()).optional() },

@@ -42,7 +42,9 @@ const guiDefine = { OM_GUI_VERSION: JSON.stringify(guiVersion) };
 
 await build({
   entryPoints: ["src/extension.ts"], bundle: true, platform: "node", format: "cjs",
-  external: ["vscode"], define: { OM_TOOLS_BUILD: JSON.stringify(extVersion) }, outfile: "dist/extension.js",
+  external: ["vscode"], define: { OM_TOOLS_BUILD: JSON.stringify(extVersion) },
+  // .md imports (the financial-model SKILL.md inlined into the MCP server) bundle as text.
+  loader: { ".md": "text" }, outfile: "dist/extension.js",
 });
 await build({
   entryPoints: ["webview/main.ts"], bundle: true, platform: "browser", format: "iife",

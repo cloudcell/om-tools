@@ -22,11 +22,11 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// ts_runtime/src/engineWorker.ts
+// src/engineWorker.ts
 var import_worker_threads = require("worker_threads");
 var fs = __toESM(require("fs"));
 
-// ts_runtime/src/omEngine.ts
+// src/omEngine.ts
 var enc = new TextEncoder();
 var dec = new TextDecoder();
 async function createOmEngine(wasmBytes, logSink) {
@@ -166,7 +166,7 @@ async function createOmEngine(wasmBytes, logSink) {
   return { memory, exports: x, limits, setStateBytes, create, evaluate, loadWorkspace, destroy, serverCreate, rpc, serverDestroy };
 }
 
-// ts_runtime/src/msgpack.ts
+// src/msgpack.ts
 var te = new TextEncoder();
 var td = new TextDecoder();
 function encode(v, out = []) {
@@ -425,7 +425,7 @@ function decodeFrames(bytes) {
   return out;
 }
 
-// ts_runtime/src/engineSession.ts
+// src/engineSession.ts
 function createEngineSession(om, hooks) {
   const log2 = hooks.log ?? (() => {
   });
@@ -514,7 +514,7 @@ function createEngineSession(om, hooks) {
       return await rpcResult("version").catch(() => null) ?? null;
     },
     async runtime_version() {
-      return true ? "0.1.0-20261123-015615-0b72d68-REL-esb0.28.2-b50" : null;
+      return typeof TS_RUNTIME_BUILD !== "undefined" ? TS_RUNTIME_BUILD : null;
     },
     async workspace_summary() {
       const ws = await getWs();
@@ -781,6 +781,9 @@ function createEngineSession(om, hooks) {
     },
     async dimension_deletion_impact(p) {
       return (await zrpc("analyze_dim_deletion", { dim_id: p.dim_id, item_ids: p.item_ids })).result ?? {};
+    },
+    async dimension_item_deletion_impact(p) {
+      return (await zrpc("analyze_item_deletion", { dim_id: p.dim_id, item_ids: p.item_ids })).result ?? {};
     },
     async cube_detach_impact(p) {
       return (await zrpc("analyze_detach", { cube_id: p.cube_id, dim_id: p.dim_id })).result ?? {};
@@ -1101,7 +1104,7 @@ function createEngineSession(om, hooks) {
   };
 }
 
-// ts_runtime/src/serialize.ts
+// src/serialize.ts
 function createSerializer() {
   let tail = Promise.resolve();
   return function serialize(task) {
@@ -1112,7 +1115,7 @@ function createSerializer() {
   };
 }
 
-// ts_runtime/src/engineWorker.ts
+// src/engineWorker.ts
 var log = (...a) => console.error("[engine-worker]", ...a);
 async function main() {
   const { wasmPath, stateBytes, scratchBytes } = import_worker_threads.workerData;
