@@ -22,17 +22,23 @@ export interface TourStep {
   text: string;
 }
 
+/** The model the tour opens so every step shows real content — a catalog id
+ *  resolved by the host's file boundary, same as Open Example…. */
+const TOUR_EXAMPLE_ID = "dcf-valuation";
+
 export const TOUR_STEPS: readonly TourStep[] = [
   { id: "welcome", title: "Welcome to OM Core",
-    text: "This is your model workspace — a live view of your data." },
+    text: "This tour opens the DCF Valuation example — a live model you can explore." },
   { id: "menus", anchor: "menubar", place: "bottom", title: "Menus",
     text: "File opens models and bundles; View, Tools, and Help hold the rest." },
   { id: "views", anchor: "view-area", place: "top", title: "Views",
     text: "Each tab is a live view into the model — drag a tab to split." },
   { id: "rules", anchor: "rules", fallbackAnchor: "view-area", place: "left", title: "Rules",
-    text: "Rules define how cells calculate — select one to inspect or edit it." },
-  { id: "status", anchor: "statusbar", place: "top", title: "Engine status",
-    text: "The indicator shows the engine state and current selection." },
+    text: "Rules attach a formula to a region of cells — select one here to inspect or edit it." },
+  { id: "calc-flow", anchor: "view-area", place: "top", title: "Calculation flow",
+    text: "Changing an input recomputes every dependent cell in order — that dependency chain is the calculation flow." },
+  { id: "status", anchor: "engine-status", fallbackAnchor: "statusbar", place: "bottom", title: "Engine status",
+    text: "The dot shows the live engine state; the status bar below tracks your selection and version." },
   { id: "help", anchor: "help-menu", place: "bottom", title: "That's it",
     text: "Replay this tour anytime from Help → Take the Tour." },
 ];
@@ -86,7 +92,13 @@ export class TourManager {
   private startPoll = 0;
   private onResize = () => { if (this.active()) this.render(); };
 
-  constructor(private store: Store) {}
+  /** Opens a catalog example by id (host resolves om-example: refs); injected
+   *  at mount so the tour loads a real model to point at. */
+  private openExample: ((id: string) => Promise<void>) | null = null;
+
+  constructor(private store: Store, openExample?: (id: string) => Promise<void>) {
+    this.openExample = openExample ?? null;
+  }
 
   active(): boolean { return this.stepIndex >= 0; }
   inviteVisible(): boolean { return this.inviteEl !== null; }
@@ -118,6 +130,11 @@ export class TourManager {
     this.hideInvite();
     this.stepIndex = i;
     window.addEventListener("resize", this.onResize);
+    // Load a real model so anchored steps have something to point at. Async —
+    // the first (centered) step reads while it loads; confirmDirty inside
+    // openExampleById still protects unsaved work. Fire-and-forget: a declined
+    // or failed load never blocks the tour.
+    this.openExample?.(TOUR_EXAMPLE_ID)?.catch(() => {});
     this.render();
   }
 
@@ -261,9 +278,9 @@ let mgr: TourManager | null = null;
 
 /** Called once at mount, beside initTips: registers the tour/invite suppression
  *  gate with the tips channel and fires the first-run invite. */
-export function initTour(store: Store): TourManager {
+export function initTour(store: Store, opts?: { openExample?: (id: string) => Promise<void> }): TourManager {
   mgr?.dispose();
-  mgr = new TourManager(store);
+  mgr = new TourManager(store, opts?.openExample);
   setTipSuppression(() => (mgr?.active() || mgr?.inviteVisible()) ?? false);
   mgr.maybeInvite();
   return mgr;

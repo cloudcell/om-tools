@@ -490,7 +490,7 @@ export class AppShell {
     document.addEventListener("keydown", (e) => this.onShortcut(e), true);
     window.addEventListener("blur", () => this.closeAllMenus());
     mb.appendChild(el("div", { class: "spacer" }));
-    const indicator = el("div", { class: "engine-indicator" }, [
+    const indicator = el("div", { class: "engine-indicator", "data-tour": "engine-status" }, [
       el("span", { class: "engine-dot" }, []),
       el("span", { class: "engine-text" }, ["disconnected"]),
     ]);
@@ -898,6 +898,16 @@ export class AppShell {
    *  surfaces failures and resets the UI — same as File → Open. */
   private async openExample() {
     const ex = await examplePickerDialog("Open Example", CATALOG);
+    if (!ex) return;
+    await this.openExampleById(ex.id);
+  }
+
+  /** Open a catalog example by id — used by Open Example… and the guided tour
+   *  (which loads a real model to tour against). Same flow as the picker:
+   *  .omz session first, plain model load otherwise, confirmDirty protects
+   *  unsaved work. */
+  async openExampleById(id: string): Promise<void> {
+    const ex = CATALOG.find((e) => e.id === id);
     if (!ex) return;
     const ref = `om-example:${ex.id}`;
     // .omz examples carry a saved session — apply it the way File → Open does

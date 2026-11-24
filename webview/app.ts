@@ -40,7 +40,8 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
   // Contextual first-use tips (T-tips): subscribes to the store's UI-event channel.
   initTips(store);
   // First-run guided tour: registers the tips suppression gate + first-run invite.
-  initTour(store);
+  // The tour opens a catalog example so its steps point at a real model.
+  initTour(store, { openExample: (id) => shell.openExampleById(id) });
 
   // Status updates from the host (connecting/connected/disconnected/error).
   transport.onStatus((status, message, extra) => {
