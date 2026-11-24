@@ -31,3 +31,11 @@ Some transitive and platform-specific packages are also present in `package-lock
 ## Relationship to OM Core
 
 OM Core has its own dependencies and third-party notices. Do not copy OM Core's Lucide and Tabler icon notices into OM Tools unless those exact assets are incorporated in this repository.
+
+## Separately licensed bundled engine
+
+The `engine/om_engine.wasm` build is distributed under [ENGINE-BINARY-LICENSE.md](ENGINE-BINARY-LICENSE.md) for rights authorised by its copyright owners. The original Zig engine source is maintained in `cloudcell/om-engine-zig-dev` (private). Its binary licence does **not** grant exceptions to the AGPL obligations of the GUI.
+
+The binary incorporates CORE-MATH `log10.c`, copyright (c) 2022–2025 INRIA and CERN, authors Paul Zimmermann and Tom Hubrecht. MIT notice: [CORE-MATH-MIT.txt](CORE-MATH-MIT.txt). Include both full licence texts in the distributed VSIX.
+
+The bundled `engineWorker.cjs` and `tsEngineServer.cjs` are compiled from the separate `ts_runtime` project. Verify the corresponding source and copyright permissions for these JS components prior to publishing; their bundling is not in itself a licence grant.

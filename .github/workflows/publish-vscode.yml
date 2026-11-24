@@ -64,6 +64,7 @@ jobs:
           npm run build
           npm run check:sensitive
           npm run audit:gate
+          OM_REQUIRE_ENGINE_SOURCE_VERIFIED=1 node tools/verify-engine-artifacts.mjs
 
       - name: Package VSIX
         run: npx --no-install vsce package --no-dependencies --out om-tools.vsix
@@ -82,6 +83,12 @@ jobs:
                   "extension/dist/extension.js",
                   "extension/dist/webview.js",
                   "extension/dist/index.html",
+                  "extension/dist/om_engine.wasm",
+                  "extension/dist/engineworker.cjs",
+                  "extension/dist/tsengineserver.cjs",
+                  "extension/dist/engine-provenance.json",
+                  "extension/dist/engine-binary-license.md",
+                  "extension/dist/core-math-mit.txt",
               }
               missing = required - names
               if not any(n.startswith("extension/readme") for n in names):

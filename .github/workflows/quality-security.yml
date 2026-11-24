@@ -36,6 +36,8 @@ jobs:
         run: npm run compile
       - name: Build extension and bridge
         run: npm run build
+      - name: Verify bundled WASM and legal notices
+        run: node tools/verify-engine-artifacts.mjs
       - name: Check for sensitive data in tracked files
         run: npm run check:sensitive
       - name: Reject high/critical npm vulnerabilities
