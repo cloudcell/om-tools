@@ -183,6 +183,11 @@ export class Store {
   };
   api: OmApi;
   private listeners = new Set<Listener>();
+  private uiEventListeners = new Set<(name: string) => void>();
+  /** Set for the whole duration of applySession — restored panes/tabs/subpanes are not
+   *  "first use". UI-event subscribers check it to suppress tips mid-restore (T-tips). */
+  private restoring = false;
+  isRestoring() { return this.restoring; }
   /** Why the in-flight notify() is running — a subscriber whose rebuild is expensive,
    *  or whose DOM may be the target of a press in progress, can skip a reason that
    *  cannot change what it renders. "focus" = only focusedGroup moved. Rebuilding
@@ -220,6 +225,20 @@ export class Store {
       try { l(); } catch (e) { console.error("notify subscriber failed", e); }
     }
     this.notifyReason = null;
+  }
+
+  /** Typed UI-action events for app-level observers (T-tips onboarding): a GUI-local
+   *  signal channel (a-07 permits it for UI-only concerns), not the engine MessageBus.
+   *  Kebab-case names; `emitUiEvent` is fire-and-forget like `notify()` — a throwing
+   *  subscriber is logged and dropped, it must never unwind into the caller. */
+  onUiEvent(fn: (name: string) => void): () => void {
+    this.uiEventListeners.add(fn);
+    return () => this.uiEventListeners.delete(fn);
+  }
+  emitUiEvent(name: string) {
+    for (const l of [...this.uiEventListeners]) {
+      try { l(name); } catch (e) { console.error("uiEvent subscriber failed", e); }
+    }
   }
 
   /** While set, every subscribe() also lands in this bag. See captureSubscriptions(). */
@@ -548,6 +567,7 @@ export class Store {
       this.state.viewGroups.push(ng);
       this.splitGroupNode(targetGid, side, ng.id);
       this.state.focusedGroup = ng.id;
+      this.emitUiEvent("view-split");
     }
     if (src && src.tabs.length === 0 && this.state.viewGroups.length > 1) this.removeGroup(src.id);
     this.syncViewMirror();
@@ -594,6 +614,7 @@ export class Store {
     if (!g) return;
     g.rulesOpen = !g.rulesOpen;
     this.notify();
+    if (g.rulesOpen) this.emitUiEvent("rules-opened");
   }
 
   groupRulesOpen(gid?: string): boolean {
@@ -1031,6 +1052,7 @@ export class Store {
   async loadWorkspaceFile(path: string) {
     try { await this.api.loadWorkspace(path); } catch (e: any) { await alertDialog("Load failed", e?.message || String(e)); return; }
     await this.resetWorkspaceUi(path, true);
+    if (/^om-example:/.test(path)) this.emitUiEvent("example-opened");
   }
 
   /** The host launched a new runtime since this page was last connected (Stop Runtime, then Start Runtime): what the page
@@ -1130,8 +1152,14 @@ export class Store {
   /** Load the descriptor's model then overlay pane/tab/subpane/chip/selection/scroll
    *  state. Never dirties the model; every unknown ID is skipped and reported. Returns
    *  the skip notes (empty = fully applied). Throws on fatal model-load failures —
-   *  the caller shows the alert. */
+   *  the caller shows the alert. `restoring` marks the whole duration (T-tips). */
   async applySession(session: SessionDescriptor, sessionPath: string | null): Promise<string[]> {
+    this.restoring = true;
+    try { return await this.applySessionBody(session, sessionPath); }
+    finally { this.restoring = false; }
+  }
+
+  private async applySessionBody(session: SessionDescriptor, sessionPath: string | null): Promise<string[]> {
     const skips: string[] = [];
     const target = this.sessionModelTarget(session, sessionPath);
     // A URL reaches the engine only in the browser host (fetch → bytes); the
@@ -1341,6 +1369,7 @@ export class Store {
   toggleDock(name: keyof AppState["dockVisible"]) {
     this.state.dockVisible[name] = !this.state.dockVisible[name];
     this.notify();
+    if (name === "rules" && this.state.dockVisible.rules) this.emitUiEvent("rules-opened");
   }
 
   // ---- Dock-zone layout (T-dock) ----

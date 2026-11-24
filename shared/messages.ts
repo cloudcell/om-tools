@@ -173,6 +173,8 @@ export interface UiOptions {
   docking?: boolean;
   /** Experimental panels: Performance Watch and Timeline in the View menu. Off by default. */
   advancedPanels?: boolean;
+  /** Contextual first-use tips (T-tips). Managed in Tools → Options and Help → Show Tips. */
+  showTips?: boolean;
 }
 
 /** What a fresh install uses — shown next to each control in the Options dialog. */
@@ -182,6 +184,7 @@ export const DEFAULT_OPTIONS: Required<UiOptions> = {
   assistant: true,
   docking: true,
   advancedPanels: false,
+  showTips: true,
 };
 
 /** Aggregate-sign choices offered in Tools → Options. The first entry is the default. */
@@ -193,11 +196,20 @@ export const AGGREGATE_SIGN_CHOICES: { value: string; label: string }[] = [
   { value: "#", label: "#  Hash" },
 ];
 
-/** Everything the webview persists. `saveUiState` params: `{ state: UiState }`. */
+/** Contextual-tip memory: ids the user acknowledged with "Got it". Dismissed-but-unacknowledged
+ *  tips are absent, so they may re-fire — `seen` is deliberately small. */
+export interface UiTips {
+  seen?: string[];
+}
+
+/** Everything the webview persists. `saveUiState` params: `{ state: UiState }`.
+ *  NOTE: every field added here must also gain a whitelist branch in the host's
+ *  `sanitizeUiState` (src/uiState.ts) or it is silently stripped in VS Code. */
 export interface UiState {
   layout?: UiLayout;
   theme?: UiTheme;
   options?: UiOptions;
+  tips?: UiTips;
 }
 
 /** Name of the `<meta>` tag through which the VS Code host hands the saved UiState to a new webview
