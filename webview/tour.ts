@@ -11,13 +11,14 @@ import { el } from "./dom";
 import { materialIconSvg } from "./menuIcons";
 import { dismissTip, setTipSuppression, suppressedForOnboarding, updateTipsState } from "./tips";
 
-export type Placement = "bottom" | "top" | "left" | "right";
+export type Placement = "bottom" | "top" | "left" | "right" | "inside";
 
 export interface TourStep {
   id: string;
   anchor?: string;           // data-tour value; absent → centered step
   fallbackAnchor?: string;   // used when the primary anchor is absent from the DOM
   place?: Placement;         // preferred side (default bottom)
+  fallbackPlace?: Placement; // placement when the fallback anchor is used
   title: string;
   text: string;
 }
@@ -31,11 +32,11 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: "This tour opens the DCF Valuation example — a live model you can explore." },
   { id: "menus", anchor: "menubar", place: "bottom", title: "Menus",
     text: "File opens models and bundles; View, Tools, and Help hold the rest." },
-  { id: "views", anchor: "view-area", place: "top", title: "Views",
+  { id: "views", anchor: "view-area", place: "inside", title: "Views",
     text: "Each tab is a live view into the model — drag a tab to split." },
-  { id: "rules", anchor: "rules", fallbackAnchor: "view-area", place: "left", title: "Rules",
+  { id: "rules", anchor: "rules", fallbackAnchor: "view-area", place: "left", fallbackPlace: "inside", title: "Rules",
     text: "Rules attach a formula to a region of cells — select one here to inspect or edit it." },
-  { id: "calc-flow", anchor: "view-area", place: "top", title: "Calculation flow",
+  { id: "calc-flow", anchor: "view-area", place: "inside", title: "Calculation flow",
     text: "Changing an input recomputes every dependent cell in order — that dependency chain is the calculation flow." },
   { id: "status", anchor: "engine-status", fallbackAnchor: "statusbar", place: "bottom", title: "Engine status",
     text: "The dot shows the live engine state; the status bar below tracks your selection and version." },
@@ -48,8 +49,13 @@ export interface RectLike { x: number; y: number; w: number; h: number }
 const GAP = 10;
 const MARGIN = 8;
 
-/** Position a callout next to an anchor rect: preferred side first, flip through
- *  the remaining sides on overflow, clamp inside the viewport as a last resort.
+const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(lo, v), Math.max(lo, hi));
+
+/** Position a callout so it corresponds to the anchor's actual location:
+ *  the main axis (below/above/beside) decides placement — the first side whose
+ *  main-axis edge fits wins; the cross axis is then CLAMPED into the viewport
+ *  rather than flipped, so a callout under an edge anchor still sits under it.
+ *  "inside" centers within the anchor region (for large areas like view-area).
  *  Pure — the DOM render just applies {x,y}. */
 export function placeCallout(
   anchor: RectLike,
@@ -57,7 +63,14 @@ export function placeCallout(
   preferred: Placement,
   viewport: { w: number; h: number },
 ): { x: number; y: number; placement: Placement } {
-  const at = (p: Placement): { x: number; y: number } => {
+  if (preferred === "inside") {
+    return {
+      x: clamp(anchor.x + anchor.w / 2 - size.w / 2, MARGIN, viewport.w - MARGIN - size.w),
+      y: clamp(anchor.y + anchor.h / 2 - size.h / 2, MARGIN, viewport.h - MARGIN - size.h),
+      placement: "inside",
+    };
+  }
+  const at = (p: Exclude<Placement, "inside">): { x: number; y: number } => {
     const cx = anchor.x + anchor.w / 2 - size.w / 2;
     const cy = anchor.y + anchor.h / 2 - size.h / 2;
     switch (p) {
@@ -67,18 +80,25 @@ export function placeCallout(
       case "left":   return { x: anchor.x - size.w - GAP, y: cy };
     }
   };
-  const fits = ({ x, y }: { x: number; y: number }) =>
-    x >= MARGIN && y >= MARGIN && x + size.w <= viewport.w - MARGIN && y + size.h <= viewport.h - MARGIN;
-  const order = [preferred, "bottom", "top", "right", "left"]
-    .filter((p, i, a): p is Placement => a.indexOf(p) === i);
+  const fitsMain = (p: Exclude<Placement, "inside">, { x, y }: { x: number; y: number }) =>
+    (p === "bottom" || p === "top")
+      ? y >= MARGIN && y + size.h <= viewport.h - MARGIN
+      : x >= MARGIN && x + size.w <= viewport.w - MARGIN;
+  const clampCross = (p: Exclude<Placement, "inside">, { x, y }: { x: number; y: number }) =>
+    (p === "bottom" || p === "top")
+      ? { x: clamp(x, MARGIN, viewport.w - MARGIN - size.w), y }
+      : { x, y: clamp(y, MARGIN, viewport.h - MARGIN - size.h) };
+  const OPPOSITE = { bottom: "top", top: "bottom", left: "right", right: "left" } as const;
+  const order = ([preferred, OPPOSITE[preferred], "bottom", "top", "right", "left"] as const)
+    .filter((p, i, a): p is Exclude<Placement, "inside"> => a.indexOf(p) === i);
   for (const p of order) {
     const pos = at(p);
-    if (fits(pos)) return { ...pos, placement: p };
+    if (fitsMain(p, pos)) return { ...clampCross(p, pos), placement: p };
   }
-  const { x, y } = at(preferred);
+  const { x, y } = at(preferred as Exclude<Placement, "inside">);
   return {
-    x: Math.min(Math.max(MARGIN, x), Math.max(MARGIN, viewport.w - MARGIN - size.w)),
-    y: Math.min(Math.max(MARGIN, y), Math.max(MARGIN, viewport.h - MARGIN - size.h)),
+    x: clamp(x, MARGIN, viewport.w - MARGIN - size.w),
+    y: clamp(y, MARGIN, viewport.h - MARGIN - size.h),
     placement: preferred,
   };
 }
@@ -154,19 +174,21 @@ export class TourManager {
 
   private prev() { if (this.stepIndex > 0) { this.stepIndex--; this.render(); } }
 
-  private anchorEl(step: TourStep): HTMLElement | null {
+  private anchorEl(step: TourStep): { el: HTMLElement; fallback: boolean } | null {
     if (!step.anchor) return null;
     const primary = document.querySelector(`[data-tour="${step.anchor}"]`);
-    if (primary) return primary as HTMLElement;
-    if (step.fallbackAnchor)
-      return document.querySelector(`[data-tour="${step.fallbackAnchor}"]`) as HTMLElement | null;
-    return null;
+    if (primary) return { el: primary as HTMLElement, fallback: false };
+    if (!step.fallbackAnchor) return null;
+    const fb = document.querySelector(`[data-tour="${step.fallbackAnchor}"]`);
+    return fb ? { el: fb as HTMLElement, fallback: true } : null;
   }
 
   private render() {
     this.teardownDom();
     const step = TOUR_STEPS[this.stepIndex];
-    const anchor = this.anchorEl(step);
+    const found = this.anchorEl(step);
+    const anchor = found?.el ?? null;
+    const place = found?.fallback ? (step.fallbackPlace ?? step.place) : step.place;
     if (anchor) { anchor.classList.add("om-tour-mark"); this.markedEl = anchor; }
 
     const n = this.stepIndex, total = TOUR_STEPS.length, last = n === total - 1;
@@ -200,12 +222,25 @@ export class TourManager {
       const pos = placeCallout(
         { x: r.x, y: r.y, w: r.width, h: r.height },
         { w: c.width, h: c.height },
-        step.place ?? "bottom",
+        place ?? "bottom",
         { w: window.innerWidth, h: window.innerHeight },
       );
       this.callout.style.left = `${pos.x}px`;
       this.callout.style.top = `${pos.y}px`;
       this.callout.dataset.placement = pos.placement;
+      // Arrow on the edge facing the anchor, aligned to the anchor's centre
+      // (clamped inside the callout's rounded corners). "inside"/centered → none.
+      if (pos.placement !== "inside") {
+        const arrow = el("span", { class: "om-tour-arrow" });
+        if (pos.placement === "bottom" || pos.placement === "top") {
+          arrow.classList.add(pos.placement === "bottom" ? "edge-top" : "edge-bottom");
+          arrow.style.left = `${clamp(r.x + r.width / 2 - pos.x, 16, c.width - 16)}px`;
+        } else {
+          arrow.classList.add(pos.placement === "left" ? "edge-right" : "edge-left");
+          arrow.style.top = `${clamp(r.y + r.height / 2 - pos.y, 16, c.height - 16)}px`;
+        }
+        this.callout.appendChild(arrow);
+      }
     }
     nextBtn.focus();
   }
