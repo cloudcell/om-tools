@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.11
+
+- **Engine licensing + provenance**: the vendored WASM is pinned by
+  `engine/PROVENANCE.json` (size, git blob SHA-1, SHA-256) and every vsix
+  ships the engine binary licence, CORE-MATH attribution, and the
+  provenance manifest inside `dist/`. `tools/verify-engine-artifacts.mjs`
+  checks fingerprint + notices on every PR; `tools/sync-engine.sh`
+  refreshes licence copies from the source checkout when available.
+  README gains "Source, licensing and the bundled engine" and a
+  Commercial Licensing note.
+
 ## 0.1.10
 
 - **MCP: financial-model skill built in.** The MCP server now advertises the
