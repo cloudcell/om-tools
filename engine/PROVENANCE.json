@@ -2,14 +2,14 @@
   "schema": "cloudcell.om-engine-artifact.v1",
   "component": "om-engine-zig",
   "artifact": "engine/om_engine.wasm",
-  "size_bytes": 1439549,
-  "git_blob_sha1": "5841fe589d5df917de085883e9bc97fe9d14bb25",
-  "sha256": "da7ff21e381b7ea0dbb7b9a75f299af5fd90f97fbc88b49bd4c47be4dcc127ef",
+  "size_bytes": 1439713,
+  "git_blob_sha1": "06c0e1189186a7efb606c1dde494b11608b8bb04",
+  "sha256": "48de5ad073c09573692feb46990ccc271cdba3e92b90d93ebcd2332cf18a5515",
   "engine_repository": "cloudcell/om-engine-zig-dev",
   "engine_commit": null,
   "engine_commit_verified": false,
   "source_provenance": "NOT VERIFIED: rebuild the matching Zig source to verify",
-  "ts_runtime_version": "ts_runtime 0.1.0 @ b1cb9be (synced 2026-11-23T21:37:44Z)",
+  "ts_runtime_version": "ts_runtime 0.1.0 @ 0e50bc0 (synced 2026-11-24T04:32:43Z)",
   "binary_license": "legal/ENGINE-BINARY-LICENSE.md",
   "third_party_notices": [
     "legal/CORE-MATH-MIT.txt"
