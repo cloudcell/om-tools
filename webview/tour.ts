@@ -41,6 +41,8 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: "A view is a live window into a cube — opening one adds a tab to the workspace." },
   { id: "views", anchor: "view-area", place: "inside", title: "View tabs",
     text: "Each tab is a live view into the model — drag a tab to split." },
+  { id: "chips", anchor: "pivot", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "Dimension chips",
+    text: "Drag chips between Page, Rows and Columns to rearrange a view; Page chips filter the slice." },
   { id: "rules", anchor: "rules", fallbackAnchor: "view-area", place: "left", fallbackPlace: "inside", activeTab: "Rules", title: "Rules",
     text: "Rules attach a formula to a region of cells — select one here to inspect or edit it." },
   { id: "calc-flow", anchor: "view-area", place: "inside", title: "Calculation flow",
