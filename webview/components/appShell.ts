@@ -538,10 +538,10 @@ export class AppShell {
    *  in the VS Code webview that ask the host to open the URL — which it only does when the
    *  URL is one of the fixed `LINKS` destinations. */
   private buildLinkButtons(): HTMLElement {
-    const defs: { icon: string; title: string; label: string; url: string }[] = [
+    const defs: { icon: string; title: string; label: string; url: string; tour?: string }[] = [
       { icon: brandIconSvg("github"), title: "Open Modeling on GitHub", label: "GitHub repository", url: LINKS.github },
-      { icon: brandIconSvg("discord"), title: "Open Modeling Discord", label: "Discord community", url: LINKS.discord },
-      { icon: msym("menu_book"), title: "Open Modeling documentation", label: "Documentation", url: LINKS.docs },
+      { icon: brandIconSvg("discord"), title: "Open Modeling Discord", label: "Discord community", url: LINKS.discord, tour: "link-discord" },
+      { icon: msym("menu_book"), title: "Open Modeling documentation", label: "Documentation", url: LINKS.docs, tour: "link-docs" },
     ];
     const group = el("div", { class: "link-btns", role: "group", "aria-label": "External links" });
     for (const d of defs) {
@@ -549,6 +549,7 @@ export class AppShell {
         class: "link-btn",
         title: d.title,
         "aria-label": `${d.title} — opens in your browser`,
+        ...(d.tour ? { "data-tour": d.tour } : {}),
       };
       const children = [el("span", { class: "link-icon", html: d.icon })];
       group.appendChild(

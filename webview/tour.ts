@@ -61,6 +61,10 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: "Typing into a cell sets a hard value — it overrides rules until cleared; start with = to write a rule. More specific rules win." },
   { id: "status", anchor: "engine-status", fallbackAnchor: "statusbar", place: "bottom", title: "Engine status",
     text: "The dot shows the live engine state; the status bar below tracks your selection and version." },
+  { id: "docs", anchor: "link-docs", fallbackAnchor: "help-menu", place: "bottom", title: "Documentation",
+    text: "The book icon opens the documentation — guides and reference, always one click away." },
+  { id: "discord", anchor: "link-discord", fallbackAnchor: "help-menu", place: "bottom", title: "Join our Discord",
+    text: "Questions, bugs, or ideas — join our Discord channel anytime from this button." },
   { id: "help", anchor: "help-menu", place: "bottom", title: "That's it",
     text: "Replay this tour anytime from Help → Take the Tour." },
 ];
