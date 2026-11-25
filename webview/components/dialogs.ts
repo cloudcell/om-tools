@@ -168,7 +168,7 @@ export function choiceDialog(title: string, message: string, choices: DialogChoi
 }
 
 /** Show an alert dialog. Returns when dismissed. */
-export function alertDialog(title: string, message: string, image?: string): Promise<void> {
+export function alertDialog(title: string, message: string, image?: string, link?: { label: string; url: string; open: (url: string) => void }): Promise<void> {
   return new Promise((resolve) => {
     const ov = ensureOverlay();
     clear(ov);
@@ -190,6 +190,12 @@ export function alertDialog(title: string, message: string, image?: string): Pro
 
     const msg = el("div", { style: { fontSize: "13px", color: "var(--dlg-text)", marginBottom: "16px", lineHeight: "1.4", whiteSpace: "pre-line", ...centered } }, [message]);
     dlg.appendChild(msg);
+
+    if (link) dlg.appendChild(el("a", {
+      href: link.url, target: "_blank", rel: "noopener noreferrer",
+      style: { display: "block", marginTop: "-8px", marginBottom: "16px", fontSize: "13px", color: "var(--accent)", textDecoration: "underline", ...centered },
+      onclick: (e: Event) => { e.preventDefault(); link.open(link.url); },
+    }, [link.label]));
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
     const okBtn = el("button", { style: {

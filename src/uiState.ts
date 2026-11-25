@@ -60,6 +60,8 @@ export function sanitizeUiState(input: unknown): UiState | null {
     }
     // tourDone is only meaningful when true; absent/false both mean "not done".
     if ((tips as Record<string, unknown>).tourDone === true) cleanTips.tourDone = true;
+    const tourVersion = (tips as Record<string, unknown>).tourVersion;
+    if (typeof tourVersion === "string" && tourVersion.length > 0 && tourVersion.length <= 128) cleanTips.tourVersion = tourVersion;
     if (Object.keys(cleanTips).length) out.tips = cleanTips;
   }
   if (!out.theme && !out.layout && !out.options && !out.tips) return null;

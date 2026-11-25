@@ -773,7 +773,8 @@ export class AppShell {
       { icon: msym("open_in_new"), label: "Get the VS Code Extension…", fn: () => this.openExternalLink(LINKS.vscodeExt) },
       { sep: true },
       { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core",
-        `OM Core — multidimensional modeling engine for structured financial,\noperational, and analytical models.\n\nCopyright © 2026 Alexander Bikeyev.\nPublished by Cloudcell Limited.\n\nLicensed under the GNU Affero General Public License v3.0.\nCommercial licensing may be available separately.\n\nhttps://cloudcell.github.io/om-docs/\n\nVersion: gui ${guiVersionShort}`, logoPng) },
+        `OM Core — multidimensional modeling engine\nfor structured financial, operational, and analytical models.\n\nCopyright © 2026 Alexander Bikeyev.\nPublished by Cloudcell Limited.\n\nLicensed under the GNU Affero General Public License v3.0.\nCommercial licensing may be available separately.\n\nVersion: gui ${guiVersionShort}`, logoPng,
+        { label: "cloudcell.github.io/om-docs", url: LINKS.docs, open: (u) => this.openExternalLink(u) }) },
     ];
   }
 
@@ -784,10 +785,15 @@ export class AppShell {
     const ibtn = (name: MaterialIcon, fn: () => void, title: string) =>
       el("button", { class: "tb-btn", title, "aria-label": title, onclick: fn, html: msym(name) }) as HTMLButtonElement;
 
-    tb.appendChild(ibtn("database", () => this.store.refreshModel().catch(() => {}), "Refresh model"));
-    tb.appendChild(ibtn("sync", () => this.store.recalc("all"), "Recalculate (Shift+F9)"));
-    tb.appendChild(ibtn("refresh", () => this.store.recalc("dirty"), "Recalculate View (F9)"));
-    tb.appendChild(el("span", { class: "tb-sep" }));
+    // Recalc cluster hidden for now — inactive in the current engine. Flip
+    // SHOW_RECALC to restore (handlers kept); same for the format cluster below.
+    const SHOW_RECALC = false;
+    if (SHOW_RECALC) {
+      tb.appendChild(ibtn("database", () => this.store.refreshModel().catch(() => {}), "Refresh model"));
+      tb.appendChild(ibtn("sync", () => this.store.recalc("all"), "Recalculate (Shift+F9)"));
+      tb.appendChild(ibtn("refresh", () => this.store.recalc("dirty"), "Recalculate View (F9)"));
+      tb.appendChild(el("span", { class: "tb-sep" }));
+    }
     const undoBtn = ibtn("undo", () => this.store.undo(), "Undo");
     const redoBtn = ibtn("redo", () => this.store.redo(), "Redo");
     tb.appendChild(undoBtn);
@@ -797,7 +803,6 @@ export class AppShell {
     const pasteBtn = ibtn("content_paste", () => this.focusedGrid()?.pasteFromClipboard(), "Paste");
     tb.appendChild(copyBtn);
     tb.appendChild(pasteBtn);
-    tb.appendChild(el("span", { class: "tb-sep" }));
 
     // Same enable rules as the Edit menu.
     const syncEnabled = () => {
@@ -809,40 +814,45 @@ export class AppShell {
     syncEnabled();
     this.store.subscribe(syncEnabled);
 
-    // Formatting is outside the MVP preview: controls stay visible but disabled (handlers kept for later).
+    // Formatting is outside the MVP preview: the cluster is hidden entirely for
+    // now (was disabled controls); flip SHOW_FORMAT to restore — handlers kept.
+    const SHOW_FORMAT = false;
     const off = (label: string) => ({ disabled: true, title: `${label} — ${NOT_IN_MVP_TITLE}` });
-    // No text labels in the compact row ("Fill", "Font", "Format"): the title of each control names it.
+    if (SHOW_FORMAT) {
+      tb.appendChild(el("span", { class: "tb-sep" }));
+      // No text labels in the compact row ("Fill", "Font", "Format"): the title of each control names it.
 
-    // Format buttons: one segmented block
-    const seg = el("div", { class: "tb-seg" });
-    const boldBtn = el("button", { class: "tb-btn", ...off("Bold"), style: { fontWeight: "700" } }, ["B"]);
-    boldBtn.addEventListener("click", () => this.store.api.formatBold("selection", true).catch(() => {}));
-    seg.appendChild(boldBtn);
-    const italicBtn = el("button", { class: "tb-btn", ...off("Italic"), style: { fontStyle: "italic" } }, ["I"]);
-    italicBtn.addEventListener("click", () => this.store.api.formatItalic("selection", true).catch(() => {}));
-    seg.appendChild(italicBtn);
-    const underlineBtn = el("button", { class: "tb-btn", ...off("Underline"), style: { textDecoration: "underline" } }, ["U"]);
-    underlineBtn.addEventListener("click", () => this.store.api.formatUnderline("selection", true).catch(() => {}));
-    seg.appendChild(underlineBtn);
-    tb.appendChild(seg);
-    tb.appendChild(el("span", { class: "tb-sep" }));
+      // Format buttons: one segmented block
+      const seg = el("div", { class: "tb-seg" });
+      const boldBtn = el("button", { class: "tb-btn", ...off("Bold"), style: { fontWeight: "700" } }, ["B"]);
+      boldBtn.addEventListener("click", () => this.store.api.formatBold("selection", true).catch(() => {}));
+      seg.appendChild(boldBtn);
+      const italicBtn = el("button", { class: "tb-btn", ...off("Italic"), style: { fontStyle: "italic" } }, ["I"]);
+      italicBtn.addEventListener("click", () => this.store.api.formatItalic("selection", true).catch(() => {}));
+      seg.appendChild(italicBtn);
+      const underlineBtn = el("button", { class: "tb-btn", ...off("Underline"), style: { textDecoration: "underline" } }, ["U"]);
+      underlineBtn.addEventListener("click", () => this.store.api.formatUnderline("selection", true).catch(() => {}));
+      seg.appendChild(underlineBtn);
+      tb.appendChild(seg);
+      tb.appendChild(el("span", { class: "tb-sep" }));
 
-    // Fill color
-    const fillInput = el("input", { class: "tb-color", type: "color", value: "#ffffff", ...off("Fill color") }) as HTMLInputElement;
-    fillInput.addEventListener("change", () => this.store.api.formatBgColor("selection", fillInput.value).catch(() => {}));
-    tb.appendChild(fillInput);
+      // Fill color
+      const fillInput = el("input", { class: "tb-color", type: "color", value: "#ffffff", ...off("Fill color") }) as HTMLInputElement;
+      fillInput.addEventListener("change", () => this.store.api.formatBgColor("selection", fillInput.value).catch(() => {}));
+      tb.appendChild(fillInput);
 
-    // Font color
-    const fontInput = el("input", { class: "tb-color", type: "color", value: "#000000", ...off("Font color") }) as HTMLInputElement;
-    fontInput.addEventListener("change", () => this.store.api.formatColor("selection", fontInput.value).catch(() => {}));
-    tb.appendChild(fontInput);
-    tb.appendChild(el("span", { class: "tb-sep" }));
+      // Font color
+      const fontInput = el("input", { class: "tb-color", type: "color", value: "#000000", ...off("Font color") }) as HTMLInputElement;
+      fontInput.addEventListener("change", () => this.store.api.formatColor("selection", fontInput.value).catch(() => {}));
+      tb.appendChild(fontInput);
+      tb.appendChild(el("span", { class: "tb-sep" }));
 
-    // Number format
-    const fmt = el("select", { class: "tb-select", ...off("Number format") }) as HTMLSelectElement;
-    [["general", "General"], ["number", "Number"], ["currency", "Currency"], ["percent", "Percent"], ["scientific", "Scientific"]].forEach(([v, l]) => fmt.appendChild(el("option", { value: v }, [l])));
-    fmt.addEventListener("change", () => this.store.api.formatNumberFormat("selection", fmt.value).catch(() => {}));
-    tb.appendChild(fmt);
+      // Number format
+      const fmt = el("select", { class: "tb-select", ...off("Number format") }) as HTMLSelectElement;
+      [["general", "General"], ["number", "Number"], ["currency", "Currency"], ["percent", "Percent"], ["scientific", "Scientific"]].forEach(([v, l]) => fmt.appendChild(el("option", { value: v }, [l])));
+      fmt.addEventListener("change", () => this.store.api.formatNumberFormat("selection", fmt.value).catch(() => {}));
+      tb.appendChild(fmt);
+    }
 
     return tb;
   }

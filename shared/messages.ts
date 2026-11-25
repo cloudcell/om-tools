@@ -203,6 +203,9 @@ export interface UiTips {
   seen?: string[];
   /** First-run guided tour completed/skipped/declined — suppresses the invite. */
   tourDone?: boolean;
+  /** The gui build string the tour was answered at — a new deploy re-offers the
+   *  invite (tourDone alone suppresses only within the same version). */
+  tourVersion?: string;
 }
 
 /** Everything the webview persists. `saveUiState` params: `{ state: UiState }`.

@@ -7,6 +7,7 @@
  *  clamp), unit-testable in plain Node like TipQueue. */
 
 import type { Store } from "./state";
+import { guiVersion } from "./version";
 import { LINKS } from "../shared/messages";
 import { el } from "./dom";
 import { materialIconSvg } from "./menuIcons";
@@ -48,9 +49,9 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: "A cube stores the data — cells addressed by items of its dimensions — and the rules that compute them." },
   { id: "browser-views", anchor: "views", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Views",
     text: "A view is a live window into a cube — opening one adds a tab to the workspace." },
-  { id: "views", anchor: "view-area", place: "inside", title: "View tabs",
+  { id: "views", anchor: "view-tab", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "View tabs",
     text: "Each tab is a live view into the model — drag a tab to split." },
-  { id: "chips", anchor: "pivot", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "Dimension chips",
+  { id: "chips", anchor: "chip", fallbackAnchor: "pivot", place: "bottom", fallbackPlace: "bottom", title: "Dimension chips",
     text: "Drag chips between Page, Rows and Columns to rearrange a view; Page chips filter the slice." },
   { id: "at-dim", anchor: "at-dim", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "The @ dimension",
     text: "Every cube's channel axis — 'value' holds the data; the other items carry formatting (fill, fonts, number formats)." },
@@ -186,13 +187,21 @@ export class TourManager {
     this.render();
   }
 
+  /** tourDone suppresses the invite only within the version it was answered
+   *  at — every deploy bumps the gui build string, so a new version re-offers
+   *  the tour even after complete/skip/"don't ask again". */
+  private tourAnswered(): boolean {
+    const t = this.store.api.loadUiState()?.tips;
+    return !!(t?.tourDone && t.tourVersion === guiVersion);
+  }
+
   /** Completion and skip both persist tourDone — a skipped tour is a declined
    *  tour; replay stays one menu click away, so there is no resume state. */
   private finish() {
     this.stepIndex = -1;
     window.removeEventListener("resize", this.onResize);
     this.teardownDom();
-    updateTipsState(this.store, { tourDone: true });
+    updateTipsState(this.store, { tourDone: true, tourVersion: guiVersion });
   }
 
   private next() {
@@ -338,7 +347,7 @@ export class TourManager {
    *  fact). Re-shown each run until Take the tour / Don't ask again. */
   maybeInvite() {
     if (this.inviteEl || this.active()) return;
-    if (this.store.api.loadUiState()?.tips?.tourDone) return;
+    if (this.tourAnswered()) return;
     if (this.store.state.options.showTips === false) return;
     if (suppressedForOnboarding(this.store)) { this.pollInvite(); return; }
 
@@ -349,8 +358,8 @@ export class TourManager {
         ["Take the tour"]),
       el("button", { class: "om-tip-btn", onClick: () => this.hideInvite() },
         ["Later"]),
-      el("button", { class: "om-tip-btn", title: "Don't ask again (Help → Take the Tour… still works)",
-        onClick: () => { updateTipsState(this.store, { tourDone: true }); this.hideInvite(); } },
+      el("button", { class: "om-tip-btn", title: "Don't ask again for this version (Help → Take the Tour… still works)",
+        onClick: () => { updateTipsState(this.store, { tourDone: true, tourVersion: guiVersion }); this.hideInvite(); } },
         ["Don't ask again"]),
     ]);
     document.body.appendChild(this.inviteEl);
@@ -363,7 +372,7 @@ export class TourManager {
     let tries = 0;
     this.invitePoll = window.setInterval(() => {
       if (++tries > 120 || this.inviteEl || this.active()
-          || this.store.api.loadUiState()?.tips?.tourDone
+          || this.tourAnswered()
           || this.store.state.options.showTips === false) {
         window.clearInterval(this.invitePoll);
         this.invitePoll = 0;
