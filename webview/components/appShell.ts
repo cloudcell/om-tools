@@ -7,6 +7,7 @@ import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
 import { tipsEnabled, setTipsEnabled, resetTips } from "../tips";
 import { startTour } from "../tour";
+import { guiVersionShort } from "../version";
 import logoPng from "../assets/om-core-logo.png";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
@@ -772,7 +773,7 @@ export class AppShell {
       { icon: msym("open_in_new"), label: "Get the VS Code Extension…", fn: () => this.openExternalLink(LINKS.vscodeExt) },
       { sep: true },
       { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core",
-        "OM Core — multidimensional modeling engine for structured financial,\noperational, and analytical models.\n\nCopyright © 2026 Alexander Bikeyev.\nPublished by Cloudcell Limited.\n\nLicensed under the GNU Affero General Public License v3.0.\nCommercial licensing may be available separately.\n\nhttps://cloudcell.github.io/om-docs/", logoPng) },
+        `OM Core — multidimensional modeling engine for structured financial,\noperational, and analytical models.\n\nCopyright © 2026 Alexander Bikeyev.\nPublished by Cloudcell Limited.\n\nLicensed under the GNU Affero General Public License v3.0.\nCommercial licensing may be available separately.\n\nhttps://cloudcell.github.io/om-docs/\n\nVersion: gui ${guiVersionShort}`, logoPng) },
     ];
   }
 
