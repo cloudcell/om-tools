@@ -537,6 +537,13 @@ export class AppShell {
    *  (native new-tab navigation, keyboard-focusable, no popup-blocker involvement); buttons
    *  in the VS Code webview that ask the host to open the URL — which it only does when the
    *  URL is one of the fixed `LINKS` destinations. */
+  /** One external-URL open path for menu items: native new-tab in a browser
+   *  host, the LINKS-allowlisted openExternal bridge in the VS Code webview. */
+  private openExternalLink(url: string): void {
+    if (this.store.api.supportsNativeExternalLinks) window.open(url, "_blank", "noopener");
+    else void this.store.api.openExternal(url);
+  }
+
   private buildLinkButtons(): HTMLElement {
     const defs: { icon: string; title: string; label: string; url: string; tour?: string }[] = [
       { icon: brandIconSvg("github"), title: "Open Modeling on GitHub", label: "GitHub repository", url: LINKS.github },
@@ -761,6 +768,7 @@ export class AppShell {
       { icon: msym("menu_book"), label: "Take the Tour…", fn: () => startTour() },
       { icon: msym("info"), label: "Show Tips", checked: tipsEnabled(), fn: () => setTipsEnabled(!tipsEnabled()) },
       { icon: msym("refresh"), label: "Reset Tips…", fn: () => resetTips() },
+      { icon: msym("open_in_new"), label: "Get the VS Code Extension…", fn: () => this.openExternalLink(LINKS.vscodeExt) },
       { sep: true },
       { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core", "OM Core — multidimensional modeling engine GUI.\nVSCode/VSCodium extension connecting to the om-core runtime.\n\nhttps://cloudcell.github.io/om-docs/") },
     ];

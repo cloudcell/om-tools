@@ -7,6 +7,7 @@
  *  clamp), unit-testable in plain Node like TipQueue. */
 
 import type { Store } from "./state";
+import { LINKS } from "../shared/messages";
 import { el } from "./dom";
 import { materialIconSvg } from "./menuIcons";
 import { dismissTip, setTipSuppression, suppressedForOnboarding, updateTipsState } from "./tips";
@@ -22,6 +23,7 @@ export interface TourStep {
   activeTab?: string;        // prefer the match whose active .lower-tab shows this label
   title: string;
   text: string;
+  link?: { label: string; url: string };  // trailing link line in the callout (routed like the header link-btns)
 }
 
 /** The model the tour opens so every step shows real content — a catalog id
@@ -32,7 +34,8 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: "welcome", title: "Welcome to OM Core",
     text: "This tour opens the DCF Valuation example — a live model you can explore." },
   { id: "privacy", anchor: "assistant", fallbackAnchor: "view-area", place: "top", fallbackPlace: "inside", title: "Runs locally",
-    text: "Everything runs locally — your model never leaves the browser. The exception is the Assistant: a remote LLM sends what you send it to your provider — however, you can set it up with a local model as well. For maximum privacy, use the VS Code extension — it pairs with any assistant you choose." },
+    text: "Everything runs locally — your model never leaves the browser. The exception is the Assistant: a remote LLM sends what you send it to your provider — however, you can set it up with a local model as well. For maximum privacy, use the VS Code extension — it pairs with any assistant you choose.",
+    link: { label: "Get the VS Code extension", url: LINKS.vscodeExt } },
   { id: "menus", anchor: "menubar", place: "bottom", title: "Menus",
     text: "File opens models and bundles; View, Tools, and Help hold the rest." },
   { id: "browser-dims", anchor: "dims", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Dimensions",
@@ -238,6 +241,14 @@ export class TourManager {
     return biggest(pool);
   }
 
+  /** Step link — same host split as the header link-btns: a real anchor in a
+   *  browser, a button asking the host to openExternal (LINKS-allowlisted). */
+  private linkEl(link: { label: string; url: string }): HTMLElement {
+    if (this.store.api.supportsNativeExternalLinks)
+      return el("a", { class: "om-tour-link", href: link.url, target: "_blank", rel: "noopener noreferrer" }, [link.label]);
+    return el("button", { class: "om-tour-link", type: "button", onClick: () => { void this.store.api.openExternal(link.url); } }, [link.label]);
+  }
+
   private render() {
     this.teardownDom();
     const step = TOUR_STEPS[this.stepIndex];
@@ -263,7 +274,10 @@ export class TourManager {
       },
     }, [
       el("div", { class: "om-tour-title" }, [step.title]),
-      el("div", { class: "om-tour-text" }, [step.text]),
+      el("div", { class: "om-tour-text" }, [
+        step.text,
+        ...(step.link ? [this.linkEl(step.link)] : []),
+      ]),
       el("div", { class: "om-tour-foot" }, [
         el("span", { class: "om-tour-count" }, [`${n + 1} / ${total}`]),
         skipBtn, backBtn, nextBtn,
