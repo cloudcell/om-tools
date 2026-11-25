@@ -193,7 +193,7 @@ export function alertDialog(title: string, message: string, image?: string, link
 
     if (link) dlg.appendChild(el("a", {
       href: link.url, target: "_blank", rel: "noopener noreferrer",
-      style: { display: "block", marginTop: "-8px", marginBottom: "16px", fontSize: "13px", color: "var(--accent)", ...centered },
+      style: { display: "block", marginTop: "-8px", marginBottom: "16px", fontSize: "13px", color: "var(--accent)", textDecoration: "underline", ...centered },
       onclick: (e: Event) => { e.preventDefault(); link.open(link.url); },
     }, [link.label]));
 
