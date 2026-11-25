@@ -241,7 +241,7 @@ export class MultilevelGrid {
     const grpActive = this.store.group(gid)?.activeTab;
     const tabbar = el("div", { class: "tabbar" });
     for (const tab of grpTabs) {
-      const t = el("div", { class: "tab" + (tab.viewId === grpActive ? " active" : "") }, [
+      const t = el("div", { class: "tab" + (tab.viewId === grpActive ? " active" : ""), ...(tab.viewId === grpActive ? { "data-tour": "view-tab" } : {}) }, [
         document.createTextNode(tab.viewName),
         el("span", { class: "tab-close", title: "Close", onclick: (e: Event) => { e.stopPropagation(); this.closeTab(tab.viewId); } }, ["×"]),
       ]);

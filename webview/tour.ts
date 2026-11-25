@@ -48,7 +48,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: "A cube stores the data — cells addressed by items of its dimensions — and the rules that compute them." },
   { id: "browser-views", anchor: "views", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Views",
     text: "A view is a live window into a cube — opening one adds a tab to the workspace." },
-  { id: "views", anchor: "view-area", place: "inside", title: "View tabs",
+  { id: "views", anchor: "view-tab", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "View tabs",
     text: "Each tab is a live view into the model — drag a tab to split." },
   { id: "chips", anchor: "pivot", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "Dimension chips",
     text: "Drag chips between Page, Rows and Columns to rearrange a view; Page chips filter the slice." },
