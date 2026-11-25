@@ -32,7 +32,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: "welcome", title: "Welcome to OM Core",
     text: "This tour opens the DCF Valuation example — a live model you can explore." },
   { id: "privacy", anchor: "assistant", fallbackAnchor: "view-area", place: "top", fallbackPlace: "inside", title: "Runs locally",
-    text: "Everything runs locally — your model never leaves the browser. The exception is the Assistant: a remote LLM sends what you send it to your provider. For maximum privacy, use the VS Code extension — it pairs with any assistant you choose." },
+    text: "Everything runs locally — your model never leaves the browser. The exception is the Assistant: a remote LLM sends what you send it to your provider — however, you can set it up with a local model as well. For maximum privacy, use the VS Code extension — it pairs with any assistant you choose." },
   { id: "menus", anchor: "menubar", place: "bottom", title: "Menus",
     text: "File opens models and bundles; View, Tools, and Help hold the rest." },
   { id: "browser-dims", anchor: "dims", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Dimensions",
