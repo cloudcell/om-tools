@@ -892,9 +892,11 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .om-tour {
   position: fixed; z-index: 2600;
   width: 280px; padding: 12px 14px;
-  /* Bubble matches the pointer: solid --border-strong, borderless. The shadow
-   *  is a filter, not box-shadow, so the arrow child shares one silhouette. */
-  background: var(--border-strong); color: var(--text);
+  /* Bubble matches the pointer: one solid cream shape in both themes (dark text
+   *  pinned for contrast — --text is light in the dark theme). The shadow is a
+   *  filter, not box-shadow, so the arrow child shares one silhouette. */
+  --tour-bg: #fdefd9;
+  background: var(--tour-bg); color: #1c1c1e;
   border-radius: 10px;
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
   font-size: 13px; line-height: 1.4;
@@ -917,14 +919,14 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .om-tour-link:hover { filter: brightness(1.2); }
 /* The highlight IS the ring — a static accent outline, no backdrop, no pulse. */
 .om-tour-mark { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-/* Arrow sits on the callout edge facing the anchor — same solid --border-strong
- *  as the bubble, so pointer + window read as one grey shape under the shadow.
- *  Origin is the apex: JS sets left/top to the anchor centre directly. */
+/* Arrow sits on the callout edge facing the anchor — same cream as the bubble
+ *  (--tour-bg inherits down), so pointer + window read as one shape under the
+ *  shadow. Origin is the apex: JS sets left/top to the anchor centre directly. */
 .om-tour-arrow { position: absolute; width: 0; height: 0; border: 8px solid transparent; }
-.om-tour-arrow.edge-top { top: -16px; margin-left: -8px; border-bottom-color: var(--border-strong); }
-.om-tour-arrow.edge-bottom { bottom: -16px; margin-left: -8px; border-top-color: var(--border-strong); }
-.om-tour-arrow.edge-left { left: -16px; margin-top: -8px; border-right-color: var(--border-strong); }
-.om-tour-arrow.edge-right { right: -16px; margin-top: -8px; border-left-color: var(--border-strong); }
+.om-tour-arrow.edge-top { top: -16px; margin-left: -8px; border-bottom-color: var(--tour-bg); }
+.om-tour-arrow.edge-bottom { bottom: -16px; margin-left: -8px; border-top-color: var(--tour-bg); }
+.om-tour-arrow.edge-left { left: -16px; margin-top: -8px; border-right-color: var(--tour-bg); }
+.om-tour-arrow.edge-right { right: -16px; margin-top: -8px; border-left-color: var(--tour-bg); }
 /* Clears om-tools-web's fixed Assistant toggle (bottom:12px, ~36px tall → top
  *  edge ≈48px) — the invite must sit visibly above it, not behind it. */
 .om-tour-invite { max-width: 460px; bottom: 60px; }
