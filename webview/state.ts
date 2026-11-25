@@ -924,7 +924,7 @@ export class Store {
         const cell = this.cellAtVisual(v, r, c);   // paste block walks VISUAL rows/cols
         if (!cell?.addr) continue;
         const raw = grid[dr][dc];
-        const val = raw === "" ? "" : (isNaN(Number(raw)) ? raw : Number(raw));
+        const val = raw === "" ? null : (isNaN(Number(raw)) ? raw : Number(raw));
         entries.push({ addr: cell.addr, value: val });
       }
     }
