@@ -77,7 +77,7 @@ export function suppressedForOnboarding(store: Store): boolean {
 /** Nested read-modify-write of `UiState.tips` — `updateUiState` shallow-merges
  *  top-level keys only, so the `seen` writer (tips) and the `tourDone` writer
  *  (tour) must go through one merge helper or they wipe each other. */
-export function updateTipsState(store: Store, patch: { seen?: string[]; tourDone?: boolean }): void {
+export function updateTipsState(store: Store, patch: { seen?: string[]; tourDone?: boolean; tourVersion?: string }): void {
   const cur = store.api.loadUiState()?.tips ?? {};
   store.api.updateUiState({ tips: { ...cur, ...patch } });
 }
@@ -112,7 +112,7 @@ export class TipManager {
 
   /** Reset = fresh onboarding: clears seen tips AND the tour-done flag, so the
    *  invite re-fires next run ("show me everything again" semantics). */
-  reset() { this.queue.clearSeen(); updateTipsState(this.store, { seen: [], tourDone: false }); }
+  reset() { this.queue.clearSeen(); updateTipsState(this.store, { seen: [], tourDone: false, tourVersion: undefined }); }
 
   /** Drops the visible tip and the queue without marking seen — used when the
    *  tour starts so no two floating elements collide (T5). */
