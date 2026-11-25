@@ -48,13 +48,13 @@ await build({
 });
 await build({
   entryPoints: ["webview/main.ts"], bundle: true, platform: "browser", format: "iife",
-  define: guiDefine, outfile: "dist/webview.js",
+  define: guiDefine, loader: { ".png": "dataurl" }, outfile: "dist/webview.js",
 });
 await build({
   // ESM variant of the om-gui library: exports mount()/transports, no self-mount.
   // Hosts that can import modules (om-tools-web, future embedders) use this.
   entryPoints: ["webview/index.ts"], bundle: true, platform: "browser", format: "esm",
-  define: guiDefine, outfile: "dist/webview.mjs",
+  define: guiDefine, loader: { ".png": "dataurl" }, outfile: "dist/webview.mjs",
 });
 copyFileSync("webview/index.html", "dist/index.html");
 // Bundled examples: repo-root examples/ + shared/catalog.json → dist/examples/.

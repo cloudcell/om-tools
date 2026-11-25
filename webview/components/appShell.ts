@@ -7,6 +7,7 @@ import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
 import { tipsEnabled, setTipsEnabled, resetTips } from "../tips";
 import { startTour } from "../tour";
+import logoPng from "../assets/om-core-logo.png";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
 import { RulePanel } from "./rulePanel";
@@ -770,7 +771,7 @@ export class AppShell {
       { icon: msym("refresh"), label: "Reset Tips…", fn: () => resetTips() },
       { icon: msym("open_in_new"), label: "Get the VS Code Extension…", fn: () => this.openExternalLink(LINKS.vscodeExt) },
       { sep: true },
-      { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core", "OM Core — multidimensional modeling engine GUI.\nVSCode/VSCodium extension connecting to the om-core runtime.\n\nhttps://cloudcell.github.io/om-docs/") },
+      { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core", "OM Core — multidimensional modeling engine GUI.\nVSCode/VSCodium extension connecting to the om-core runtime.\n\nhttps://cloudcell.github.io/om-docs/", logoPng) },
     ];
   }
 

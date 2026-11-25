@@ -168,7 +168,7 @@ export function choiceDialog(title: string, message: string, choices: DialogChoi
 }
 
 /** Show an alert dialog. Returns when dismissed. */
-export function alertDialog(title: string, message: string): Promise<void> {
+export function alertDialog(title: string, message: string, image?: string): Promise<void> {
   return new Promise((resolve) => {
     const ov = ensureOverlay();
     clear(ov);
@@ -178,6 +178,10 @@ export function alertDialog(title: string, message: string): Promise<void> {
       minWidth: "320px", maxWidth: "400px", boxShadow: "var(--dlg-shadow)",
       fontFamily: "-apple-system, system-ui, sans-serif",
     } }) as HTMLElement;
+
+    if (image) dlg.appendChild(el("img", { src: image, alt: "", style: {
+      display: "block", margin: "0 auto 12px", maxWidth: "240px", maxHeight: "120px", objectFit: "contain",
+    } }));
 
     const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "var(--dlg-title)" } }, [title]);
     dlg.appendChild(label);
