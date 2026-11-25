@@ -928,7 +928,9 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .om-tour-arrow.edge-bottom::after { left: 0; top: -1px; border-top-color: var(--popup-bg); }
 .om-tour-arrow.edge-left::after { left: 1px; top: 0; border-right-color: var(--popup-bg); }
 .om-tour-arrow.edge-right::after { left: -1px; top: 0; border-left-color: var(--popup-bg); }
-.om-tour-invite { max-width: 460px; }
+/* Clears om-tools-web's fixed Assistant toggle (bottom:12px, ~36px tall → top
+ *  edge ≈48px) — the invite must sit visibly above it, not behind it. */
+.om-tour-invite { max-width: 460px; bottom: 60px; }
 .ctx-item.disabled:hover { background: transparent; color: var(--text-disabled); }
 .ctx-sep { height: 1px; background: var(--border); margin: 2px 0; }
 .ctx-submenu { position: relative; }
