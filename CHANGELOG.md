@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.12
+
+- **Contextual first-use tips + guided tour**: tips (`webview/tips.ts`)
+  and a step-by-step tour (`webview/tour.ts`) — anchored callouts with
+  arrows, a cream bubble, explainers for dims/cubes/views, pivot chips,
+  rules + calc flow, @ channels, hard-value precedence, and set vs
+  sequence dims. The tour re-invites on each new version and opens the
+  DCF example live; privacy step covers the marketplace link and the
+  local-model assistant option.
+- **About dialog**: OM Core logo (CSP `img-src` unblocked), copyright +
+  licence lines matching Qt, clickable om-docs link, centred layout,
+  version line.
+- Toolbar: inactive recalc/format clusters hidden behind feature flags.
+- Paste: empty cells send `null` instead of `""` — Qt coercion parity.
+- **Engine**: vendored wasm resynced to zig `156ca49` (persistent
+  unseeded PRNG for RAND/RANDBETWEEN) with verified provenance, so the
+  release gate passes.
+
 ## 0.1.11
 
 - **Engine licensing + provenance**: the vendored WASM is pinned by

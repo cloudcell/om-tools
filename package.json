@@ -2,7 +2,7 @@
   "name": "om-tools",
   "displayName": "OM Core",
   "description": "Multidimensional modeling engine GUI for OM Core — connects to the om-core runtime.",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "publisher": "cloudcell",
   "license": "AGPL-3.0-or-later",
   "icon": "media/om-core-icon.png",
@@ -206,7 +206,11 @@
         },
         "omCore.engineMode": {
           "type": "string",
-          "enum": ["auto", "embedded", "socket"],
+          "enum": [
+            "auto",
+            "embedded",
+            "socket"
+          ],
           "default": "auto",
           "description": "Which engine the GUI talks to. 'embedded' = the bundled zig/wasm engine in a worker (zero dependencies — opens the GUI and it just works). 'socket' = an external om-core/om-runtime over unix/TCP (scripts, solver, shared workspaces). 'auto' = socket when omCore.runtimeEndpoint or OPENM_TRANSPORT_* is explicitly set, embedded otherwise. Changing this reconnects under the new mode."
         },
