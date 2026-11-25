@@ -51,7 +51,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: "A view is a live window into a cube — opening one adds a tab to the workspace." },
   { id: "views", anchor: "view-tab", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "View tabs",
     text: "Each tab is a live view into the model — drag a tab to split." },
-  { id: "chips", anchor: "pivot", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "Dimension chips",
+  { id: "chips", anchor: "chip", fallbackAnchor: "pivot", place: "bottom", fallbackPlace: "bottom", title: "Dimension chips",
     text: "Drag chips between Page, Rows and Columns to rearrange a view; Page chips filter the slice." },
   { id: "at-dim", anchor: "at-dim", fallbackAnchor: "view-area", place: "bottom", fallbackPlace: "inside", title: "The @ dimension",
     text: "Every cube's channel axis — 'value' holds the data; the other items carry formatting (fill, fonts, number formats)." },
