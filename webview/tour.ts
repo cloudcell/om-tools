@@ -31,7 +31,7 @@ export interface TourStep {
 const TOUR_EXAMPLE_ID = "dcf-valuation";
 
 export const TOUR_STEPS: readonly TourStep[] = [
-  { id: "welcome", title: "Welcome to OM Core",
+  { id: "welcome", anchor: "view-area", place: "inside", title: "Welcome to OM Core",
     text: "This tour opens the DCF Valuation example — a live model you can explore." },
   { id: "privacy", anchor: "assistant", fallbackAnchor: "view-area", place: "top", fallbackPlace: "inside", title: "Runs locally",
     text: "Everything runs locally — your model never leaves the browser. The exception is the Assistant: a remote LLM sends what you send it to your provider — however, you can set it up with a local model as well. For maximum privacy, use the VS Code extension — it pairs with any assistant you choose.",
@@ -297,19 +297,29 @@ export class TourManager {
       this.callout.style.left = `${pos.x}px`;
       this.callout.style.top = `${pos.y}px`;
       this.callout.dataset.placement = pos.placement;
-      // Arrow on the edge facing the anchor, aligned to the anchor's centre
-      // (clamped inside the callout's rounded corners). "inside"/centered → none.
-      if (pos.placement !== "inside") {
-        const arrow = el("span", { class: "om-tour-arrow" });
-        if (pos.placement === "bottom" || pos.placement === "top") {
-          arrow.classList.add(pos.placement === "bottom" ? "edge-top" : "edge-bottom");
-          arrow.style.left = `${clamp(r.x + r.width / 2 - pos.x, 16, c.width - 16)}px`;
-        } else {
-          arrow.classList.add(pos.placement === "left" ? "edge-right" : "edge-left");
-          arrow.style.top = `${clamp(r.y + r.height / 2 - pos.y, 16, c.height - 16)}px`;
-        }
-        this.callout.appendChild(arrow);
+      // Arrow on the edge facing the anchor — every anchored step gets one.
+      // Edge placements point back at the anchor; "inside" points at the
+      // anchor's nearest edge so the centred callout still ties to the ring.
+      const arrow = el("span", { class: "om-tour-arrow" });
+      let side = pos.placement;
+      if (side === "inside") {
+        const cx = pos.x + c.width / 2, cy = pos.y + c.height / 2;
+        const d: [Placement, number][] = [
+          ["top", cy - r.y], ["bottom", r.y + r.height - cy],
+          ["left", cx - r.x], ["right", r.x + r.width - cx]];
+        side = d.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
       }
+      const faces = pos.placement === "inside"
+        ? side                                        // edge the callout points at
+        : ({ bottom: "top", top: "bottom", left: "right", right: "left" } as const)[side as Exclude<Placement, "inside">];
+      if (faces === "top" || faces === "bottom") {
+        arrow.classList.add(faces === "top" ? "edge-top" : "edge-bottom");
+        arrow.style.left = `${clamp(r.x + r.width / 2 - pos.x, 16, c.width - 16)}px`;
+      } else {
+        arrow.classList.add(faces === "left" ? "edge-left" : "edge-right");
+        arrow.style.top = `${clamp(r.y + r.height / 2 - pos.y, 16, c.height - 16)}px`;
+      }
+      this.callout.appendChild(arrow);
     }
     nextBtn.focus();
   }
