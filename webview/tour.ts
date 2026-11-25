@@ -35,6 +35,10 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: "File opens models and bundles; View, Tools, and Help hold the rest." },
   { id: "browser-dims", anchor: "dims", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Dimensions",
     text: "Dimensions are the model's axes — Year, Account. Their items become the rows and columns." },
+  { id: "dim-set", anchor: "dim-set", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Set dimensions",
+    text: "An unordered set dimension — you can drag its items into any order." },
+  { id: "dim-seq", anchor: "dim-seq", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Sequence dimensions",
+    text: "An ordered sequence — rules reach items by index (FIRST, LAST, THIS, PREV, NEXT); the order can't be dragged." },
   { id: "browser-cubes", anchor: "cubes", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Cubes",
     text: "A cube stores the data — cells addressed by items of its dimensions — and the rules that compute them." },
   { id: "browser-views", anchor: "views", fallbackAnchor: "view-area", place: "right", fallbackPlace: "inside", title: "Views",
@@ -194,9 +198,13 @@ export class TourManager {
     const qsa = (name: string) => [...document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`)];
     let els = qsa(step.anchor);
     let fallback = false;
-    if (!els.length && step.fallbackAnchor) { els = qsa(step.fallbackAnchor); fallback = true; }
-    if (!els.length) return null;
-    return { el: this.pickAnchor(els, step), fallback };
+    let picked = els.length ? this.pickAnchor(els, step) : null;
+    // A collapsed dock keeps its anchors mounted at zero size — a picked
+    // zero-area element degrades to the fallback just like a missing one.
+    const zero = (e: HTMLElement) => { const r = e.getBoundingClientRect(); return r.width === 0 && r.height === 0; };
+    if ((!picked || zero(picked)) && step.fallbackAnchor) { els = qsa(step.fallbackAnchor); picked = els.length ? this.pickAnchor(els, step) : null; fallback = true; }
+    if (!picked || zero(picked)) return null;
+    return { el: picked, fallback };
   }
 
   /** Multiple view panes can carry the same anchor — each pane has its own

@@ -41,6 +41,9 @@ export class ModelBrowser {
       const node = this.makeTreeNode(`${dim.name} (${dim.items})`, kindIcon("dimension"), false, () => this.dimMenu(dim));
       // Sequential dimension: the same link mark as its pivot chip (issue #2; was "→").
       if (this.store.dimIsSeq(dim.id)) node.querySelector(".tree-label .tree-count")?.before(seqLinkIcon());
+      // data-tour anchors the guided tour's set-vs-sequence steps; "@" is covered by its own.
+      if (dim.name !== "@") (node.querySelector(".tree-row") as HTMLElement).dataset.tour =
+        this.store.dimIsSeq(dim.id) ? "dim-seq" : "dim-set";
       dimChildren.appendChild(node);
     }
     tree.appendChild(dimRoot);
