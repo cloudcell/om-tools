@@ -773,7 +773,8 @@ export class AppShell {
       { icon: msym("open_in_new"), label: "Get the VS Code Extension…", fn: () => this.openExternalLink(LINKS.vscodeExt) },
       { sep: true },
       { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core",
-        `OM Core — multidimensional modeling engine for structured financial,\noperational, and analytical models.\n\nCopyright © 2026 Alexander Bikeyev.\nPublished by Cloudcell Limited.\n\nLicensed under the GNU Affero General Public License v3.0.\nCommercial licensing may be available separately.\n\nhttps://cloudcell.github.io/om-docs/\n\nVersion: gui ${guiVersionShort}`, logoPng) },
+        `OM Core — multidimensional modeling engine\nfor structured financial, operational, and analytical models.\n\nCopyright © 2026 Alexander Bikeyev.\nPublished by Cloudcell Limited.\n\nLicensed under the GNU Affero General Public License v3.0.\nCommercial licensing may be available separately.\n\nVersion: gui ${guiVersionShort}`, logoPng,
+        { label: "cloudcell.github.io/om-docs", url: LINKS.docs, open: (u) => this.openExternalLink(u) }) },
     ];
   }
 
