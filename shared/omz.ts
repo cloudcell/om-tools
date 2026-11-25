@@ -9,6 +9,8 @@
  *  CompressionStream exists, stored otherwise. */
 
 export const BUNDLE_SCHEMA = "om.bundle/1";
+/** Session descriptors are small UI state; a giant member is not a session. */
+export const MAX_SESSION_TEXT_BYTES = 8 * 1024 * 1024;
 export const BUNDLE_EXT = ".omz";
 export const BUNDLE_MODEL_MEMBER = "model.json";
 export const BUNDLE_SESSION_MEMBER = "session.omsession.json";
@@ -43,7 +45,13 @@ const deflateRaw = (u8: Uint8Array) => pump(u8, new CompressionStream("deflate-r
 const hasDeflate = () => typeof CompressionStream === "function" && typeof DecompressionStream === "function";
 
 // ── read ──
-interface CentralEntry { name: string; method: number; csize: number; lho: number }
+interface CentralEntry { name: string; method: number; csize: number; usize: number; lho: number }
+
+// Import-boundary caps (a-08-0d D.3.3): a hostile .omz must not be able to
+// declare or inflate beyond these. Bundles carry 3 members; 64 is generous.
+export const ZIP_MAX_ENTRIES = 64;
+export const ZIP_MAX_MEMBER_BYTES = 64 * 1024 * 1024;
+export const ZIP_MAX_TOTAL_BYTES = 128 * 1024 * 1024;
 
 export async function unzip(u8: Uint8Array): Promise<Map<string, Uint8Array>> {
   if (!isZip(u8)) throw new Error("not a zip file");
@@ -56,29 +64,40 @@ export async function unzip(u8: Uint8Array): Promise<Map<string, Uint8Array>> {
   }
   if (eocd < 0) throw new Error("zip: end-of-central-directory not found");
   const count = dv.getUint16(eocd + 10, true);
+  if (count > ZIP_MAX_ENTRIES) throw new Error(`zip: too many entries (${count} > ${ZIP_MAX_ENTRIES})`);
   let off = dv.getUint32(eocd + 16, true);
   const td = new TextDecoder();
   const entries: CentralEntry[] = [];
+  let totalUsize = 0;
   for (let i = 0; i < count; i++) {
-    if (dv.getUint32(off, true) !== 0x02014b50) throw new Error("zip: bad central directory");
+    if (off + 46 > u8.length || dv.getUint32(off, true) !== 0x02014b50) throw new Error("zip: bad central directory");
     const method = dv.getUint16(off + 10, true);
     const csize = dv.getUint32(off + 20, true);
+    const usize = dv.getUint32(off + 24, true);
     const namelen = dv.getUint16(off + 28, true);
     const extralen = dv.getUint16(off + 30, true);
     const commentlen = dv.getUint16(off + 32, true);
     const lho = dv.getUint32(off + 42, true);
-    entries.push({ name: td.decode(u8.subarray(off + 46, off + 46 + namelen)), method, csize, lho });
+    if (usize > ZIP_MAX_MEMBER_BYTES) throw new Error(`zip: member too large (${usize} bytes)`);
+    totalUsize += usize;
+    if (totalUsize > ZIP_MAX_TOTAL_BYTES) throw new Error(`zip: archive too large (${totalUsize} bytes uncompressed)`);
+    entries.push({ name: td.decode(u8.subarray(off + 46, off + 46 + namelen)), method, csize, usize, lho });
     off += 46 + namelen + extralen + commentlen;
   }
   const out = new Map<string, Uint8Array>();
   for (const e of entries) {
-    if (dv.getUint32(e.lho, true) !== 0x04034b50) throw new Error(`zip: bad local header for ${e.name}`);
+    if (e.lho + 30 > u8.length || dv.getUint32(e.lho, true) !== 0x04034b50) throw new Error(`zip: bad local header for ${e.name}`);
     const namelen = dv.getUint16(e.lho + 26, true);
     const extralen = dv.getUint16(e.lho + 28, true);
-    const data = u8.subarray(e.lho + 30 + namelen + extralen, e.lho + 30 + namelen + extralen + e.csize);
-    if (e.method === 0) out.set(e.name, data.slice());
-    else if (e.method === 8) out.set(e.name, await inflateRaw(data));
+    const dataEnd = e.lho + 30 + namelen + extralen + e.csize;
+    if (dataEnd > u8.length) throw new Error(`zip: truncated member data for ${e.name}`);
+    const data = u8.subarray(e.lho + 30 + namelen + extralen, dataEnd);
+    let bytes: Uint8Array;
+    if (e.method === 0) bytes = data.slice();
+    else if (e.method === 8) bytes = await inflateRaw(data);
     else throw new Error(`zip: unsupported compression method ${e.method} for ${e.name}`);
+    if (bytes.length !== e.usize) throw new Error(`zip: size mismatch for ${e.name} (${bytes.length} != ${e.usize})`);
+    out.set(e.name, bytes);
   }
   return out;
 }
@@ -158,10 +177,9 @@ export async function readBundle(u8: Uint8Array): Promise<BundleContents> {
   };
   const pickSession = () => {
     const name = manifest?.session;
-    if (name && files.has(name)) return td.decode(files.get(name)!);
-    if (files.has(BUNDLE_SESSION_MEMBER)) return td.decode(files.get(BUNDLE_SESSION_MEMBER)!);
-    for (const [n, b] of files) if (/\.omsession\.json$/i.test(n)) return td.decode(b);
-    return null;
+    const b = (name && files.get(name)) ?? files.get(BUNDLE_SESSION_MEMBER)
+      ?? [...files.entries()].find(([n]) => /\.omsession\.json$/i.test(n))?.[1];
+    return b && b.length <= MAX_SESSION_TEXT_BYTES ? td.decode(b) : null;
   };
   return { manifest, modelBytes: pickModel(), sessionText: pickSession(), members: [...files.keys()] };
 }
