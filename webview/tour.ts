@@ -298,16 +298,18 @@ export class TourManager {
       this.callout.style.top = `${pos.y}px`;
       this.callout.dataset.placement = pos.placement;
       // Arrow on the edge facing the anchor — every anchored step gets one.
-      // Edge placements point back at the anchor; "inside" points at the
-      // anchor's nearest edge so the centred callout still ties to the ring.
+      // Edge placements point back at the anchor; "inside" points toward the
+      // anchor's centre — nearest-edge would aim at the nearest border (the
+      // headers above the callout), not at the region being described.
       const arrow = el("span", { class: "om-tour-arrow" });
       let side = pos.placement;
       if (side === "inside") {
         const cx = pos.x + c.width / 2, cy = pos.y + c.height / 2;
-        const d: [Placement, number][] = [
-          ["top", cy - r.y], ["bottom", r.y + r.height - cy],
-          ["left", cx - r.x], ["right", r.x + r.width - cx]];
-        side = d.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
+        const px = clamp(cx, r.x, r.x + r.width), py = clamp(cy, r.y, r.y + r.height);
+        const dx = px - cx, dy = py - cy;
+        side = dx === 0 && dy === 0 ? "bottom"
+          : Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? "right" : "left")
+          : (dy > 0 ? "bottom" : "top");
       }
       const faces = pos.placement === "inside"
         ? side                                        // edge the callout points at
