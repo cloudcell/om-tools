@@ -14,6 +14,7 @@ export const LINKS = {
   github: "https://github.com/cloudcell/om-tools",
   discord: "https://discord.gg/GfU5ypAbaD",
   docs: "https://cloudcell.github.io/om-docs/",
+  vscodeExt: "https://marketplace.visualstudio.com/items?itemName=cloudcell.om-tools",
 } as const;
 export const LINK_URLS: readonly string[] = Object.values(LINKS);
 

@@ -55,8 +55,8 @@ export class PivotBar {
     const container = el("div", { class: "pivot-canvas" });
     const frame = el("div", { class: "pc-frame" });
 
-    const topLeft = el("div", { class: "pc-topleft drop-zone", "data-zone": "page" });
-    const gridMount = el("div", { class: "pc-grid" });
+    const topLeft = el("div", { class: "pc-topleft drop-zone", "data-zone": "page", "data-tour": "pivot" });
+    const gridMount = el("div", { class: "pc-grid", "data-tour": "grid" });
     const pageRight = el("div", { class: "pc-pageright drop-zone", "data-zone": "col" });
     const bottom = el("div", { class: "pc-bottom drop-zone", "data-zone": "row" });
 
@@ -117,7 +117,7 @@ export class PivotBar {
       const curName = items.find((it) => it.id === curId)?.name || (items[0]?.name || "\u2014");
       const label = el("span", {}, [`${name}: ${curName}`]);
       const arrow = el("span", { class: "chip-arrow" });
-      const chip = el("div", { class: cls, draggable: "true", title: `Drag to move; click to pick ${name} item` },
+      const chip = el("div", { class: cls, draggable: "true", title: `Drag to move; click to pick ${name} item`, "data-tour": dimId === "@" ? "at-dim" : null },
         [grip, label, seqMark, arrow].filter(Boolean) as HTMLElement[]);
       chip.addEventListener("click", (e) => { e.stopPropagation(); this.showPageDropdown(chip, dimId, items); });
       this.setupChipDrag(chip, dimId, zone);
@@ -125,7 +125,7 @@ export class PivotBar {
     }
 
     // AxisChip / HeaderChip: grip + name
-    const chip = el("div", { class: cls, draggable: "true", title: `Drag to move ${name}` },
+    const chip = el("div", { class: cls, draggable: "true", title: `Drag to move ${name}`, "data-tour": dimId === "@" ? "at-dim" : null },
       [grip, el("span", {}, [name]), seqMark].filter(Boolean) as HTMLElement[]);
     this.setupChipDrag(chip, dimId, zone);
     return chip;

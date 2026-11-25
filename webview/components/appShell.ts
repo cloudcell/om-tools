@@ -7,6 +7,8 @@ import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
 import { tipsEnabled, setTipsEnabled, resetTips } from "../tips";
 import { startTour } from "../tour";
+import { guiVersionShort } from "../version";
+import logoPng from "../assets/om-core-logo.png";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
 import { RulePanel } from "./rulePanel";
@@ -490,7 +492,7 @@ export class AppShell {
     document.addEventListener("keydown", (e) => this.onShortcut(e), true);
     window.addEventListener("blur", () => this.closeAllMenus());
     mb.appendChild(el("div", { class: "spacer" }));
-    const indicator = el("div", { class: "engine-indicator" }, [
+    const indicator = el("div", { class: "engine-indicator", "data-tour": "engine-status" }, [
       el("span", { class: "engine-dot" }, []),
       el("span", { class: "engine-text" }, ["disconnected"]),
     ]);
@@ -537,11 +539,18 @@ export class AppShell {
    *  (native new-tab navigation, keyboard-focusable, no popup-blocker involvement); buttons
    *  in the VS Code webview that ask the host to open the URL — which it only does when the
    *  URL is one of the fixed `LINKS` destinations. */
+  /** One external-URL open path for menu items: native new-tab in a browser
+   *  host, the LINKS-allowlisted openExternal bridge in the VS Code webview. */
+  private openExternalLink(url: string): void {
+    if (this.store.api.supportsNativeExternalLinks) window.open(url, "_blank", "noopener");
+    else void this.store.api.openExternal(url);
+  }
+
   private buildLinkButtons(): HTMLElement {
-    const defs: { icon: string; title: string; label: string; url: string }[] = [
+    const defs: { icon: string; title: string; label: string; url: string; tour?: string }[] = [
       { icon: brandIconSvg("github"), title: "Open Modeling on GitHub", label: "GitHub repository", url: LINKS.github },
-      { icon: brandIconSvg("discord"), title: "Open Modeling Discord", label: "Discord community", url: LINKS.discord },
-      { icon: msym("menu_book"), title: "Open Modeling documentation", label: "Documentation", url: LINKS.docs },
+      { icon: brandIconSvg("discord"), title: "Open Modeling Discord", label: "Discord community", url: LINKS.discord, tour: "link-discord" },
+      { icon: msym("menu_book"), title: "Open Modeling documentation", label: "Documentation", url: LINKS.docs, tour: "link-docs" },
     ];
     const group = el("div", { class: "link-btns", role: "group", "aria-label": "External links" });
     for (const d of defs) {
@@ -549,6 +558,7 @@ export class AppShell {
         class: "link-btn",
         title: d.title,
         "aria-label": `${d.title} — opens in your browser`,
+        ...(d.tour ? { "data-tour": d.tour } : {}),
       };
       const children = [el("span", { class: "link-icon", html: d.icon })];
       group.appendChild(
@@ -760,8 +770,10 @@ export class AppShell {
       { icon: msym("menu_book"), label: "Take the Tour…", fn: () => startTour() },
       { icon: msym("info"), label: "Show Tips", checked: tipsEnabled(), fn: () => setTipsEnabled(!tipsEnabled()) },
       { icon: msym("refresh"), label: "Reset Tips…", fn: () => resetTips() },
+      { icon: msym("open_in_new"), label: "Get the VS Code Extension…", fn: () => this.openExternalLink(LINKS.vscodeExt) },
       { sep: true },
-      { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core", "OM Core — multidimensional modeling engine GUI.\nVSCode/VSCodium extension connecting to the om-core runtime.\n\nhttps://cloudcell.github.io/om-docs/") },
+      { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core",
+        `OM Core — multidimensional modeling engine for structured financial,\noperational, and analytical models.\n\nCopyright © 2026 Alexander Bikeyev.\nPublished by Cloudcell Limited.\n\nLicensed under the GNU Affero General Public License v3.0.\nCommercial licensing may be available separately.\n\nhttps://cloudcell.github.io/om-docs/\n\nVersion: gui ${guiVersionShort}`, logoPng) },
     ];
   }
 
@@ -898,6 +910,16 @@ export class AppShell {
    *  surfaces failures and resets the UI — same as File → Open. */
   private async openExample() {
     const ex = await examplePickerDialog("Open Example", CATALOG);
+    if (!ex) return;
+    await this.openExampleById(ex.id);
+  }
+
+  /** Open a catalog example by id — used by Open Example… and the guided tour
+   *  (which loads a real model to tour against). Same flow as the picker:
+   *  .omz session first, plain model load otherwise, confirmDirty protects
+   *  unsaved work. */
+  async openExampleById(id: string): Promise<void> {
+    const ex = CATALOG.find((e) => e.id === id);
     if (!ex) return;
     const ref = `om-example:${ex.id}`;
     // .omz examples carry a saved session — apply it the way File → Open does

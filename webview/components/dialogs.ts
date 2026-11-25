@@ -168,7 +168,7 @@ export function choiceDialog(title: string, message: string, choices: DialogChoi
 }
 
 /** Show an alert dialog. Returns when dismissed. */
-export function alertDialog(title: string, message: string): Promise<void> {
+export function alertDialog(title: string, message: string, image?: string): Promise<void> {
   return new Promise((resolve) => {
     const ov = ensureOverlay();
     clear(ov);
@@ -179,10 +179,16 @@ export function alertDialog(title: string, message: string): Promise<void> {
       fontFamily: "-apple-system, system-ui, sans-serif",
     } }) as HTMLElement;
 
-    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "var(--dlg-title)" } }, [title]);
+    // An image (e.g. the About logo) switches the dialog to Qt's centred layout.
+    const centered = image ? { textAlign: "center" } : {};
+    if (image) dlg.appendChild(el("img", { src: image, alt: "", style: {
+      display: "block", margin: "0 auto 12px", maxWidth: "240px", maxHeight: "120px", objectFit: "contain",
+    } }));
+
+    const label = el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "var(--dlg-title)", ...centered } }, [title]);
     dlg.appendChild(label);
 
-    const msg = el("div", { style: { fontSize: "13px", color: "var(--dlg-text)", marginBottom: "16px", lineHeight: "1.4", whiteSpace: "pre-line" } }, [message]);
+    const msg = el("div", { style: { fontSize: "13px", color: "var(--dlg-text)", marginBottom: "16px", lineHeight: "1.4", whiteSpace: "pre-line", ...centered } }, [message]);
     dlg.appendChild(msg);
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
