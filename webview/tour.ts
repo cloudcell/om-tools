@@ -51,6 +51,8 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: "Click a pill to show only that channel's rules — Ctrl-click to combine; none selected shows all." },
   { id: "calc-flow", anchor: "view-area", place: "inside", title: "Calculation flow",
     text: "Changing an input recomputes every dependent cell in order — that dependency chain is the calculation flow." },
+  { id: "hardvalues", anchor: "grid", fallbackAnchor: "view-area", place: "inside", title: "Hard values",
+    text: "Typing into a cell sets a hard value — it overrides rules until cleared; start with = to write a rule. More specific rules win." },
   { id: "status", anchor: "engine-status", fallbackAnchor: "statusbar", place: "bottom", title: "Engine status",
     text: "The dot shows the live engine state; the status bar below tracks your selection and version." },
   { id: "help", anchor: "help-menu", place: "bottom", title: "That's it",

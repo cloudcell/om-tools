@@ -56,7 +56,7 @@ export class PivotBar {
     const frame = el("div", { class: "pc-frame" });
 
     const topLeft = el("div", { class: "pc-topleft drop-zone", "data-zone": "page", "data-tour": "pivot" });
-    const gridMount = el("div", { class: "pc-grid" });
+    const gridMount = el("div", { class: "pc-grid", "data-tour": "grid" });
     const pageRight = el("div", { class: "pc-pageright drop-zone", "data-zone": "col" });
     const bottom = el("div", { class: "pc-bottom drop-zone", "data-zone": "row" });
 
