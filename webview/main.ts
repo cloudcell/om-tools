@@ -9,7 +9,7 @@ const app = document.getElementById("app")!;
 mount(app, { transport: createTransport() }).catch((e) => {
   // textContent, not innerHTML: the message can carry text from the runtime or the model (T-049, DEV-08).
   const box = document.createElement("div");
-  box.style.cssText = "padding:24px;color:#d32f2f;font-family:system-ui";
+  Object.assign(box.style, { padding: "24px", color: "#d32f2f", fontFamily: "system-ui" });
   box.textContent = `OM Core GUI failed to start: ${String(e?.message || e)}`;
   app.replaceChildren(box);
 });

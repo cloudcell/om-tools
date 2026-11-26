@@ -24,7 +24,23 @@ const SELF = path.relative(process.cwd(), __filename).split(path.sep).join("/");
 const ALLOW_MARK = "check-sensitive: allow";
 const MAX_BYTES = 2 * 1024 * 1024;
 
-/** Paths that must never be committed. */
+/** A .npmrc is safe to commit when it carries no credential material.
+ *  Auth keys appear registry-scoped (`//host/:_authToken=v`) or top-level
+ *  (`_auth=v`, `_password=v`); a pure `${VAR}` value references the
+ *  environment — it is not a stored secret. */
+const NPMRC_AUTH_KEY =
+  /^\s*(\/\/\S*:\s*)?(_auth|_authtoken|_password|username|password|secret|token|certfile|keyfile)\s*=\s*(\S*)/i;
+const npmrcIsClean = (buf) => {
+  for (const line of buf.toString("utf8").split(/\r?\n/)) {
+    const m = line.match(NPMRC_AUTH_KEY);
+    if (m && !/^\$\{[^}]+\}$/.test(m[3])) return false;
+  }
+  return true;
+};
+
+/** Paths that must never be committed. `cleanIf` = content-based exemption:
+ *  the file may be committed only if the check proves it is the harmless
+ *  kind; unreadable/binary files fail closed. */
 const FORBIDDEN_PATHS = [
   { re: /^docs\//, why: "docs/ is kept out of the repository" },
   { re: /^(dist|out)\//, why: "build output" },
@@ -34,7 +50,7 @@ const FORBIDDEN_PATHS = [
   { re: /\.vsix$/, why: "packaged extension" },
   { re: /\.(pem|key|p12|pfx|jks|keystore)$/i, why: "key / certificate file" },
   { re: /(^|\/)id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$/, why: "SSH key" },
-  { re: /(^|\/)\.npmrc$/, why: "may contain an npm auth token" },
+  { re: /(^|\/)\.npmrc$/, why: "may contain an npm auth token", cleanIf: npmrcIsClean },
 ];
 
 /** Content rules. `skip` = paths the rule does not apply to. */
@@ -95,18 +111,20 @@ function main() {
   const findings = [];
 
   for (const file of files) {
-    for (const rule of FORBIDDEN_PATHS) {
-      if (rule.re.test(file)) findings.push(`${file}: forbidden path (${rule.why})`);
-    }
-    if (file === SELF) continue; // the rules themselves would match
-
-    let buf;
+    let buf = null;
     try {
       buf = readFile(mode, file);
     } catch {
-      continue; // deleted in working tree, submodule, etc.
+      // deleted in working tree, submodule, etc.
     }
-    if (buf.length > MAX_BYTES || buf.includes(0)) continue; // binary or huge
+    const readable = buf !== null && buf.length <= MAX_BYTES && !buf.includes(0);
+
+    for (const rule of FORBIDDEN_PATHS) {
+      if (!rule.re.test(file)) continue;
+      if (rule.cleanIf && readable && rule.cleanIf(buf)) continue;
+      findings.push(`${file}: forbidden path (${rule.why})`);
+    }
+    if (file === SELF || !readable) continue; // the rules themselves would match
 
     const lines = buf.toString("utf8").split(/\r?\n/);
     lines.forEach((line, i) => {

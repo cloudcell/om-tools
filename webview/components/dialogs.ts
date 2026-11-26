@@ -42,7 +42,7 @@ export function inputDialog(title: string, defaultValue = "", placeholder = ""):
     input.type = "text";
     input.value = defaultValue;
     input.placeholder = placeholder;
-    input.style.cssText = "width: 100%; box-sizing: border-box; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 16px;";
+    Object.assign(input.style, { width: "100%", boxSizing: "border-box", padding: "8px 12px", background: "var(--input-bg)", border: "1px solid var(--dlg-border)", borderRadius: "6px", fontSize: "13px", fontFamily: "inherit", marginBottom: "16px" });
     dlg.appendChild(input);
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
@@ -233,7 +233,7 @@ export function pickDialog(title: string, options: string[], defaultIndex = 0): 
     dlg.appendChild(label);
 
     const select = document.createElement("select") as HTMLSelectElement;
-    select.style.cssText = "width: 100%; box-sizing: border-box; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 16px;";
+    Object.assign(select.style, { width: "100%", boxSizing: "border-box", padding: "8px 12px", background: "var(--input-bg)", border: "1px solid var(--dlg-border)", borderRadius: "6px", fontSize: "13px", fontFamily: "inherit", marginBottom: "16px" });
     options.forEach((opt, i) => {
       const o = document.createElement("option");
       o.value = opt; o.textContent = opt;
@@ -368,7 +368,7 @@ export function formDialog(title: string, fields: FormField[], opts: { okLabel?:
     dlg.appendChild(el("div", { style: { fontSize: "13px", fontWeight: "600", marginBottom: "12px", color: "var(--dlg-title)" } }, [title]));
 
     const values: FormValues = {};
-    const ctl = "width: 100%; box-sizing: border-box; padding: 6px 10px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit;";
+    const ctl = { width: "100%", boxSizing: "border-box", padding: "6px 10px", background: "var(--input-bg)", border: "1px solid var(--dlg-border)", borderRadius: "6px", fontSize: "13px", fontFamily: "inherit" };
     const rows: { f: FormField; row: HTMLElement; sync?: () => void }[] = [];
     const refresh = () => {
       for (const r of rows) { r.sync?.(); r.row.style.display = !r.f.visibleIf || r.f.visibleIf(values) ? "" : "none"; }
@@ -381,14 +381,14 @@ export function formDialog(title: string, fields: FormField[], opts: { okLabel?:
         row.appendChild(lab);
         const input = document.createElement("input");
         input.type = "text"; input.value = f.value ?? ""; input.placeholder = f.placeholder ?? "";
-        input.style.cssText = ctl; input.dataset.key = f.key; input.setAttribute("aria-label", f.label);
+        Object.assign(input.style, ctl); input.dataset.key = f.key; input.setAttribute("aria-label", f.label);
         values[f.key] = input.value;
         input.addEventListener("input", () => { values[f.key] = input.value; refresh(); });
         row.appendChild(input);
       } else if (f.kind === "select") {
         row.appendChild(lab);
         const select = document.createElement("select");
-        select.style.cssText = ctl; select.dataset.key = f.key; select.setAttribute("aria-label", f.label);
+        Object.assign(select.style, ctl); select.dataset.key = f.key; select.setAttribute("aria-label", f.label);
         let shown = "";
         sync = () => {
           const list = typeof f.options === "function" ? f.options(values) : f.options;
@@ -497,7 +497,7 @@ export function optionsDialog(current: Required<UiOptions>, onResetTips?: () => 
 
     // — Aggregate sign —
     const signSelect = document.createElement("select");
-    signSelect.style.cssText = "box-sizing: border-box; padding: 4px 8px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit;";
+    Object.assign(signSelect.style, { boxSizing: "border-box", padding: "4px 8px", background: "var(--input-bg)", border: "1px solid var(--dlg-border)", borderRadius: "6px", fontSize: "13px", fontFamily: "inherit" });
     for (const c of AGGREGATE_SIGN_CHOICES) {
       const op = document.createElement("option");
       op.value = c.value;
@@ -652,7 +652,7 @@ export function browseDialog(opts: {
     nameInput.type = "text";
     nameInput.value = opts.mode === "save" ? (opts.defaultName ?? "") : "";
     nameInput.placeholder = opts.mode === "save" ? "File name" : "Select a file above";
-    nameInput.style.cssText = "width: 100%; box-sizing: border-box; padding: 7px 10px; background: var(--input-bg); border: 1px solid var(--dlg-border); border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 12px;";
+    Object.assign(nameInput.style, { width: "100%", boxSizing: "border-box", padding: "7px 10px", background: "var(--input-bg)", border: "1px solid var(--dlg-border)", borderRadius: "6px", fontSize: "13px", fontFamily: "inherit", marginBottom: "12px" });
     dlg.appendChild(nameInput);
 
     const btnRow = el("div", { style: { display: "flex", justifyContent: "flex-end", gap: "8px" } }) as HTMLElement;
@@ -763,7 +763,7 @@ export function shareSessionDialog(opts: {
       const box = el("div", { style: { display: "flex", gap: "6px" } });
       const input = document.createElement("input") as HTMLInputElement;
       input.type = "text"; input.value = value; input.readOnly = true;
-      input.style.cssText = "flex:1; box-sizing:border-box; padding:6px 10px; background:var(--input-bg); border:1px solid var(--dlg-border); border-radius:6px; font-size:12px; font-family:inherit;";
+      Object.assign(input.style, { flex: "1", boxSizing: "border-box", padding: "6px 10px", background: "var(--input-bg)", border: "1px solid var(--dlg-border)", borderRadius: "6px", fontSize: "12px", fontFamily: "inherit" });
       const copy = el("button", { style: { padding: "6px 12px", border: "1px solid var(--dlg-border)", borderRadius: "6px", background: "var(--dlg-btn-bg)", fontSize: "12px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" } }, ["Copy"]) as HTMLButtonElement;
       copy.addEventListener("click", () => {
         input.select();
@@ -779,7 +779,7 @@ export function shareSessionDialog(opts: {
       const input = document.createElement("input") as HTMLInputElement;
       input.type = "text";
       input.placeholder = placeholder;
-      input.style.cssText = "width:100%; box-sizing:border-box; padding:6px 10px; background:var(--input-bg); border:1px solid var(--dlg-border); border-radius:6px; font-size:12px; font-family:inherit; margin-bottom:8px;";
+      Object.assign(input.style, { width: "100%", boxSizing: "border-box", padding: "6px 10px", background: "var(--input-bg)", border: "1px solid var(--dlg-border)", borderRadius: "6px", fontSize: "12px", fontFamily: "inherit", marginBottom: "8px" });
       input.addEventListener("input", () => oninput(input.value.trim()));
       return input;
     };
