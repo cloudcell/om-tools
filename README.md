@@ -4,6 +4,8 @@
 
 # OM Core for VS Code
 
+**[Try Open Modeling in your browser](https://om.cloudcell.nz/)** — explore the browser-based edition without installing VS Code or creating an account. Model calculations run locally using WebAssembly.
+
 A grid GUI for [OM Core](https://github.com/cloudcell/om-core), a multidimensional
 modeling engine (dimensions, cubes, rules, views), inside VS Code.
 
