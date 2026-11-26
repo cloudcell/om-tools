@@ -108,3 +108,20 @@ jobs:
 
       - name: Publish to Visual Studio Marketplace (OIDC)
         run: npx --no-install vsce publish --oidc --packagePath om-tools.vsix
+
+      - name: Publish to Open VSX
+        # Non-blocking: a failure here must not fail the release (the VS
+        # Marketplace publish above already succeeded and cannot be
+        # retried for the same version). The cloudcell namespace is
+        # created automatically on first publish.
+        continue-on-error: true
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${OVSX_PAT:-}" ]; then
+            echo "::notice::OVSX_PAT secret not set — skipping Open VSX publish"
+            exit 0
+          fi
+          npx --no-install ovsx publish om-tools.vsix --pat "$OVSX_PAT"
