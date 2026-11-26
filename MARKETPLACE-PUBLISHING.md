@@ -55,10 +55,14 @@ Only published **non-prerelease** GitHub releases trigger publication. Pushes to
   `OVSX_PAT` repository secret — an access token from open-vsx.org, which
   requires an Eclipse account and a signed Publisher Agreement. The `cloudcell`
   namespace is created automatically on first publish. The step is
-  non-blocking: without the secret it is skipped, and a failure does not fail
-  the release (the VS Marketplace publish cannot be retried for the same
-  version) — re-publish manually with `npx ovsx publish <vsix> --pat <token>`
-  if it is ever skipped or fails.
+  non-blocking: a failure does not fail the release (the VS Marketplace
+  publish cannot be retried for the same version) — re-publish manually with
+  `npx ovsx publish <vsix> --pat <token>` if it ever fails. Open VSX also
+  supports **trusted publishing (OIDC)**: once the extension exists and a
+  trusted publisher is registered for `cloudcell.om-tools` pointing at this
+  repository and workflow (open-vsx.org extension settings), the step uses
+  `--trusted-publishing` automatically whenever `OVSX_PAT` is unset — remove
+  the secret after registration to switch to OIDC permanently.
 - The **first** successful publish cannot happen until the publisher account and Trusted Publishing policy have been created manually.
 
 Reference: https://code.visualstudio.com/api/working-with-extensions/publishing-extension

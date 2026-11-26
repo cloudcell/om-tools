@@ -120,8 +120,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "${OVSX_PAT:-}" ]; then
-            echo "::notice::OVSX_PAT secret not set — skipping Open VSX publish"
-            exit 0
+          if [ -n "${OVSX_PAT:-}" ]; then
+            npx --no-install ovsx publish om-tools.vsix --pat "$OVSX_PAT"
+          else
+            # OIDC trusted publishing (no stored token): works once a trusted
+            # publisher is registered for cloudcell.om-tools on open-vsx.org.
+            # Fails cleanly (absorbed by continue-on-error) until then.
+            npx --no-install ovsx publish om-tools.vsix --trusted-publishing
           fi
-          npx --no-install ovsx publish om-tools.vsix --pat "$OVSX_PAT"
