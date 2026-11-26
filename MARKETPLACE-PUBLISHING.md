@@ -58,11 +58,15 @@ Only published **non-prerelease** GitHub releases trigger publication. Pushes to
   non-blocking: a failure does not fail the release (the VS Marketplace
   publish cannot be retried for the same version) — re-publish manually with
   `npx ovsx publish <vsix> --pat <token>` if it ever fails. Open VSX also
-  supports **trusted publishing (OIDC)**: once the extension exists and a
-  trusted publisher is registered for `cloudcell.om-tools` pointing at this
-  repository and workflow (open-vsx.org extension settings), the step uses
-  `--trusted-publishing` automatically whenever `OVSX_PAT` is unset — remove
-  the secret after registration to switch to OIDC permanently.
+  supports **trusted publishing (OIDC)**: once the extension exists, register
+  a trusted publisher at *Settings → Trusted Publishers*
+  (`/user-settings/trusted-publishers`) — namespace `cloudcell`, provider
+  GitHub Actions, owner `cloudcell`, repository `om-tools`, workflow
+  `publish-vscode.yml`, environment blank — then remove the `OVSX_PAT` secret
+  and the step uses `--trusted-publishing` automatically. Keep the namespace
+  and `package.json` `publisher` case-identical (`cloudcell`): the registry
+  compares them case-sensitively (known limitation, openvsx#2279). See
+  https://github.com/eclipse-openvsx/openvsx/wiki/Trusted-Publishing
 - The **first** successful publish cannot happen until the publisher account and Trusted Publishing policy have been created manually.
 
 Reference: https://code.visualstudio.com/api/working-with-extensions/publishing-extension
