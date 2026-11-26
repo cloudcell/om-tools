@@ -1,5 +1,5 @@
 // Optional site chrome; no engine access or external scripts.
-const questions = [
+const questions: [string, string, string[]][] = [
     ['useful', 'Was the demonstration useful?', ['Yes', 'Somewhat', 'No']],
     ['clarity', 'How clear was the modeling approach?', ['Clear', 'Partly clear', 'Unclear']],
     ['relevance', 'Could you use this in your work?', ['Yes', 'Maybe', 'No']]
