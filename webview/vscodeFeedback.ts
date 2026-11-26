@@ -91,6 +91,8 @@ function showFeedback(event: {detail: {outcome: string; step: number}}) {
     dialog.showModal();
 }
 export function installFeedback() {
+    window.addEventListener('om-show-feedback', () => showFeedback({detail:{outcome:'not_applicable',step:0}}));
+    document.documentElement.dataset.omFeedbackAvailable = 'true';
     
     // Bridge the pinned GUI's existing tour controls without modifying vendor artifacts.
     // Capture before the GUI removes its callout; verify teardown after dispatch.
@@ -123,6 +125,6 @@ export function installFeedback() {
         if (!tour) return;
         recordStep(tour);
         if (e.key === 'Escape') afterTour(tour, 'cancelled');
-        else if (e.key === 'ArrowRight' && tour.querySelector('.om-tip-btn.primary')?.textContent.trim() === 'Done') afterTour(tour, 'completed');
+        else if (e.key === 'ArrowRight' && tour.querySelector('.om-tip-btn.primary')?.textContent?.trim() === 'Done') afterTour(tour, 'completed');
     }, true);
 }
