@@ -50,7 +50,15 @@ Only published **non-prerelease** GitHub releases trigger publication. Pushes to
 - The pipeline runs `npm ci`, typechecking, security checks, and `npm audit --audit-level=high` before publishing. Existing repository quality gates should additionally be required for merging to `main`.
 - Packaging uses the repository's `.vscodeignore`; the VSIX must contain the extension entry point, built webview, README, and license.
 - Do not merge unreviewed changes to the release workflow or allow untrusted users to create releases: a trusted publishing policy grants that workflow publishing authority.
-- Marketplace release is distinct from publishing to Open VSX (VSCodium). Open VSX requires its own publisher registration and workflow.
+- The release also publishes to **Open VSX** (the gallery used by Windsurf,
+  VSCodium, Devin, and other VS Code forks) in the same workflow. It needs the
+  `OVSX_PAT` repository secret — an access token from open-vsx.org, which
+  requires an Eclipse account and a signed Publisher Agreement. The `cloudcell`
+  namespace is created automatically on first publish. The step is
+  non-blocking: without the secret it is skipped, and a failure does not fail
+  the release (the VS Marketplace publish cannot be retried for the same
+  version) — re-publish manually with `npx ovsx publish <vsix> --pat <token>`
+  if it is ever skipped or fails.
 - The **first** successful publish cannot happen until the publisher account and Trusted Publishing policy have been created manually.
 
 Reference: https://code.visualstudio.com/api/working-with-extensions/publishing-extension
