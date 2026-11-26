@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.13
+
+- **Tour feedback dialog**: opt-in post-tour feedback form posting to
+  Google Forms — isolated `webview/vscodeFeedback.ts` (no engine access,
+  no external scripts), Help menu entry, build commit embedded via
+  `OM_FEEDBACK_COMMIT`.
+- `.omz` hardening: import-boundary caps (entry/member/total limits),
+  usize verification, compressed-size bounds (a-08-0d D.3.3).
+- CSP `style-src` tightening: `cssText` strings replaced with
+  `Object.assign(style, …)`; `.npmrc` audit allows token-free files,
+  `min-release-age=7` added.
+
 ## 0.1.12
 
 - **Contextual first-use tips + guided tour**: tips (`webview/tips.ts`)

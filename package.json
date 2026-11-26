@@ -2,7 +2,7 @@
   "name": "om-tools",
   "displayName": "OM Core",
   "description": "Multidimensional modeling engine GUI for OM Core — connects to the om-core runtime.",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "publisher": "cloudcell",
   "license": "AGPL-3.0-or-later",
   "icon": "media/om-core-icon.png",
