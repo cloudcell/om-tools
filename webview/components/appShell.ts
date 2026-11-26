@@ -767,6 +767,9 @@ export class AppShell {
       ...(this.store.api.supportsNativeExternalLinks
         ? [{ icon: msym("water_drop"), label: "Welcome Screen…", fn: () => window.dispatchEvent(new CustomEvent("om-show-welcome")) } as MenuItem]
         : []),
+      ...(document.documentElement.dataset.omFeedbackAvailable === "true"
+        ? [{ icon: msym("comment"), label: "Send Feedback…", fn: () => window.dispatchEvent(new CustomEvent("om-show-feedback")) } as MenuItem]
+        : []),
       { icon: msym("menu_book"), label: "Take the Tour…", fn: () => startTour() },
       { icon: msym("info"), label: "Show Tips", checked: tipsEnabled(), fn: () => setTipsEnabled(!tipsEnabled()) },
       { icon: msym("refresh"), label: "Reset Tips…", fn: () => resetTips() },
