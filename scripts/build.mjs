@@ -38,6 +38,8 @@ function omBuildString(dir, { semverFile = "package.json", counter = ".build_cou
 
 const extVersion = omBuildString(".");
 const guiVersion = omBuildString("webview");
+let feedbackCommit = "unavailable";
+try { feedbackCommit = execSync("git rev-parse HEAD", {stdio:["pipe","pipe","ignore"]}).toString().trim(); } catch { /* development archive */ }
 const guiDefine = { OM_GUI_VERSION: JSON.stringify(guiVersion) };
 
 await build({
@@ -48,7 +50,7 @@ await build({
 });
 await build({
   entryPoints: ["webview/main.ts"], bundle: true, platform: "browser", format: "iife",
-  define: guiDefine, loader: { ".png": "dataurl" }, outfile: "dist/webview.js",
+  define: {...guiDefine, OM_FEEDBACK_COMMIT: JSON.stringify(feedbackCommit)}, loader: { ".png": "dataurl" }, outfile: "dist/webview.js",
 });
 await build({
   // ESM variant of the om-gui library: exports mount()/transports, no self-mount.
