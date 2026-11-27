@@ -7,7 +7,7 @@ import { el, clear, ICONS, NOT_IN_MVP_TITLE } from "../dom";
 import { materialIconSvg as msym, brandIconSvg, type MaterialIcon } from "../menuIcons";
 import { tipsEnabled, setTipsEnabled, resetTips } from "../tips";
 import { startTour } from "../tour";
-import { guiVersionShort } from "../version";
+import { guiVersion, guiVersionShort } from "../version";
 import logoPng from "../assets/om-core-logo.png";
 import { ModelBrowser } from "./modelBrowser";
 import { MultilevelGrid } from "./multilevelGrid";
@@ -756,8 +756,25 @@ export class AppShell {
 
   private devMenuItems(): MenuItem[] {
     return [
+      { icon: msym("note_add"), label: "Save Diagnostics Report…", fn: () => void this.saveDiagnosticsReport() },
       { icon: msym("bug_report"), label: "GUI Debug Tooltips", fn: () => alertDialog("Debug Tooltips", "Debug tooltips toggle pending."), ...NOT_IN_MVP },
     ];
+  }
+
+  /** Developer → Save Diagnostics Report… — the host assembles a scrubbed
+   *  report (names hashed, paths masked); the save dialog picks the file.
+   *  Always enabled: a partial report while disconnected is when it matters. */
+  private async saveDiagnosticsReport() {
+    const rep = await this.store.api.getDiagnosticsReport(guiVersion).catch(() => null);
+    if (!rep?.text) {
+      await alertDialog("Diagnostics Report", "This host does not offer diagnostics reports.");
+      return;
+    }
+    const res = await this.store.api.saveTextFile(
+      rep.suggestedName || `OM_Diagnostics_${timestamp()}.log`, rep.text,
+      { "Diagnostics log": ["log", "txt"] }).catch(() => null);
+    if (res?.downloaded)
+      await alertDialog("Saved to Downloads", "Your browser doesn't support choosing a save location — the report was downloaded to your default Downloads folder.");
   }
 
   private helpMenuItems(): MenuItem[] {

@@ -84,7 +84,11 @@ export class EmbeddedBackend implements EngineBackend {
     onAnyEvent?: (env: EngineEvent) => void;
 
     constructor(
-        private opts: { workerPath: string; wasmPath: string; stateBytes?: number; scratchBytes?: number },
+        private opts: {
+            workerPath: string; wasmPath: string; stateBytes?: number; scratchBytes?: number;
+            /** Worker stdout/stderr, line-buffered (engine log + session diagnostics). */
+            onLog?: (line: string) => void;
+        },
     ) {}
 
     get isConnected() { return !this.dead && this.worker !== null; }
@@ -100,7 +104,14 @@ export class EmbeddedBackend implements EngineBackend {
                 stateBytes: this.opts.stateBytes,
                 scratchBytes: this.opts.scratchBytes,
             },
+            // Private streams: the worker's console.* no longer pipes through to
+            // the extension host — we own the lines (diagnostics ring + output
+            // channel) instead of losing them.
+            stdout: true,
+            stderr: true,
         });
+        this.pipeLines(this.worker.stdout);
+        this.pipeLines(this.worker.stderr);
         this.ready = new Promise<void>((resolve, reject) => {
             this.worker!.on("message", (msg: any) => {
                 if (msg?.ready) { resolve(); return; }
@@ -132,6 +143,22 @@ export class EmbeddedBackend implements EngineBackend {
             });
         });
         return this.ready;
+    }
+
+    /** Accumulate stream chunks into whole lines for opts.onLog. */
+    private pipeLines(stream: NodeJS.ReadableStream | null) {
+        if (!stream) return;
+        let buf = "";
+        stream.on("data", (c: Buffer) => {
+            buf += c.toString("utf8");
+            let i: number;
+            while ((i = buf.indexOf("\n")) >= 0) {
+                const line = buf.slice(0, i);
+                buf = buf.slice(i + 1);
+                if (line) this.opts.onLog?.(line);
+            }
+        });
+        stream.on("end", () => { if (buf.trim()) this.opts.onLog?.(buf); });
     }
 
     /** Respawn the worker if it died unexpectedly; returns true when a fresh

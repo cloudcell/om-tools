@@ -8,6 +8,7 @@ import { GUI_BUTTON_KEY, RUNTIME_BUTTON_KEY, StatusSnapshot, UV_INSTALL_URL, but
 import { StatusPanel } from "./statusPanel";
 import { OmMcpServer, startOmMcpServer } from "./mcpServer";
 import { EmbeddedBackend, resolveTsRuntime } from "./backend";
+import { DiagRing, formatDiagnosticsReport } from "../shared/diagnostics";
 import { EXAMPLE_SCHEME, resolveExampleRef, type ExampleCatalog } from "./fileParams";
 import catalogData from "../shared/catalog.json";
 import { isZip, readBundle } from "../shared/omz";
@@ -209,6 +210,12 @@ async function pickAndPersistOmCorePath(): Promise<string> {
 }
 
 /** The extension's output channel (engine/MCP logs). */
+/** Diagnostics capture (Developer → Save Diagnostics Report…): engine lines
+ *  (worker stdout/stderr) and host-side lifecycle/failures. Always-on, bounded,
+ *  in-memory — the report scrubs them before anything is written. */
+const engineRing = new DiagRing(2000);
+const hostRing = new DiagRing(1000);
+
 let engineOutput: vscode.OutputChannel | null = null;
 function outputChannel(): vscode.OutputChannel {
   if (!engineOutput) engineOutput = vscode.window.createOutputChannel("OM Core");
@@ -452,7 +459,18 @@ async function launchRuntime(): Promise<TransportEndpoint> {
   return ep;
 }
 
-function connect(): Promise<void> {
+function connect(force = false): Promise<void> {
+  // Idempotent while connected: only Reconnect (force) may replace a live
+  // connection. Without this, any second connect() — Open GUI after Start
+  // Runtime, an MCP call, a second Start click — disposes a healthy embedded
+  // engine, and a worker respawn silently loses the in-memory workspace.
+  if (!force && currentSessionId && activeConn()?.isConnected) {
+    const m = lastStatus?.status === "connected" && lastStatus.message
+      ? lastStatus.message
+      : `Connected · session ${currentSessionId.slice(0, 8)}`;
+    sendStatus("connected", m);
+    return Promise.resolve();
+  }
   if (!connecting) {
     connecting = openConnection()
       .catch((e: any) => {
@@ -488,17 +506,21 @@ async function openConnection(): Promise<void> {
       ...tsPaths,
       stateBytes: cfg.get<number>("engineStateBytes") || undefined,
       scratchBytes: cfg.get<number>("engineScratchBytes") || undefined,
+      onLog: (line) => { engineRing.push(line); outputChannel().appendLine(line); },
     });
+    hostRing.push(`embedded worker spawned (${tsPaths.workerPath})`);
     eb.onWorkerExit = (code) => {
       // Keep `embedded`: the backend respawns on next request (freshRuntime
       // surfaces to the webview). Nulling it would strand the GUI with a
       // dead conn and no recovery path.
       if (embedded === eb) currentSessionId = null;
+      hostRing.push(`embedded worker exited (code ${code})`);
       sendStatus("error", `Embedded engine stopped (code ${code}) — unsaved workspace was lost. It respawns on next action or Start Runtime.`);
     };
     eb.onRespawn = () => {
       currentSessionId = eb.session;
       runtimeReplaced = false;
+      hostRing.push("embedded worker respawned — fresh engine, workspace empty");
       sendStatus("connected", "Embedded engine restarted — workspace is fresh", { freshRuntime: true });
     };
     eb.onAnyEvent = (env) => postToWebview({ type: "event", envelope: env });
@@ -514,6 +536,7 @@ async function openConnection(): Promise<void> {
   if (client) { try { client.close(); } catch {} }
   if (embedded) { try { await embedded.dispose(); } catch {} embedded = null; }
   client = new EngineClient(ep);
+  hostRing.push(`socket backend connecting: ${endpointToString(ep)}`);
   const thisClient = client;
   client.on("disconnect", () => {
     sendStatus("disconnected", thisClient.lastError ? `Runtime connection closed: ${thisClient.lastError}` : "Runtime connection lost", { hint: DISCONNECTED_HINT });
@@ -619,6 +642,56 @@ function updateStatusBar(status: string, message?: string) {
   statusBar.tooltip = `OM Core ${BUILD_INFO} — ${status}${message ? ": " + message : ""}`;
 }
 
+/** Engine diagnostics gathered into the report — each is best-effort. */
+const DIAG_QUERIES: { id: string; params: Record<string, any> }[] = [
+  { id: "diagnostics_engine_backend", params: {} },
+  { id: "diagnostics_dirty_count", params: {} },
+  { id: "diagnostics_dependency_tracking_state", params: {} },
+  { id: "diagnostics_dependency_metrics", params: {} },
+  { id: "diagnostics_rule_eval_profile", params: { top_n: 10 } },
+  { id: "diagnostics_multithread_config", params: {} },
+];
+
+/** All user-facing names (dims + items + cubes + views) — the scrubber's
+ *  pseudonym dictionary. Best-effort: whatever queries answer. */
+async function collectReportNames(conn: EngineClient | EmbeddedBackend): Promise<string[]> {
+  const names = new Set<string>();
+  const add = (v: unknown) => { if (typeof v === "string" && v) names.add(v); };
+  try {
+    const dl = await conn.query("dimension_list", {});
+    for (const d of dl?.dimensions ?? []) {
+      add(d.id); add(d.name);
+      for (const it of d.item_list ?? []) { add(it.id); add(it.name); }
+    }
+  } catch {}
+  try {
+    const cl = await conn.query("cube_list", {});
+    for (const c of cl?.cubes ?? []) { add(c.id); add(c.name); }
+  } catch {}
+  try {
+    const vl = await conn.query("view_list", {});
+    for (const vw of vl?.views ?? []) { add(vw.id); add(vw.name); }
+  } catch {}
+  return [...names];
+}
+
+/** The exact omCore.* keys the report may list — an explicit whitelist, never
+ *  a config dump (a-08-0d). Path values are masked by the formatter. */
+function reportSettings(cfg: vscode.WorkspaceConfiguration): Record<string, unknown> {
+  return {
+    "omCore.engineMode": cfg.get("engineMode"),
+    "omCore.runtimeEndpoint": cfg.get("runtimeEndpoint"),
+    "omCore.omCorePath": cfg.get("omCorePath"),
+    "omCore.showSystemElements": cfg.get("showSystemElements"),
+    "omCore.mcp.enabled": cfg.get("mcp.enabled"),
+    "omCore.mcp.port": cfg.get("mcp.port"),
+    "omCore.engineStateBytes": cfg.get("engineStateBytes"),
+    "omCore.engineScratchBytes": cfg.get("engineScratchBytes"),
+    "omCore.enginePreload": cfg.get("enginePreload"),
+    "omCore.tsRuntimePath": cfg.get("tsRuntimePath"),
+  };
+}
+
 function postToWebview(msg: HostToWebview) {
   if (panel) panel.webview.postMessage(msg);
 }
@@ -626,7 +699,7 @@ function postToWebview(msg: HostToWebview) {
 async function handleRequest(req: HostRequest): Promise<HostToWebview> {
   try {
     const conn = activeConn();
-    if (!conn && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState", "openFeedback", "openExternal", "readTextFile", "saveTextFile"].includes(req.method)) {
+    if (!conn && !["getConfig", "startRuntime", "reconnect", "setTitle", "saveUiState", "openFeedback", "openExternal", "readTextFile", "saveTextFile", "getDiagnosticsReport"].includes(req.method)) {
       return { type: "response", id: req.id, ok: false, error: "not connected" };
     }
     switch (req.method) {
@@ -670,11 +743,50 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
           }
         }
         const r = await conn!.send(req.params!.command_id, params);
+        if (!r.ok) hostRing.push(`command ${req.params!.command_id} failed: ${r.error}`);
         return { type: "response", id: req.id, ok: r.ok, data: r.data, error: r.error };
       }
       case "query": {
-        const data = await conn!.query(req.params!.query_id, req.params!.params || {});
-        return { type: "response", id: req.id, ok: true, data };
+        try {
+          const data = await conn!.query(req.params!.query_id, req.params!.params || {});
+          return { type: "response", id: req.id, ok: true, data };
+        } catch (e: any) {
+          hostRing.push(`query ${req.params!.query_id} failed: ${String(e?.message || e)}`);
+          throw e;
+        }
+      }
+      case "getDiagnosticsReport": {
+        const guiVersion = typeof req.params?.gui_version === "string" ? req.params.gui_version : undefined;
+        const cfg = vscode.workspace.getConfiguration("omCore");
+        const diagnostics: Record<string, any> = {};
+        if (conn) {
+          for (const q of DIAG_QUERIES) {
+            try { diagnostics[q.id] = await conn.query(q.id, q.params); }
+            catch (e: any) { diagnostics[q.id] = { error: String(e?.message || e) }; }
+          }
+        }
+        const embeddedMode = useEmbedded();
+        const report = formatDiagnosticsReport({
+          host: "vscode-extension",
+          versions: {
+            ext: BUILD_INFO,
+            gui: guiVersion,
+            eng: conn ? await conn.query("engine_version", {}).catch(() => undefined) : undefined,
+            tsr: conn ? await conn.query("runtime_version", {}).catch(() => undefined) : undefined,
+          },
+          endpoint: embeddedMode ? "wasm://embedded" : endpointToString(defaultEndpoint()),
+          mode: embeddedMode ? "embedded" : "socket",
+          platform: `${process.platform} ${process.arch} node ${process.version}`,
+          sessionId: currentSessionId ?? undefined,
+          connected: !!conn,
+          settings: reportSettings(cfg),
+          diagnostics,
+          lifecycle: hostRing.all(),
+          log: engineRing.all(),
+          externalEngineLog: embeddedMode ? null : "engine log lives in the external om-core runtime — see log/engine.log under omCore.omCorePath",
+          names: conn ? await collectReportNames(conn).catch(() => []) : [],
+        });
+        return { type: "response", id: req.id, ok: true, data: report };
       }
       case "subscribe": {
         const topic = req.params!.topic;
@@ -707,7 +819,7 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
       }
       case "startRuntime": {
         if (useEmbedded()) {
-          if (!embedded) await openConnection();
+          if (!embedded?.isConnected) await openConnection();
           return { type: "response", id: req.id, ok: true, data: { endpoint: "wasm://embedded" } };
         }
         const ep = await startRuntimeProcess();
@@ -795,9 +907,20 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         const suggested = typeof p.suggestedName === "string" && p.suggestedName.trim().length > 0
           && !/[\\/:*?"<>|\x00-\x1f]/.test(p.suggestedName)
           ? p.suggestedName : (isBin ? `OM_Workspace_${ts}.omz` : "session.omsession.json");
+        // Caller-supplied dialog filters, validated (label → clean extensions).
+        const customFilters = (() => {
+          const f = p.filters;
+          if (!f || typeof f !== "object" || Array.isArray(f)) return null;
+          const out: Record<string, string[]> = {};
+          for (const [k, exts] of Object.entries(f).slice(0, 4)) {
+            const clean = (Array.isArray(exts) ? exts : []).filter((e) => typeof e === "string" && /^[a-z0-9]{1,8}$/i.test(e)).slice(0, 6);
+            if (typeof k === "string" && clean.length) out[k.slice(0, 40)] = clean;
+          }
+          return Object.keys(out).length ? out : null;
+        })();
         const uri = await vscode.window.showSaveDialog({
           defaultUri: vscode.Uri.joinPath(defaultDirUri(), suggested),
-          filters: isBin ? { "OM Bundle": ["omz"] } : { "OM Session": ["omsession.json", "json"] },
+          filters: customFilters ?? (isBin ? { "OM Bundle": ["omz"] } : { "OM Session": ["omsession.json", "json"] }),
         });
         if (!uri) return { type: "response", id: req.id, ok: true, data: { path: null } };
         await fs.promises.writeFile(uri.fsPath, isBin ? Buffer.from(p.bytesB64, "base64") : p.text, isBin ? undefined : "utf8");
@@ -853,8 +976,12 @@ export function activate(context: vscode.ExtensionContext) {
         if (useEmbedded()) {
           // There is nothing to launch: "starting" the embedded engine IS
           // opening the connection — it spawns the wasm worker on demand.
-          await openConnection();
-          vscode.window.showInformationMessage("OM Core embedded engine started.");
+          // Guarded: a second Start must not dispose a live engine (respawn
+          // loses the workspace). A crashed worker reports !isConnected and
+          // gets a fresh engine here.
+          const running = embedded?.isConnected;
+          if (!running) await openConnection();
+          vscode.window.showInformationMessage(running ? "OM Core embedded engine is already running." : "OM Core embedded engine started.");
         } else {
           await startRuntimeProcess();
           // A GUI tab that is open but not connected (the runtime was stopped or died) comes back to life,
@@ -889,7 +1016,7 @@ export function activate(context: vscode.ExtensionContext) {
           : "OM Tools did not start the running om-core runtime, so it was not stopped; the GUI is disconnected from it."));
     }),
     vscode.commands.registerCommand("omCore.reconnect", async () => {
-      try { await connect(); vscode.window.showInformationMessage("OM Core reconnected."); } catch (e: any) { vscode.window.showErrorMessage(`Reconnect failed: ${e?.message || e}`); }
+      try { await connect(true); vscode.window.showInformationMessage("OM Core reconnected."); } catch (e: any) { vscode.window.showErrorMessage(`Reconnect failed: ${e?.message || e}`); }
       refreshPanel();
     }),
     vscode.commands.registerCommand("omCore.refreshStatus", () => statusPanel?.refresh()),
