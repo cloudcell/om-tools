@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.21
+
+- **Engine**: vendored wasm resynced to zig `1734a32` — persisted
+  `col_widths` follow the column on reorder; provenance verified.
+- Grid: `colWidths` re-seeds when the engine's persisted map changes.
+
 ## 0.1.20
 
 - **Engine**: vendored wasm resynced to zig `68ea4b8` —
