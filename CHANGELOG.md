@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.16
+
+- **Engine**: vendored wasm resynced to zig `1460e04` — quadratic-memory
+  fix and unsigned wasm pointer corrections, provenance verified.
+
 ## 0.1.15
 
 - Docs: `cloudcell.om-tools` on both the VS Code Marketplace and Open VSX
