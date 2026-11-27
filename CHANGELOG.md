@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.15
+
+- Docs: `cloudcell.om-tools` on both the VS Code Marketplace and Open VSX
+  (identical vsix); exercised daily on Devin Desktop/Windsurf, verified
+  on VS Code. Per-editor MCP discovery documented, plus the fixed-port /
+  shared-runtime caveat.
+- First release published to Open VSX via OIDC trusted publishing — no
+  stored token.
+
 ## 0.1.14
 
 - **Per-window MCP discovery**: on bind, each window writes its own
