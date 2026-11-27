@@ -518,14 +518,8 @@ function createEngineSession(om, hooks) {
     },
     async workspace_summary() {
       const ws = await getWs();
-      let defView = null;
-      try {
-        const r = await rpcResult("resolve_default_view");
-        defView = r?.view_id ?? r ?? null;
-      } catch {
-      }
       return {
-        saved_default_view_id: defView,
+        saved_default_view_id: ws.saved_default_view_id ?? null,
         dimension_ids: Object.keys(ws.dimensions ?? {}).sort((a, b) => a === "@" ? -1 : b === "@" ? 1 : 0),
         cube_ids: Object.keys(ws.cubes ?? {}),
         view_ids: Object.keys(ws.views ?? {})
