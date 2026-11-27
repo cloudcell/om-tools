@@ -26,8 +26,20 @@ Nothing else. Git and [uv](https://docs.astral.sh/uv/) are needed only for
 
 ## Install
 
-Download `om-tools-<version>.vsix` from the
-[Releases](https://github.com/cloudcell/om-tools/releases) page, then in VS Code:
+Search for **OM Core** (`cloudcell.om-tools`) in the editor's Extensions view:
+
+- **VS Code** — published to the VS Code Marketplace
+- **Windsurf, Devin, VSCodium and other VS Code forks** — published to
+  [Open VSX](https://open-vsx.org/extension/cloudcell/om-tools), the gallery
+  those editors query
+
+Both galleries ship the identical `.vsix`. The extension is developed and
+exercised daily on Devin Desktop (a Windsurf-derived editor) and verified on
+VS Code; other Open VSX editors should work but are not regularly tested —
+please report anything odd.
+
+You can also download `om-tools-<version>.vsix` from the
+[Releases](https://github.com/cloudcell/om-tools/releases) page and install it by hand:
 **Extensions** panel → **…** menu (top right of the panel) → **Install from VSIX…** → choose the file.
 
 Or from a terminal, in the folder with the downloaded file:
@@ -177,13 +189,17 @@ Two tools:
 - `om_query({query_id, params})` — any om-core query (`dimension_list`, `view_list`, `cell_range`, `selection_stats`, `rule_target_resolve`, …).
 - `om_command({command_id, params})` — any om-core command (`create_dimension`, `set_cell_hardvalue_by_addr`, `set_rule`, `run_recalculation`, `undo`, …). The tool description lists required-parameter gotchas.
 
-On VS Code ≥ 1.102 the extension registers the server automatically — Copilot agent mode sees the `om_query`/`om_command` tools after the one-time consent prompt. On older versions or other clients, run **OM Core: MCP Server Info** to copy the URL or a `.vscode/mcp.json` snippet:
+How your agent discovers the server depends on the editor — each window always gets its own server and its own runtime:
+
+- **VS Code ≥ 1.102** — registered automatically via the MCP provider API; Copilot agent mode sees the `om_query`/`om_command` tools after the one-time consent prompt.
+- **Devin / Windsurf** — those agents read project-scoped MCP config, so the extension writes the window's bound URL into `.devin/mcp_config.local.json` in your workspace on every start (removed again on close; the file is gitignored). New agent sessions in that window pick up the server automatically.
+- **Other clients / older versions** — run **OM Core: MCP Server Info** to copy the URL or a `.vscode/mcp.json` snippet:
 
 ```json
 { "servers": { "om-core": { "type": "http", "url": "http://127.0.0.1:<port>/mcp" } } }
 ```
 
-The server binds localhost only, on an ephemeral port by default, and answers only `POST /mcp` — the same local-only/no-auth exposure class as the runtime's own socket. While no runtime is connected, the tools return a "not connected" error rather than failing calls. `omCore.mcp.enabled: false` closes the listener.
+The server binds localhost only, on an ephemeral port by default, and answers only `POST /mcp` — the same local-only/no-auth exposure class as the runtime's own socket. Leave `omCore.mcp.port` at `0`: a fixed port can only be bound by one window, so every window's agents would land on that single window's runtime. While no runtime is connected, the tools return a "not connected" error rather than failing calls. `omCore.mcp.enabled: false` closes the listener.
 
 ## Not available in this preview
 
