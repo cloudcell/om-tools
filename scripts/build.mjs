@@ -42,7 +42,7 @@ const extVersion = omBuildString(".");
 const guiVersion = omBuildString("webview");
 let feedbackCommit = "unavailable";
 try { feedbackCommit = execSync("git rev-parse HEAD", {stdio:["pipe","pipe","ignore"]}).toString().trim(); } catch { /* development archive */ }
-const guiDefine = { OM_GUI_VERSION: JSON.stringify(guiVersion) };
+const guiDefine = { OM_GUI_VERSION: JSON.stringify(guiVersion), OM_GUI_GITSHA: JSON.stringify(feedbackCommit) };
 
 await build({
   entryPoints: ["src/extension.ts"], bundle: true, platform: "node", format: "cjs",

@@ -1,6 +1,6 @@
 import { Store } from "../state";
 import { el } from "../dom";
-import { guiVersion, guiVersionShort, shortForm } from "../version";
+import { guiVersion, guiVersionShort, guiGitSha, shortForm } from "../version";
 
 /** StatusBar — bottom bar showing focus path, cell address, nav mode, selection stats.
  *  Mirrors lib_gui/app.py status bar. The stats widget is the Qt dropdown button
@@ -107,7 +107,7 @@ export class StatusBar {
         `gui ${guiVersion}`,
         `tsr ${s.tsRuntimeVersion || "unknown"}`,
         `eng ${s.engineVersion || "unknown"}`,
-        ...(srcCommit() ? [`git ${srcCommit()}`] : []),
+        ...(srcCommit() ? [`git ${guiGitSha || srcCommit()}`] : []),
       ].join("\n");
     };
     const showVersions = () => {
