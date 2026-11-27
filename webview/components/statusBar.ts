@@ -107,7 +107,11 @@ export class StatusBar {
     };
     const showVersions = () => {
       const eng = this.store.state.engineVersion;
-      version.textContent = `gui ${guiVersionShort}${eng ? ` · eng ${shortForm(eng)}` : ""}`;
+      // The webview's own git7 = the om-tools source commit this build came
+      // from — called out explicitly so a screenshot identifies the repo
+      // state without reading the build strings.
+      const srcCommit = guiVersion.split("-").find((p) => /^[0-9a-f]{7}$/.test(p)) ?? "";
+      version.textContent = `gui ${guiVersionShort}${eng ? ` · eng ${shortForm(eng)}` : ""}${srcCommit ? ` · git ${srcCommit}` : ""}`;
       version.title = `${fullForms()}\n(click to copy)`;
     };
     const copyVersions = () => {
