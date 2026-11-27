@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.23
+
+- Status-bar version chip now shows the host repo's git7 source commit;
+  full sha in the tooltip and click-to-copy payload, `+dirty` stamped
+  when the tree isn't clean at build time.
+- `check:sensitive` extended to block OM model/workspace files.
+- Grid no longer blanks to "Loading view…" on reload.
+
 ## 0.1.22
 
 - Grid: selection restored after a row/column drag now persists through
