@@ -278,8 +278,24 @@ export class MultilevelGrid {
 
   // ---- Build grid entries from view data ----
   private widthsViewId: string | null = null;
+  private seededWidths = "";
+  private seededRowWidths = "";
   private buildGrid(v: any) {
-    if (this.widthsViewId !== v.viewId) { this.widthsViewId = v.viewId; this.colWidths = { ...v.colWidths }; this.rowLevelWidths = { ...v.rowHeaderWidths }; }
+    // Re-seed when the view changes or the engine's persisted map changes
+    // (e.g. a column reorder remaps col_widths server-side). Locally-dragged
+    // widths aren't in seededWidths yet, so a mid-resize refresh whose server
+    // map still matches the last seed won't clobber the in-flight edit.
+    const wSig = JSON.stringify(v.colWidths ?? {});
+    const rSig = JSON.stringify(v.rowHeaderWidths ?? {});
+    if (this.widthsViewId !== v.viewId || wSig !== this.seededWidths) {
+      this.widthsViewId = v.viewId;
+      this.seededWidths = wSig;
+      this.colWidths = { ...v.colWidths };
+    }
+    if (rSig !== this.seededRowWidths) {
+      this.seededRowWidths = rSig;
+      this.rowLevelWidths = { ...v.rowHeaderWidths };
+    }
     this.rowKeys = v.rowKeys;
     this.colKeys = v.colKeys;
     this.cells = v.cells.cells;
