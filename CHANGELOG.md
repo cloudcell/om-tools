@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.17
+
+- **Diagnostics report** (Developer → Save Diagnostics Report): gathers
+  engine diagnostics, host lifecycle events, and bounded engine log into
+  a scrubbed report — names are salted hashes, values are type tags,
+  paths masked, settings whitelisted.
+- `connect()` is now idempotent while connected — a second connect (Open
+  GUI after Start Runtime, an MCP call, a second Start click) no longer
+  disposes a healthy embedded engine and silently loses the workspace.
+
 ## 0.1.16
 
 - **Engine**: vendored wasm resynced to zig `1460e04` — quadratic-memory
