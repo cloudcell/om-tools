@@ -28,12 +28,14 @@ function nextSeq(counterPath) {
 // The standard OM build string (docs/versioning.md). `dir` is the component's
 // repo root: its package.json supplies the semver, its .build_counter supplies
 // the sequence, its HEAD supplies git7.
+function utcStamp(d = new Date()) {
+  const p = (v, w = 2) => String(v).padStart(w, "0");
+  return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}-${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}`;
+}
+
 function omBuildString(dir, { semverFile = "package.json", counter = ".build_counter", mode = "REL" } = {}) {
   const semver = JSON.parse(readFileSync(`${dir}/${semverFile}`, "utf8")).version;
-  const d = new Date();
-  const p = (v, w = 2) => String(v).padStart(w, "0");
-  const stamp = `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}-${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}`;
-  return `${semver}-${stamp}-${git7(dir)}-${mode}-${toolchain}-b${nextSeq(`${dir}/${counter}`)}`;
+  return `${semver}-${utcStamp()}-${git7(dir)}-${mode}-${toolchain}-b${nextSeq(`${dir}/${counter}`)}`;
 }
 
 const extVersion = omBuildString(".");
@@ -93,23 +95,45 @@ if (existsSync(`${tsRuntimeDir}/src/engineWorker.ts`)) {
   chmodSync("dist/tsEngineServer.cjs", 0o755);
   tsBundled = true;
 } else if (existsSync(`${tsRuntimeDir}/dist/engineWorker.cjs`)) {
-  // Checkout without sources — reuse its prebuilt artifacts.
-  copyFileSync(`${tsRuntimeDir}/dist/engineWorker.cjs`, "dist/engineWorker.cjs");
+  // Checkout without sources — reuse its prebuilt artifacts. ts_runtime's own
+  // dist build never defines TS_RUNTIME_BUILD, so re-bundle with the stamp —
+  // a raw copy reports runtime_version null and the status bar shows
+  // "tsr unknown" (same for the vendored branch below).
+  tsrVersion = omBuildString(tsRuntimeDir);
+  await build({
+    entryPoints: [`${tsRuntimeDir}/dist/engineWorker.cjs`], bundle: true, platform: "node", format: "cjs",
+    define: { TS_RUNTIME_BUILD: JSON.stringify(tsrVersion) }, outfile: "dist/engineWorker.cjs",
+  });
   if (existsSync(`${tsRuntimeDir}/dist/tsEngineServer.cjs`)) {
-    copyFileSync(`${tsRuntimeDir}/dist/tsEngineServer.cjs`, "dist/tsEngineServer.cjs");
+    await build({
+      entryPoints: [`${tsRuntimeDir}/dist/tsEngineServer.cjs`], bundle: true, platform: "node", format: "cjs",
+      define: { TS_RUNTIME_BUILD: JSON.stringify(tsrVersion) }, banner: { js: "#!/usr/bin/env node" },
+      outfile: "dist/tsEngineServer.cjs",
+    });
     chmodSync("dist/tsEngineServer.cjs", 0o755);
   }
   tsBundled = true;
 } else if (existsSync("engine/engineWorker.cjs")) {
   // No checkout (CI, contributors) — fall back to the vendored build in
-  // engine/ (refresh it with tools/sync-engine.sh).
-  copyFileSync("engine/engineWorker.cjs", "dist/engineWorker.cjs");
+  // engine/ (refresh it with tools/sync-engine.sh). Re-bundle with a VND-mode
+  // stamp derived from engine/VERSION so runtime_version stays self-describing.
+  const vMatch = /ts_runtime (\S+) @ (\w+)/.exec(readFileSync("engine/VERSION", "utf8"));
+  tsrVersion = vMatch
+    ? `${vMatch[1]}-${utcStamp()}-${vMatch[2]}-VND-${toolchain}-b0`
+    : "vendored-unstamped";
+  const tsrDefine = { TS_RUNTIME_BUILD: JSON.stringify(tsrVersion) };
+  await build({
+    entryPoints: ["engine/engineWorker.cjs"], bundle: true, platform: "node", format: "cjs",
+    define: tsrDefine, outfile: "dist/engineWorker.cjs",
+  });
   if (existsSync("engine/tsEngineServer.cjs")) {
-    copyFileSync("engine/tsEngineServer.cjs", "dist/tsEngineServer.cjs");
+    await build({
+      entryPoints: ["engine/tsEngineServer.cjs"], bundle: true, platform: "node", format: "cjs",
+      define: tsrDefine, banner: { js: "#!/usr/bin/env node" }, outfile: "dist/tsEngineServer.cjs",
+    });
     chmodSync("dist/tsEngineServer.cjs", 0o755);
   }
   tsBundled = true;
-  tsrVersion = readFileSync("engine/VERSION", "utf8").trim().replace(/^ts_runtime /, "");
 } else {
   console.warn(`ts_runtime not found at ${tsRuntimeDir} and engine/ is empty — socket-only build (embedded mode will need omCore.tsRuntimePath)`);
 }
