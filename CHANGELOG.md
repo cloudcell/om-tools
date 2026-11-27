@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.22
+
+- Grid: selection restored after a row/column drag now persists through
+  the store — a subsequent refresh no longer loses it.
+
 ## 0.1.21
 
 - **Engine**: vendored wasm resynced to zig `1734a32` — persisted
