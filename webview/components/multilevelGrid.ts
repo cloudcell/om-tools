@@ -2208,9 +2208,15 @@ export class MultilevelGrid {
       if (e.item_id && saved.keys.includes(this.entryKey(e))) newIndices.add(i);
       else if (e.path?.length && saved.groupPaths.includes(`${e.dim ?? 0}:${e.path.join(",")}`)) newIndices.add(i);
     }
-    if (newIndices.size > 0) {
-      this.selMode = axis;
-      this.selIndices = newIndices;
+    // Write through the store — buildGrid re-syncs selMode/selIndices from view
+    // state on every render, so assigning the local fields here would be lost.
+    const first = newIndices.size ? Math.min(...newIndices) : 0;
+    if (newIndices.size === 0) {
+      this.store.setSelectionFull(this.selRow, this.selCol, "cell", new Set(), this.anchorRow, this.anchorCol, this.gid);
+    } else if (axis === "col") {
+      this.store.setSelectionFull(this.selRow, first, "col", newIndices, this.anchorRow, first, this.gid);
+    } else {
+      this.store.setSelectionFull(first, this.selCol, "row", newIndices, first, this.anchorCol, this.gid);
     }
   }
 
