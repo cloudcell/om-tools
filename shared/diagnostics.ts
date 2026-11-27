@@ -212,7 +212,10 @@ export function formatDiagnosticsReport(input: DiagnosticsReportInput): Diagnost
     out.push("");
     out.push("[versions]");
     const v = input.versions ?? {};
-    out.push(`ext: ${v.ext ?? "-"}`, `gui: ${v.gui ?? "-"}`, `eng: ${v.eng ?? "-"}`, `tsr: ${v.tsr ?? "-"}`);
+    // An unstamped tsr means the host is running the vendored engine/ copy
+    // (no build stamp) — the stale-engine tell from the 0.1.17 packaging gap.
+    const tsr = v.tsr ?? "- (vendored engine, unstamped)";
+    out.push(`ext: ${v.ext ?? "-"}`, `gui: ${v.gui ?? "-"}`, `eng: ${v.eng ?? "-"}`, `tsr: ${tsr}`);
     out.push("");
     out.push("[settings]");
     const settings = Object.entries(input.settings ?? {});
