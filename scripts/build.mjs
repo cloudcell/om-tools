@@ -41,8 +41,16 @@ function omBuildString(dir, { semverFile = "package.json", counter = ".build_cou
 const extVersion = omBuildString(".");
 const guiVersion = omBuildString("webview");
 let feedbackCommit = "unavailable";
-try { feedbackCommit = execSync("git rev-parse HEAD", {stdio:["pipe","pipe","ignore"]}).toString().trim(); } catch { /* development archive */ }
-const guiDefine = { OM_GUI_VERSION: JSON.stringify(guiVersion), OM_GUI_GITSHA: JSON.stringify(feedbackCommit) };
+let guiGitSha = "unavailable";
+try {
+  feedbackCommit = execSync("git rev-parse HEAD", {stdio:["pipe","pipe","ignore"]}).toString().trim();
+  // A build stamps the commit the tree was BASED on — the change commit
+  // always lands after the build (a commit can't hash itself). "+dirty"
+  // marks uncommitted content so the stamp honestly identifies the source.
+  const dirty = execSync("git status --porcelain", {stdio:["pipe","pipe","ignore"]}).toString().trim().length > 0;
+  guiGitSha = feedbackCommit + (dirty ? "+dirty" : "");
+} catch { /* development archive */ }
+const guiDefine = { OM_GUI_VERSION: JSON.stringify(guiVersion), OM_GUI_GITSHA: JSON.stringify(guiGitSha) };
 
 await build({
   entryPoints: ["src/extension.ts"], bundle: true, platform: "node", format: "cjs",

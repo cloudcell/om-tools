@@ -113,7 +113,7 @@ export class StatusBar {
     const showVersions = () => {
       const eng = this.store.state.engineVersion;
       const c = srcCommit();
-      version.textContent = `gui ${guiVersionShort}${eng ? ` · eng ${shortForm(eng)}` : ""}${c ? ` · git ${c}` : ""}`;
+      version.textContent = `gui ${guiVersionShort}${eng ? ` · eng ${shortForm(eng)}` : ""}${c ? ` · git ${c}${guiGitSha.endsWith("+dirty") ? "+" : ""}` : ""}`;
       version.title = `${fullForms()}\n(click to copy)`;
     };
     const copyVersions = () => {
