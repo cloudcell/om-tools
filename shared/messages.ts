@@ -95,6 +95,10 @@ export interface AppConfig {
   engine_version?: string;
   /** Host extension's build string (OM_TOOLS_BUILD), when the host is the VS Code extension. */
   ext_version?: string;
+  /** Host repo's full commit sha (`+dirty` when the tree wasn't clean at stamp
+   *  time) — identifies the host app's source state: om-tools in the
+   *  extension, om-tools-web on the web. */
+  git_sha?: string;
   /** TS runtime's build string (`runtime_version` session query), when it can report one. */
   ts_runtime_version?: string;
 }

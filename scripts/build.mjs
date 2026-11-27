@@ -54,7 +54,7 @@ const guiDefine = { OM_GUI_VERSION: JSON.stringify(guiVersion), OM_GUI_GITSHA: J
 
 await build({
   entryPoints: ["src/extension.ts"], bundle: true, platform: "node", format: "cjs",
-  external: ["vscode"], define: { OM_TOOLS_BUILD: JSON.stringify(extVersion) },
+  external: ["vscode"], define: { OM_TOOLS_BUILD: JSON.stringify(extVersion), OM_TOOLS_GITSHA: JSON.stringify(guiGitSha) },
   // .md imports (the financial-model SKILL.md inlined into the MCP server) bundle as text.
   loader: { ".md": "text" }, outfile: "dist/extension.js",
 });

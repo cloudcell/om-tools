@@ -96,10 +96,12 @@ export class StatusBar {
     // {short}` visible; tooltip and click-to-copy list every component's full
     // build string — the most useful data for a bug report.
     const version = el("span", { class: "sb-section sb-version", tabindex: "0", role: "button", title: "" }, [""]);
-    // The webview's own git7 = the om-tools source commit this build came
-    // from — called out explicitly so a screenshot/report identifies the
-    // repo state without reading the build strings.
-    const srcCommit = () => guiVersion.split("-").find((p) => /^[0-9a-f]{7}$/.test(p)) ?? "";
+    // `git` identifies the host app's repo state — om-tools-web's commit on
+    // the web (carried in ext_version's -WEB stamp), om-tools' in the
+    // extension (ext/gui share that checkout). Falls back to the webview's
+    // own build-string git7 when the host reports nothing.
+    const git7Of = (build: string) => build.split("-").find((p) => /^[0-9a-f]{7}$/.test(p)) ?? "";
+    const srcCommit = () => git7Of(this.store.state.extVersion) || git7Of(guiVersion);
     const fullForms = () => {
       const s = this.store.state;
       return [
@@ -107,13 +109,13 @@ export class StatusBar {
         `gui ${guiVersion}`,
         `tsr ${s.tsRuntimeVersion || "unknown"}`,
         `eng ${s.engineVersion || "unknown"}`,
-        ...(srcCommit() ? [`git ${guiGitSha || srcCommit()}`] : []),
+        ...((s.hostGitSha || srcCommit()) ? [`git ${s.hostGitSha || srcCommit()}`] : []),
       ].join("\n");
     };
     const showVersions = () => {
       const eng = this.store.state.engineVersion;
       const c = srcCommit();
-      version.textContent = `gui ${guiVersionShort}${eng ? ` · eng ${shortForm(eng)}` : ""}${c ? ` · git ${c}${guiGitSha.endsWith("+dirty") ? "+" : ""}` : ""}`;
+      version.textContent = `gui ${guiVersionShort}${eng ? ` · eng ${shortForm(eng)}` : ""}${c ? ` · git ${c}${(this.store.state.hostGitSha || guiGitSha).endsWith("+dirty") ? "+" : ""}` : ""}`;
       version.title = `${fullForms()}\n(click to copy)`;
     };
     const copyVersions = () => {
