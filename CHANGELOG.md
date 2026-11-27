@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.18
+
+- **Engine**: vendored wasm resynced to ts_runtime `158b952f` (zig
+  `f233771`) — eval-state resilience and dep-graph fixes that the 0.1.17
+  package missed; provenance verified.
+- **Packaging**: `vscode:prepublish` now runs
+  `check-engine-freshness.mjs` — the vendored engine must match
+  `ts_runtime` HEAD (skips when the checkout is absent), so a release
+  can no longer ship a stale engine. Diagnostics reports annotate an
+  unstamped `tsr` component accordingly.
+
 ## 0.1.17
 
 - **Diagnostics report** (Developer → Save Diagnostics Report): gathers
