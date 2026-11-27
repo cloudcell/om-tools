@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.19
+
+- `TS_RUNTIME_BUILD` is now stamped in the vendored/prebuilt fallback
+  build paths too — every vsix reports which engine its bundled runtime
+  came from, closing the unstamped-`tsr` gap the diagnostics report
+  exposed.
+- Help menu: Privacy Settings item restored in source (was a vendored
+  hand-patch).
+
 ## 0.1.18
 
 - **Engine**: vendored wasm resynced to ts_runtime `158b952f` (zig
