@@ -316,6 +316,45 @@ let runtimeReplaced = false;
 let mcpServer: OmMcpServer | null = null;
 const mcpDefChange = new vscode.EventEmitter<void>();
 
+// ── Per-window MCP discovery for external agents ─────────────────────────
+// Devin/Windsurf agents do not read VS Code's MCP provider API — they read
+// .devin/mcp_config*.json. Each window binds its own (ephemeral) port, so we
+// advertise the bound URL in the workspace's local config: every window's
+// agent reaches its own runtime instead of racing for one fixed port.
+let advertisedMcpUrl: string | null = null;
+
+async function advertiseMcpServer(url: string | null): Promise<void> {
+  const dir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!dir) return;
+  const cfgPath = path.join(dir, ".devin", "mcp_config.local.json");
+  try {
+    let cfg: any = {};
+    try { cfg = JSON.parse(await fs.promises.readFile(cfgPath, "utf8")); } catch {}
+    cfg.mcpServers ??= {};
+    if (url) {
+      const cur = cfg.mcpServers.omCore;
+      if (cur?.url === url && cur?.transport === "http") { advertisedMcpUrl = url; return; }
+      cfg.mcpServers.omCore = { url, transport: "http" };
+      advertisedMcpUrl = url;
+    } else {
+      // Another window may have overwritten the entry; don't clobber it.
+      if (!advertisedMcpUrl || cfg.mcpServers.omCore?.url !== advertisedMcpUrl) return;
+      delete cfg.mcpServers.omCore;
+      advertisedMcpUrl = null;
+    }
+    await fs.promises.mkdir(path.dirname(cfgPath), { recursive: true });
+    await fs.promises.writeFile(cfgPath, JSON.stringify(cfg, null, 2) + "\n");
+    // Keep the local config out of commits if .devin/ is gitignored per file.
+    const gi = path.join(dir, ".devin", ".gitignore");
+    let giText = "";
+    try { giText = await fs.promises.readFile(gi, "utf8"); } catch {}
+    if (!giText.split("\n").some(l => l.trim() === "mcp_config.local.json"))
+      await fs.promises.appendFile(gi, "mcp_config.local.json\n");
+  } catch (e: any) {
+    outputChannel().appendLine(`[mcp] discovery write failed: ${e?.message || e}`);
+  }
+}
+
 async function restartMcpServer(): Promise<void> {
   if (mcpServer) { try { mcpServer.close(); } catch {} mcpServer = null; }
   const cfg = vscode.workspace.getConfiguration("omCore");
@@ -339,6 +378,7 @@ async function restartMcpServer(): Promise<void> {
       outputChannel().appendLine(`[mcp] server failed to start: ${e?.message || e}`);
     }
   }
+  await advertiseMcpServer(mcpServer?.url ?? null);
   mcpDefChange.fire();
 }
 
@@ -1001,6 +1041,7 @@ function getNonce(): string {
 
 export function deactivate() {
   if (mcpServer) { try { mcpServer.close(); } catch {} mcpServer = null; }
+  void advertiseMcpServer(null);
   if (client) { client.close(); client = null; }
   if (embedded) { void embedded.dispose(); embedded = null; }
   if (runtime) { runtime.stop(); runtime = null; }
