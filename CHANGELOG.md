@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.14
+
+- **Per-window MCP discovery**: on bind, each window writes its own
+  server URL into `<workspace>/.devin/mcp_config.local.json` — Devin and
+  Windsurf agents (which read project-scoped MCP config, not VS Code's
+  provider API) reach their own window's embedded runtime instead of
+  racing for one fixed port. The entry is removed on stop/deactivate and
+  the file is gitignored.
+- Releases now publish to **Open VSX** alongside the VS Marketplace —
+  PAT publish when `OVSX_PAT` is set, OIDC trusted publishing once a
+  trusted publisher is registered (step is non-blocking).
+- README links to the browser-based Open Modeling application.
+
 ## 0.1.13
 
 - **Tour feedback dialog**: opt-in post-tour feedback form posting to
