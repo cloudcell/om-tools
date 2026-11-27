@@ -41,6 +41,9 @@ const npmrcIsClean = (buf) => {
 /** Paths that must never be committed. `cleanIf` = content-based exemption:
  *  the file may be committed only if the check proves it is the harmless
  *  kind; unreadable/binary files fail closed. */
+const OM_WS_MARKERS = [/"dimension_ids"/, /"cube_ids"/];
+const OM_WS_EXEMPT = /^examples\//;
+
 const FORBIDDEN_PATHS = [
   { re: /^docs\//, why: "docs/ is kept out of the repository" },
   { re: /^(dist|out)\//, why: "build output" },
@@ -51,6 +54,8 @@ const FORBIDDEN_PATHS = [
   { re: /\.(pem|key|p12|pfx|jks|keystore)$/i, why: "key / certificate file" },
   { re: /(^|\/)id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$/, why: "SSH key" },
   { re: /(^|\/)\.npmrc$/, why: "may contain an npm auth token", cleanIf: npmrcIsClean },
+  { re: /\.(omz|omw|om-session\.json)$/i, why: "OM model/workspace bundle", skip: [/^examples\//] },
+  { re: /(^|\/)New_Model.*\.json$/i, why: "OM model/workspace file", skip: [/^examples\//] },
 ];
 
 /** Content rules. `skip` = paths the rule does not apply to. */
@@ -121,10 +126,20 @@ function main() {
 
     for (const rule of FORBIDDEN_PATHS) {
       if (!rule.re.test(file)) continue;
+      if (rule.skip && rule.skip.some((re) => re.test(file))) continue;
       if (rule.cleanIf && readable && rule.cleanIf(buf)) continue;
       findings.push(`${file}: forbidden path (${rule.why})`);
     }
     if (file === SELF || !readable) continue; // the rules themselves would match
+
+    // OM workspace envelope: demo assets live under examples/; the same
+    // shape anywhere else means a model file was dropped into the tree.
+    if (!OM_WS_EXEMPT.test(file)) {
+      const head = buf.subarray(0, 8192).toString("utf8");
+      if (OM_WS_MARKERS.every((re) => re.test(head))) {
+        findings.push(`${file}: OM workspace/model file (keep under examples/ or out of the repo)`);
+      }
+    }
 
     const lines = buf.toString("utf8").split(/\r?\n/);
     lines.forEach((line, i) => {

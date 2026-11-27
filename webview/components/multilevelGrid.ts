@@ -263,7 +263,12 @@ export class MultilevelGrid {
     this.gridMount = gridMount;
     this.root.appendChild(container);
 
-    if (v.loading) { gridMount.appendChild(el("div", { class: "grid-loading" }, ["Loading view…"])); return; }
+    // Stale-while-revalidate: a reload with cells already present keeps
+    // painting the current grid until fresh data lands — the "Loading view…"
+    // placeholder is only for the first load, otherwise every refresh
+    // (drops schedule a deferred reload + recalc on top of their own) blanks
+    // the pane twice.
+    if (v.loading && !v.cells) { gridMount.appendChild(el("div", { class: "grid-loading" }, ["Loading view…"])); return; }
     if (!v.cells || v.rowKeys.length === 0 || v.colKeys.length === 0) {
       gridMount.appendChild(el("div", { class: "grid-empty" }, ["This view has no rows or columns for the current page selection."]));
       return;

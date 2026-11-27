@@ -103,6 +103,9 @@ export interface AppState {
   engineVersion: string;
   /** Host extension's build string; "" when the host isn't the VS Code extension. */
   extVersion: string;
+  /** Host repo's full commit sha (om-tools-web on web, om-tools in the
+   *  extension) — drives the `git` element in the status bar. */
+  hostGitSha: string;
   /** TS runtime's build string; "" when the backend can't report one. */
   tsRuntimeVersion: string;
   canUndo: boolean;
@@ -162,6 +165,7 @@ export class Store {
     defaultDir: "",
     engineVersion: "",
     extVersion: "",
+    hostGitSha: "",
     tsRuntimeVersion: "",
     canUndo: false,
     canRedo: false,

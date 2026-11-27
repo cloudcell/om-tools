@@ -41,7 +41,9 @@ const UI_STATE_KEY = "omCore.uiState";
 
 /** "<version>+<git describe>" stamped by scripts/build.mjs; "dev" for watch builds. */
 declare const OM_TOOLS_BUILD: string | undefined;
+declare const OM_TOOLS_GITSHA: string | undefined;
 const BUILD_INFO: string = typeof OM_TOOLS_BUILD === "undefined" ? "dev" : OM_TOOLS_BUILD;
+const GIT_SHA: string = typeof OM_TOOLS_GITSHA === "undefined" ? "" : OM_TOOLS_GITSHA;
 
 const DEFAULT_TCP: TransportEndpoint = { kind: "tcp", host: "127.0.0.1", port: 17391 };
 let resolvedEndpoint: TransportEndpoint | null = null;
@@ -815,6 +817,7 @@ async function handleRequest(req: HostRequest): Promise<HostToWebview> {
         data.engine_version = await conn?.query("engine_version", {}).catch(() => undefined);
         data.ts_runtime_version = await conn?.query("runtime_version", {}).catch(() => undefined);
         data.ext_version = BUILD_INFO;
+        data.git_sha = GIT_SHA;
         return { type: "response", id: req.id, ok: true, data };
       }
       case "startRuntime": {

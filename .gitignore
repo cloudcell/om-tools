@@ -25,3 +25,13 @@ Thumbs.db
 docs
 .build_counter
 webview/.build_counter
+
+# OM model/workspace files — client data must never be committed.
+# Demo assets belong in examples/; ad-hoc files for live testing go in tmp/.
+model.json
+*.model.json
+*.omz
+*.omw
+*.om-session.json
+New_Model*.json
+/tmp/

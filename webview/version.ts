@@ -18,3 +18,10 @@ export function shortForm(v: string): string {
 
 /** Compact display form: semver + git7 (`0.1.0-alpha.0·138bf66`). */
 export const guiVersionShort = shortForm(guiVersion);
+
+declare const OM_GUI_GITSHA: string | undefined;
+
+/** Full 40-char source commit the webview bundle was built from (om-tools
+ *  HEAD at build time). "unavailable" in archives without git. */
+export const guiGitSha: string =
+  typeof OM_GUI_GITSHA === "string" && OM_GUI_GITSHA !== "unavailable" ? OM_GUI_GITSHA : "";

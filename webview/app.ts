@@ -68,6 +68,7 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
     store.state.defaultDir = cfg.defaultDir || "";
     store.state.engineVersion = cfg.engine_version || "";
     store.state.extVersion = cfg.ext_version || "";
+    store.state.hostGitSha = cfg.git_sha || "";
     store.state.tsRuntimeVersion = cfg.ts_runtime_version || "";
     store.notify();
   }).catch(() => {});
