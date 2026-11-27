@@ -35,7 +35,7 @@ async function createOmEngine(wasmBytes, logSink) {
     omz_host_now_ns: () => BigInt(Math.floor(performance.now() * 1e6)),
     omz_host_local_ms: () => Date.now() - (/* @__PURE__ */ new Date()).getTimezoneOffset() * 6e4,
     omz_host_log: (ptr, len) => {
-      const line = dec.decode(new Uint8Array(memory.buffer, ptr, len));
+      const line = dec.decode(new Uint8Array(memory.buffer, ptr >>> 0, len >>> 0));
       (logSink ?? ((l) => console.log("[om_engine]", l)))(line);
     }
   };
@@ -45,7 +45,7 @@ async function createOmEngine(wasmBytes, logSink) {
   const x = instance.exports;
   const u32 = (ptr) => new DataView(memory.buffer, ptr, 4).getUint32(0, true);
   function alloc(size) {
-    const p = x.omz_wasm_alloc(size);
+    const p = x.omz_wasm_alloc(size) >>> 0;
     if (!p) throw new Error("omz_wasm_alloc failed");
     return p;
   }
@@ -827,7 +827,6 @@ function createEngineSession(om, hooks) {
     "set_cell_hardvalue",
     "set_cell_hardvalue_by_addr",
     "clear_cell_hardvalue",
-    "set_cell_hardvalues_batch_by_addr",
     "batch_set_cell_hardvalues_by_addr",
     "set_rule",
     "update_rule",
@@ -869,7 +868,8 @@ function createEngineSession(om, hooks) {
     detach_dimension_from_cube: "detach_dimension",
     set_range_values: "set_range",
     set_dimension_outline: "dimension_outline",
-    create_dimension_items_batch: "create_dimension_items_batch"
+    create_dimension_items_batch: "create_dimension_items_batch",
+    set_cell_hardvalues_batch_by_addr: "batch_set_cell_hardvalues_by_addr"
   };
   const ADDR_ARRAY_METHODS = /* @__PURE__ */ new Set(["set_rule_anchored", "set_rule_anchored_by_addr", "delete_rule_anchored", "find_anchored_rule"]);
   const STUB_OK = /* @__PURE__ */ new Set([
@@ -982,6 +982,9 @@ function createEngineSession(om, hooks) {
     if (Array.isArray(kw.addr) && !ADDR_ARRAY_METHODS.has(method)) {
       kw.addr_key = kw.addr.join("|");
       delete kw.addr;
+    }
+    if (method === "batch_set_cell_hardvalues_by_addr" && Array.isArray(kw.entries)) {
+      kw.entries = kw.entries.map((e) => Array.isArray(e?.addr) ? { addr_key: e.addr.join("|"), value: e.value } : e);
     }
     const r = await zrpc(method, kw);
     if (r.error) throw new Error(typeof r.error === "string" ? r.error : JSON.stringify(r.error));

@@ -37,7 +37,7 @@ async function createOmEngine(wasmBytes, logSink) {
     omz_host_now_ns: () => BigInt(Math.floor(performance.now() * 1e6)),
     omz_host_local_ms: () => Date.now() - (/* @__PURE__ */ new Date()).getTimezoneOffset() * 6e4,
     omz_host_log: (ptr, len) => {
-      const line = dec.decode(new Uint8Array(memory.buffer, ptr, len));
+      const line = dec.decode(new Uint8Array(memory.buffer, ptr >>> 0, len >>> 0));
       (logSink ?? ((l) => console.log("[om_engine]", l)))(line);
     }
   };
@@ -47,7 +47,7 @@ async function createOmEngine(wasmBytes, logSink) {
   const x = instance.exports;
   const u32 = (ptr) => new DataView(memory.buffer, ptr, 4).getUint32(0, true);
   function alloc(size) {
-    const p = x.omz_wasm_alloc(size);
+    const p = x.omz_wasm_alloc(size) >>> 0;
     if (!p) throw new Error("omz_wasm_alloc failed");
     return p;
   }
