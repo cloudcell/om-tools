@@ -96,6 +96,10 @@ export class StatusBar {
     // {short}` visible; tooltip and click-to-copy list every component's full
     // build string — the most useful data for a bug report.
     const version = el("span", { class: "sb-section sb-version", tabindex: "0", role: "button", title: "" }, [""]);
+    // The webview's own git7 = the om-tools source commit this build came
+    // from — called out explicitly so a screenshot/report identifies the
+    // repo state without reading the build strings.
+    const srcCommit = () => guiVersion.split("-").find((p) => /^[0-9a-f]{7}$/.test(p)) ?? "";
     const fullForms = () => {
       const s = this.store.state;
       return [
@@ -103,15 +107,13 @@ export class StatusBar {
         `gui ${guiVersion}`,
         `tsr ${s.tsRuntimeVersion || "unknown"}`,
         `eng ${s.engineVersion || "unknown"}`,
+        ...(srcCommit() ? [`git ${srcCommit()}`] : []),
       ].join("\n");
     };
     const showVersions = () => {
       const eng = this.store.state.engineVersion;
-      // The webview's own git7 = the om-tools source commit this build came
-      // from — called out explicitly so a screenshot identifies the repo
-      // state without reading the build strings.
-      const srcCommit = guiVersion.split("-").find((p) => /^[0-9a-f]{7}$/.test(p)) ?? "";
-      version.textContent = `gui ${guiVersionShort}${eng ? ` · eng ${shortForm(eng)}` : ""}${srcCommit ? ` · git ${srcCommit}` : ""}`;
+      const c = srcCommit();
+      version.textContent = `gui ${guiVersionShort}${eng ? ` · eng ${shortForm(eng)}` : ""}${c ? ` · git ${c}` : ""}`;
       version.title = `${fullForms()}\n(click to copy)`;
     };
     const copyVersions = () => {
