@@ -110,3 +110,14 @@ All GUI work must follow `docs/design-guidelines.md` (derived from Apple HIG).
 Quick-reference rules in `docs/design-rules.md`. Devin skill in `.devin/skills/hig-design/`.
 Before writing or modifying any UI code, read the guidelines and run through the checklist
 at the bottom of `docs/design-guidelines.md`.
+
+## Model files are forbidden
+
+Client model/workspace data must never be committed (a client file almost
+leaked this way in om-tools-web). `.gitignore` rejects `model.json`,
+`*.model.json`, `*.omz`, `*.omw`, `*.om-session.json`, `New_Model*.json` and
+`tmp/` (the sanctioned scratch dir for ad-hoc files). `check:sensitive` also
+blocks OM bundles by name and workspace-envelope JSON (the
+dimension/cube/view id fields) by content anywhere except `examples/`
+(the designated model-asset dir). For live tests: drop the file in `tmp/`
+or `examples/`, never the repo root.
