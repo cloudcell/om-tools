@@ -787,6 +787,12 @@ export class AppShell {
       ...(document.documentElement.dataset.omFeedbackAvailable === "true"
         ? [{ icon: msym("comment"), label: "Send Feedback…", fn: () => window.dispatchEvent(new CustomEvent("om-show-feedback")) } as MenuItem]
         : []),
+      // Web host only: privacy.js sets the flag + listens for the event
+      // (om-tools-web a06c930 — the item used to be a hand-patch inside the
+      // vendored bundle, which every sync.sh run overwrote).
+      ...(document.documentElement.dataset.omPrivacyAvailable === "true"
+        ? [{ icon: msym("settings"), label: "Privacy Settings…", fn: () => window.dispatchEvent(new CustomEvent("om-show-privacy-settings")) } as MenuItem]
+        : []),
       { icon: msym("menu_book"), label: "Take the Tour…", fn: () => startTour() },
       { icon: msym("info"), label: "Show Tips", checked: tipsEnabled(), fn: () => setTipsEnabled(!tipsEnabled()) },
       { icon: msym("refresh"), label: "Reset Tips…", fn: () => resetTips() },
