@@ -71,8 +71,13 @@ export class OmApi {
   /** Host reads a picked/given text file (webview cannot touch the filesystem). */
   readTextFile(path: string): Promise<{ text: string | null }> { return this.t.request("readTextFile", { path }); }
   /** Host shows a save dialog, writes `text`, returns the chosen path (or download flag). */
-  saveTextFile(suggestedName: string, text: string): Promise<{ path: string | null; downloaded?: boolean }> {
-    return this.t.request("saveTextFile", { suggestedName, text });
+  saveTextFile(suggestedName: string, text: string, filters?: Record<string, string[]>): Promise<{ path: string | null; downloaded?: boolean }> {
+    return this.t.request("saveTextFile", { suggestedName, text, filters });
+  }
+  /** Host assembles the diagnostics report text (scrubbed); the webview sends
+   *  its own build string — the host cannot know the vendored bundle version. */
+  getDiagnosticsReport(guiVersion: string): Promise<{ text: string; suggestedName: string }> {
+    return this.t.request("getDiagnosticsReport", { gui_version: guiVersion });
   }
   /** Same save flow for binary payloads (.omz bundles) — bytes travel base64. */
   saveBinaryFile(suggestedName: string, bytes: Uint8Array): Promise<{ path: string | null; downloaded?: boolean }> {

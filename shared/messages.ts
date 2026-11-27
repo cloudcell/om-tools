@@ -2,7 +2,13 @@
  *  Kept transport-agnostic so the same webview bundle can run in a browser
  *  later (the browser transport would be a WebSocket instead of postMessage). */
 
-export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "fsList" | "setTitle" | "saveUiState" | "openFeedback" | "openExternal" | "readTextFile" | "saveTextFile";
+export type HostRequestMethod = "ping" | "openSession" | "command" | "query" | "subscribe" | "unsubscribe" | "getConfig" | "startRuntime" | "stopRuntime" | "reconnect" | "pickFile" | "fsList" | "setTitle" | "saveUiState" | "openFeedback" | "openExternal" | "readTextFile" | "saveTextFile" | "getDiagnosticsReport";
+
+/** `getDiagnosticsReport` params — the host cannot know the vendored webview
+ *  build, so the GUI sends its own version for the report header.
+ *  Response data: `{ text: string, suggestedName: string }`. Works while
+ *  disconnected — a partial report is exactly what a crash needs. */
+export interface GetDiagnosticsReportParams { gui_version?: string }
 
 /** One-click feedback: the only external destination the webview may ask the host to open.
  *  The `openFeedback` request carries no URL — the host always opens this. */
@@ -23,8 +29,10 @@ export const LINK_URLS: readonly string[] = Object.values(LINKS);
  *  file the user just picked. */
 export interface ReadTextFileParams { path: string }
 /** `saveTextFile` params — host picks the destination (native save dialog), writes the
- *  text, returns the chosen path. `downloaded` = browser download fallback (no picker). */
-export interface SaveTextFileParams { suggestedName?: string; text?: string; bytesB64?: string }
+ *  text, returns the chosen path. `downloaded` = browser download fallback (no picker).
+ *  `filters` overrides the default dialog filter (label → extensions) so a payload
+ *  is never offered under a misdescribing file type. */
+export interface SaveTextFileParams { suggestedName?: string; text?: string; bytesB64?: string; filters?: Record<string, string[]> }
 
 export interface HostRequest {
   type: "request";
