@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.20
+
+- **Engine**: vendored wasm resynced to zig `68ea4b8` —
+  `serializeSnapshot` corruption fix; provenance verified.
+
 ## 0.1.19
 
 - `TS_RUNTIME_BUILD` is now stamped in the vendored/prebuilt fallback
