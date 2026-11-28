@@ -1,7 +1,7 @@
 import { Store } from "../state";
 import { el, clear } from "../dom";
 import { seqLinkIcon, kindIcon } from "../menuIcons";
-import { inputDialog, alertDialog } from "./dialogs";
+import { inputDialog, alertDialog, confirmDialog } from "./dialogs";
 import { ModelActions } from "./modelActions";
 
 /** ModelBrowser — left dock with tree: Dimensions, Cubes, Views.
@@ -79,7 +79,7 @@ export class ModelBrowser {
           const dim = this.store.state.dimensions.find((d) => d.id === dimId);
           cubeNodeChildren.appendChild(this.makeTreeNode(
             dim ? dim.name : this.store.dimName(dimId), kindIcon("dimension"), false,
-            dim ? () => this.dimMenu(dim) : undefined));
+            dim ? () => this.cubeDimMenu(cube, dim) : undefined));
         }
       } else if (!this.loadingCubeDims.has(cube.id)) {
         // cube_detail loads once per cube; refresh re-renders the children when it lands.
@@ -172,6 +172,34 @@ export class ModelBrowser {
       { label: `Rename cube '${cube.name}'…`, fn: () => this.rename("Rename Cube", cube.name, (n) => this.store.api.renameCube(cube.id, n)) },
       { label: `Delete cube '${cube.name}'…`, fn: () => this.actions.deleteCube(cube.id) },
     ]);
+  }
+
+  private cubeDimMenu(cube: any, dim: any) {
+    this.popup([{ label: `Detach '${dim.name}' from '${cube.name}'…`, fn: () => this.detachDimFromCube(cube, dim) }]);
+  }
+
+  // Qt parity (model_browser.py cube_dim branch): query the blast radius first;
+  // zero-impact detaches immediately, otherwise a warning lists the casualties.
+  private async detachDimFromCube(cube: any, dim: any) {
+    try {
+      const impact = (await this.store.api.cubeDetachImpact(cube.id, dim.id)) ?? {};
+      const cells = impact.data_cells ?? 0, anchored = impact.anchored_rules ?? 0, rules = impact.rules ?? 0;
+      if (cells > 0 || anchored > 0 || rules > 0) {
+        const msg =
+          `Detach dimension '${dim.name}' from cube '${cube.name}'?\n\n` +
+          `This will permanently delete:\n` +
+          `• ${cells} data cell(s) (hard numbers)\n` +
+          `• ${anchored} anchored rule(s)\n` +
+          `• ${rules} rule(s)\n\n` +
+          `This action cannot be undone.`;
+        if (!(await confirmDialog("Confirm Detach Dimension", msg, "Detach", true))) return;
+      }
+      await this.store.api.detachDimensionFromCube(cube.id, dim.id);
+    } catch (e: any) {
+      await alertDialog("Detach Dimension", e?.message || String(e));
+      return;
+    }
+    await this.store.afterStructureChange();
   }
 
   private viewRootMenu() {
