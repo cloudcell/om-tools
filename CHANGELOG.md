@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.25
+
+- `launch-dev.sh`: the Extension Development Host now gets its own
+  extensions dir — a locally installed vsix can no longer collide with
+  the dev-path extension (the duplicated sidebar sections symptom).
+
 ## 0.1.24
 
 - **Dependency-tracking visibility**: recalc live/off pill in the status
