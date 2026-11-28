@@ -1032,8 +1032,10 @@ export class Store {
   static readonly UI_ONLY_COMMANDS = new Set([
     "set_selection", "set_active_view", "set_view_col_width",
     "set_view_row_header_width", "cancel_operation",
-    "clear_profiler_snapshot", "set_property", "set_engine",
+    "clear_profiler_snapshot", "set_property",
     "set_multithread_recompute", "set_page_item_id", "save_workspace",
+    // NOT set_engine: it carries a dependency_tracking param, so its echo
+    // must reach refreshModel → flag refetch, or the recalc pill lies.
   ]);
 
   private externalRefreshTimer: ReturnType<typeof setTimeout> | null = null;
