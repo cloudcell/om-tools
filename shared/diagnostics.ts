@@ -147,6 +147,8 @@ export interface DiagnosticsReportInput {
     lifecycle?: string[];
     /** Engine/session ring lines (raw — scrubbed inside). */
     log?: string[];
+    /** Buffered wasm engine stderr lines (omz_host_log ring — names dispatch faults behind status -14). */
+    engine_log?: string[];
     /** Socket mode: where the engine's own log lives instead. */
     externalEngineLog?: string | null;
     /** Name dictionary for the scrubber. */
@@ -231,6 +233,11 @@ export function formatDiagnosticsReport(input: DiagnosticsReportInput): Diagnost
     const life = (input.lifecycle ?? []).map((l) => scrub.scrubText(l));
     if (life.length === 0) out.push("(none)");
     else out.push(...life);
+    out.push("");
+    out.push("[engine stderr]");
+    const stderr = (input.engine_log ?? []).map((l) => scrub.scrubText(l));
+    if (stderr.length === 0) out.push("(none)");
+    else out.push(...stderr);
     out.push("");
     out.push("[engine diary]");
     const log = (input.log ?? []).map((l) => scrub.scrubText(l));

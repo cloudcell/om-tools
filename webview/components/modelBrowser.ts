@@ -1,7 +1,7 @@
 import { Store } from "../state";
 import { el, clear } from "../dom";
 import { seqLinkIcon, kindIcon } from "../menuIcons";
-import { inputDialog, alertDialog } from "./dialogs";
+import { inputDialog, alertDialog, confirmDialog, formDialog } from "./dialogs";
 import { ModelActions } from "./modelActions";
 
 /** ModelBrowser — left dock with tree: Dimensions, Cubes, Views.
@@ -10,6 +10,8 @@ export class ModelBrowser {
   private actions: ModelActions;
   /** Cubes whose `cube_detail` is loading for the dim children (fetched once per cube). */
   private loadingCubeDims = new Set<string>();
+  /** Cube expansion survives refresh() rebuilds — collapsed is the default. */
+  private expandedCubes = new Set<string>();
   /** Where the last right click happened; the context menu opens there (issue #4). */
   private menuPos = { x: 0, y: 0 };
   constructor(private store: Store) { this.actions = new ModelActions(store); }
@@ -58,13 +60,26 @@ export class ModelBrowser {
       // Qt model_browser: cube nodes expand to their dimensions (cube_dim rows, in cube order).
       const cubeNode = this.makeTreeNode(`${cube.name} (${cube.dimensions})`, kindIcon("cube"), true, () => this.cubeMenu(cube));
       const cubeNodeChildren = (cubeNode as any)._children as HTMLElement;
+      // Collapsed by default; expansion is remembered across refresh() rebuilds.
+      const cubeTwisty = cubeNode.querySelector(":scope > .tree-row .tree-twisty") as HTMLElement;
+      const applyExpanded = (on: boolean) => {
+        cubeNodeChildren.style.display = on ? "block" : "none";
+        cubeTwisty.textContent = on ? "▾" : "▸";
+      };
+      applyExpanded(this.expandedCubes.has(cube.id));
+      const syncExpanded = () => {
+        if (cubeNodeChildren.style.display !== "none") this.expandedCubes.add(cube.id);
+        else this.expandedCubes.delete(cube.id);
+      };
+      cubeTwisty.addEventListener("click", syncExpanded);
+      (cubeNode.querySelector(":scope > .tree-row .tree-label") as HTMLElement).addEventListener("click", syncExpanded);
       const dimIds = this.store.cubeDimensionIds(cube.id);
       if (dimIds) {
         for (const dimId of dimIds) {
           const dim = this.store.state.dimensions.find((d) => d.id === dimId);
           cubeNodeChildren.appendChild(this.makeTreeNode(
             dim ? dim.name : this.store.dimName(dimId), kindIcon("dimension"), false,
-            dim ? () => this.dimMenu(dim) : undefined));
+            dim && dimId !== "@" ? () => this.cubeDimMenu(cube, dim) : undefined));
         }
       } else if (!this.loadingCubeDims.has(cube.id)) {
         // cube_detail loads once per cube; refresh re-renders the children when it lands.
@@ -154,9 +169,84 @@ export class ModelBrowser {
   private cubeMenu(cube: any) {
     this.popup([
       { label: `New view of '${cube.name}'…`, fn: () => this.actions.newView(cube.id) },
+      { label: `Attach dimension to '${cube.name}'…`, fn: () => this.attachDimToCube(cube) },
       { label: `Rename cube '${cube.name}'…`, fn: () => this.rename("Rename Cube", cube.name, (n) => this.store.api.renameCube(cube.id, n)) },
       { label: `Delete cube '${cube.name}'…`, fn: () => this.actions.deleteCube(cube.id) },
     ]);
+  }
+
+  // Qt `_on_attach_dimension_to_cube`: pick an unattached dim (or create one),
+  // choose the default item — existing cells land on it; the engine pages the
+  // dim into every view of the cube.
+  private async attachDimToCube(cube: any) {
+    const NEW = "__new__";
+    try {
+      await this.store.ensureCubeDetail(cube.id);
+      const attached = new Set(this.store.cubeDimensionIds(cube.id));
+      const available = this.store.state.dimensions
+        .filter((d) => !attached.has(d.id))
+        .sort(ModelBrowser.byName);
+      if (!available.length) { await alertDialog("Attach Dimension", "All dimensions are already attached to this cube."); return; }
+      const itemLists: Record<string, { id: string; name: string }[]> = {};
+      await Promise.all(available.map(async (d) => {
+        itemLists[d.id] = d.item_list ?? (await this.store.api.dimensionDetail(d.id).catch(() => null))?.items ?? [];
+      }));
+      const v = await formDialog(`Add Dimension to ${cube.name}`, [
+        { kind: "select", key: "dim", label: "Dimension", options: [{ value: NEW, label: "— create new dimension —" }, ...available.map((d) => ({ value: d.id, label: d.name }))] },
+        { kind: "text", key: "new_name", label: "New name", placeholder: "Dimension name", visibleIf: (v) => v.dim === NEW },
+        { kind: "select", key: "new_type", label: "Type", value: "set", options: [{ value: "set", label: "Set (unordered)" }, { value: "seq", label: "Sequence (ordered)" }], visibleIf: (v) => v.dim === NEW },
+        { kind: "text", key: "new_items", label: "Items", placeholder: "Item names, comma-separated (e.g. Jan,Feb,Mar)", visibleIf: (v) => v.dim === NEW },
+        { kind: "select", key: "default_item", label: "Default item", options: (v) => (itemLists[v.dim] ?? []).map((i) => ({ value: i.id, label: i.name })), visibleIf: (v) => v.dim !== NEW },
+      ], { validate: (v) => {
+        if (v.dim === NEW) return v.new_name.trim() ? null : "Dimension name is required.";
+        return (itemLists[v.dim] ?? []).length ? null : "The selected dimension has no items. Please add items to the dimension before attaching it to a cube.";
+      } });
+      if (!v) return;
+      let dimId = v.dim, itemId = v.default_item;
+      if (dimId === NEW) {
+        const d = await this.store.api.createDimension(v.new_name.trim(), v.new_type);
+        dimId = d?.id;
+        if (!dimId) throw new Error("create_dimension returned no dimension id");
+        const names = v.new_items.split(",").map((s: string) => s.trim()).filter(Boolean);
+        if (!names.length) names.push("Item 1");
+        itemId = undefined;
+        for (const n of names) { const r = await this.store.api.createDimensionItem(dimId, n); itemId = itemId ?? r?.id; }
+        if (!itemId) throw new Error("No items were created");
+      }
+      await this.store.api.attachDimensionToCube(cube.id, dimId, itemId);
+    } catch (e: any) {
+      await alertDialog("Attach Dimension", e?.message || String(e));
+      return;
+    }
+    await this.store.afterStructureChange();
+  }
+
+  private cubeDimMenu(cube: any, dim: any) {
+    this.popup([{ label: `Detach '${dim.name}' from '${cube.name}'…`, fn: () => this.detachDimFromCube(cube, dim) }]);
+  }
+
+  // Qt parity (model_browser.py cube_dim branch): query the blast radius first;
+  // zero-impact detaches immediately, otherwise a warning lists the casualties.
+  private async detachDimFromCube(cube: any, dim: any) {
+    try {
+      const impact = (await this.store.api.cubeDetachImpact(cube.id, dim.id)) ?? {};
+      const cells = impact.data_cells ?? 0, anchored = impact.anchored_rules ?? 0, rules = impact.rules ?? 0;
+      if (cells > 0 || anchored > 0 || rules > 0) {
+        const msg =
+          `Detach dimension '${dim.name}' from cube '${cube.name}'?\n\n` +
+          `This will permanently delete:\n` +
+          `• ${cells} data cell(s) (hard numbers)\n` +
+          `• ${anchored} anchored rule(s)\n` +
+          `• ${rules} rule(s)\n\n` +
+          `This action cannot be undone.`;
+        if (!(await confirmDialog("Confirm Detach Dimension", msg, "Detach", true))) return;
+      }
+      await this.store.api.detachDimensionFromCube(cube.id, dim.id);
+    } catch (e: any) {
+      await alertDialog("Detach Dimension", e?.message || String(e));
+      return;
+    }
+    await this.store.afterStructureChange();
   }
 
   private viewRootMenu() {

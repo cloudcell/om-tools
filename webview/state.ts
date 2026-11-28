@@ -1303,7 +1303,7 @@ export class Store {
       for (const [dimId, itemId] of Object.entries(chips)) {
         if (typeof itemId !== "string") { skips.push(`bad chip on ${t.viewId}: ${dimId}`); continue; }
         try { await this.api.setPageItemId(t.viewId, dimId, itemId); }
-        catch { skips.push(`chip not applied on ${t.viewId}: ${dimId} → ${itemId}`); }
+        catch (e) { skips.push(`chip not applied on ${t.viewId}: ${dimId} → ${itemId} — ${(e as Error)?.message || e}`); }
       }
     }
     for (const t of uniqueTabs) {
