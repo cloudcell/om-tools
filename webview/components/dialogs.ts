@@ -467,8 +467,11 @@ export function formDialog(title: string, fields: FormField[], opts: { okLabel?:
 
 /** Tools → Options… — display preferences, persisted in UiState. Each row shows
  *  what the default setup uses; "Restore defaults" resets every control.
- *  Resolves with the full options map on OK, or null on Cancel/Escape/outside click. */
-export function optionsDialog(current: Required<UiOptions>, onResetTips?: () => void): Promise<UiOptions | null> {
+ *  Resolves with the options map + the live-recalc flag on OK, or null on
+ *  Cancel/Escape/outside click. `depTrackingEnabled` is engine session state,
+ *  not a UiOption — it rides the dialog but returns alongside the map so it
+ *  can never leak into saveUiState persistence. */
+export function optionsDialog(current: Required<UiOptions>, onResetTips?: () => void, depTrackingEnabled?: boolean): Promise<{ options: UiOptions; depTrackingEnabled: boolean } | null> {
   return new Promise((resolve) => {
     const ov = ensureOverlay();
     clear(ov);
@@ -482,6 +485,24 @@ export function optionsDialog(current: Required<UiOptions>, onResetTips?: () => 
     const defaultTag = (isDefault: boolean) =>
       el("span", { style: { fontSize: "11px", color: "var(--text-label)", marginLeft: "6px" } },
         [isDefault ? "(default)" : ""]);
+
+    // — Calculation (engine session state — not a persisted UiOption) —
+    const recalcCb = document.createElement("input");
+    recalcCb.type = "checkbox"; recalcCb.checked = depTrackingEnabled !== false;
+    const recalcDefault = el("span", { style: { fontSize: "11px", color: "var(--text-label)", marginLeft: "auto" } },
+      ["default: on"]);
+    dlg.appendChild(el("div", { style: { fontSize: "11px", fontWeight: "600", color: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" } }, ["Calculation"]));
+    dlg.appendChild(el("label", { style: { display: "flex", gap: "6px", alignItems: "center", fontSize: "13px", marginBottom: "4px", cursor: "pointer" } }, [
+      recalcCb,
+      document.createTextNode("Live recalculation"),
+      el("span", { style: { fontSize: "11px", color: "var(--text-label)" } }, ["update dependent cells on every edit"]),
+      recalcDefault,
+    ]));
+    dlg.appendChild(el("div", { style: { fontSize: "11px", color: "var(--text-label)", marginBottom: "16px", marginLeft: "22px" } },
+      ["session state — not saved; turning it back on recalculates everything"]));
+
+    // — Display —
+    dlg.appendChild(el("div", { style: { fontSize: "11px", fontWeight: "600", color: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" } }, ["Display"]));
 
     // — Mark hardvalue cells —
     const hvCb = document.createElement("input");
@@ -589,6 +610,7 @@ export function optionsDialog(current: Required<UiOptions>, onResetTips?: () => 
     ov.appendChild(dlg);
 
     resetBtn.addEventListener("click", () => {
+      recalcCb.checked = true;
       hvCb.checked = DEFAULT_OPTIONS.markHardvalues;
       signSelect.value = DEFAULT_OPTIONS.aggregateSign;
       aiCb.checked = DEFAULT_OPTIONS.assistant;
@@ -601,9 +623,12 @@ export function optionsDialog(current: Required<UiOptions>, onResetTips?: () => 
       signTag.textContent = signSelect.value === DEFAULT_OPTIONS.aggregateSign ? "(default)" : "";
     });
 
-    const done = (v: UiOptions | null) => { closeOverlay(); resolve(v); };
+    const done = (v: { options: UiOptions; depTrackingEnabled: boolean } | null) => { closeOverlay(); resolve(v); };
     cancelBtn.addEventListener("click", () => done(null));
-    okBtn.addEventListener("click", () => done({ markHardvalues: hvCb.checked, aggregateSign: signSelect.value, assistant: aiCb.checked, docking: dockCb.checked, advancedPanels: advCb.checked, showTips: tipsCb.checked }));
+    okBtn.addEventListener("click", () => done({
+      options: { markHardvalues: hvCb.checked, aggregateSign: signSelect.value, assistant: aiCb.checked, docking: dockCb.checked, advancedPanels: advCb.checked, showTips: tipsCb.checked },
+      depTrackingEnabled: recalcCb.checked,
+    }));
     dlg.addEventListener("keydown", (e) => {
       if (e.key === "Escape") { e.preventDefault(); done(null); }
     });

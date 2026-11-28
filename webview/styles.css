@@ -1315,6 +1315,20 @@ table.matrix td.cell.rule-marker::before { content: ""; }
 .statusbar .sb-focus { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--focus-indicator); }
 .statusbar .sb-cell { font-family: ui-monospace, monospace; }
 .statusbar .sb-mode { color: var(--text-muted); }
+/* `● recalc:` pill — leftmost anchor slot, like Excel's Ready/Calculate.
+ *  Safety indicator: live is quiet green-on-neutral; off is the loud amber
+ *  (--warn family, same convention as dirty-marker and engine-dot.connecting). */
+.statusbar .sb-recalc { font-family: ui-monospace, monospace; font-size: 11px; padding: 1px 8px; border-radius: 9px; border: 1px solid var(--dlg-border); color: var(--text-muted); cursor: pointer; user-select: none; }
+.statusbar .sb-recalc .sb-recalc-dot { color: var(--ok); font-size: 9px; }
+.statusbar .sb-recalc.off { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn); font-weight: 600; }
+.statusbar .sb-recalc.off .sb-recalc-dot { color: var(--warn); }
+.statusbar .sb-recalc:hover { filter: brightness(0.97); }
+.statusbar .sb-recalc:focus-visible { outline: 1px solid var(--selection); outline-offset: -1px; }
+.statusbar .sb-recalc.flash { animation: sbRecalcFlash 0.9s ease-out; }
+@keyframes sbRecalcFlash {
+  0%, 45% { background: var(--warn-bg); border-color: var(--warn); box-shadow: 0 0 0 3px var(--warn-bg); }
+  100% { background: transparent; box-shadow: none; }
+}
 .statusbar .sb-stats { font-family: ui-monospace, monospace; padding: 1px 4px; border-radius: 3px; user-select: none; }
 .statusbar .sb-stats:hover { background: var(--menu-item-hover); }
 .statusbar .sb-stats:focus-visible { outline: 1px solid var(--selection); outline-offset: -1px; }

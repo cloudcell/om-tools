@@ -114,6 +114,12 @@ export interface AppState {
   redoDesc: string;
   engineType: string;
   depTrackingEnabled: boolean;
+  /** Edits seen on command.*.succeeded while depTrackingEnabled was false —
+   *  the status-bar pill's "·N pending" count. Client-side and approximate. */
+  pendingEditsWhileUntracked: number;
+  /** Bumped when a refetch flips depTrackingEnabled and the change did not
+   *  originate from this client's own toggle — the pill flashes on change. */
+  depTrackingFlipSeq: number;
   mtEnabled: boolean;
   isRemote: boolean;
   dockVisible: { browser: boolean; info: boolean; format: boolean; perf: boolean; timeline: boolean; rules: boolean };
@@ -173,6 +179,8 @@ export class Store {
     redoDesc: "",
     engineType: "python",
     depTrackingEnabled: true,
+    pendingEditsWhileUntracked: 0,
+    depTrackingFlipSeq: 0,
     mtEnabled: false,
     isRemote: false,
     // perf/timeline are outside the MVP (their View menu items are disabled), so start hidden.
@@ -322,14 +330,46 @@ export class Store {
     this.cubeCache.set(cubeId, detail || {});
   }
 
+  /** Set by openOptions() before it sends set_dependency_tracking — the next
+   *  flag refetch is our own toggle's echo, not an external flip. */
+  private depTrackingToggledLocally = false;
+  noteLocalDepTrackingToggle() { this.depTrackingToggledLocally = true; }
+
+  /** command.*.succeeded accounting for the recalc pill's "·N pending": edits
+   *  made while tracking is off can't have marked dependents dirty. Recalc
+   *  echoes do NOT clear the count while off — the topic carries no scope, a
+   *  dirty-scope recalc recomputes nothing untracked, and scheduleExternalRefresh
+   *  fires a no-op one after every external command. Reset happens on the flag
+   *  refetching true and on workspace (re)load. */
+  notePendingEdit(cmd: string | undefined) {
+    if (this.state.depTrackingEnabled || !cmd) return;
+    if (cmd === "set_dependency_tracking" || cmd === "run_recalculation" || cmd === "recompute_dirty") return;
+    this.set({ pendingEditsWhileUntracked: this.state.pendingEditsWhileUntracked + 1 });
+  }
+
   async refreshModel() {
-    const [dims, cubes, views, ws] = await Promise.all([
+    const [dims, cubes, views, ws, dep] = await Promise.all([
       this.api.dimensionList(),
       this.api.cubeList(),
       this.api.viewList(),
       this.api.workspaceSummary(),
+      this.api.diagnosticsDependencyTrackingState().catch(() => null),
     ]);
-    this.set({ dimensions: dims.dimensions, cubes: cubes.cubes, views: views.views, workspaceSummary: ws });
+    // diagnostics_dependency_tracking_state resolves a bare boolean on some
+    // runtimes, {dependency_tracking_enabled} on others — accept both.
+    const depEnabled = typeof dep === "boolean" ? dep
+      : (dep?.dependency_tracking_enabled ?? this.state.depTrackingEnabled);
+    // External flip (MCP om_command, REPL, second GUI) → bump the seq so the
+    // pill flashes; an own toggle's echo is not a surprise.
+    const flipped = depEnabled !== this.state.depTrackingEnabled;
+    const externalFlip = flipped && !this.depTrackingToggledLocally;
+    this.depTrackingToggledLocally = false;
+    this.set({
+      dimensions: dims.dimensions, cubes: cubes.cubes, views: views.views, workspaceSummary: ws,
+      depTrackingEnabled: depEnabled,
+      depTrackingFlipSeq: this.state.depTrackingFlipSeq + (externalFlip ? 1 : 0),
+      pendingEditsWhileUntracked: depEnabled ? 0 : this.state.pendingEditsWhileUntracked,
+    });
     this.syncTabsWithViews();
     // Externally-driven changes (MCP agent, second client) re-run refreshModel via
     // event.* subscriptions but never invalidateDimCache — a dim cached before its
@@ -1076,7 +1116,7 @@ export class Store {
     this.dimCache.clear();
     this.cubeCache.clear();
     Object.assign(this.state, {
-      selectionStats: {}, filePath, dirty: false,
+      selectionStats: {}, filePath, dirty: false, pendingEditsWhileUntracked: 0,
       viewGroups: [{ id: "g0", tabs: [], activeTab: null, rulesOpen: true, rulesCollapsed: false }],
       viewStates: {}, focusedGroup: "g0", viewArea: { kind: "group", gid: "g0" } as AreaNode,
     });

@@ -134,7 +134,7 @@ export class AppShell {
     app.appendChild(this.ruleBar());
     this.bodyEl = el("div", { class: "body" });
     app.appendChild(this.bodyEl);
-    app.appendChild(new StatusBar(this.store).render());
+    app.appendChild(new StatusBar(this.store, () => this.openOptions()).render());
 
     // Saved layout first: panel renders already check whether it is collapsed.
     const layout = this.store.state.layout;
@@ -742,8 +742,21 @@ export class AppShell {
   }
 
   private async openOptions() {
-    const result = await optionsDialog(this.store.state.options, () => resetTips());
-    if (result) this.store.setOptions(result);
+    const result = await optionsDialog(this.store.state.options, () => resetTips(), this.store.state.depTrackingEnabled);
+    if (!result) return;
+    this.store.setOptions(result.options);
+    if (result.depTrackingEnabled !== this.store.state.depTrackingEnabled) {
+      // Mark before sending so the flag's own echo-refetch doesn't flash the pill.
+      this.store.noteLocalDepTrackingToggle();
+      try { await this.store.api.setDependencyTracking(result.depTrackingEnabled); }
+      catch (e: any) { await alertDialog("Recalculation toggle failed", e?.message || String(e)); return; }
+      // Excel's Manual→Automatic behavior: edits made while tracking was off
+      // never marked dependents dirty, so a "dirty" recalc finds nothing —
+      // re-enabling must full-recalc or stale values persist indefinitely.
+      if (result.depTrackingEnabled) {
+        try { await this.store.api.recalc("all"); } catch {}
+      }
+    }
   }
 
   private windowMenuItems(): MenuItem[] {
