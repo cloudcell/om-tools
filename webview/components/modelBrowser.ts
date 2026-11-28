@@ -8,6 +8,8 @@ import { ModelActions } from "./modelActions";
  *  Mirrors lib_gui/model_browser.py with context menus and drag-to-view. */
 export class ModelBrowser {
   private actions: ModelActions;
+  /** Cubes whose `cube_detail` is loading for the dim children (fetched once per cube). */
+  private loadingCubeDims = new Set<string>();
   /** Where the last right click happened; the context menu opens there (issue #4). */
   private menuPos = { x: 0, y: 0 };
   constructor(private store: Store) { this.actions = new ModelActions(store); }
@@ -53,7 +55,26 @@ export class ModelBrowser {
     (cubeRoot.querySelector(".tree-row") as HTMLElement).dataset.tour = "cubes";
     const cubeChildren = (cubeRoot as any)._children as HTMLElement;
     for (const cube of [...this.store.visibleCubes()].sort(ModelBrowser.byName)) {
-      cubeChildren.appendChild(this.makeTreeNode(`${cube.name} (${cube.dimensions})`, kindIcon("cube"), false, () => this.cubeMenu(cube)));
+      // Qt model_browser: cube nodes expand to their dimensions (cube_dim rows, in cube order).
+      const cubeNode = this.makeTreeNode(`${cube.name} (${cube.dimensions})`, kindIcon("cube"), true, () => this.cubeMenu(cube));
+      const cubeNodeChildren = (cubeNode as any)._children as HTMLElement;
+      const dimIds = this.store.cubeDimensionIds(cube.id);
+      if (dimIds) {
+        for (const dimId of dimIds) {
+          const dim = this.store.state.dimensions.find((d) => d.id === dimId);
+          cubeNodeChildren.appendChild(this.makeTreeNode(
+            dim ? dim.name : this.store.dimName(dimId), kindIcon("dimension"), false,
+            dim ? () => this.dimMenu(dim) : undefined));
+        }
+      } else if (!this.loadingCubeDims.has(cube.id)) {
+        // cube_detail loads once per cube; refresh re-renders the children when it lands.
+        this.loadingCubeDims.add(cube.id);
+        this.store.ensureCubeDetail(cube.id).then(() => {
+          this.loadingCubeDims.delete(cube.id);
+          if (tree.isConnected) this.refresh(tree);
+        });
+      }
+      cubeChildren.appendChild(cubeNode);
     }
     tree.appendChild(cubeRoot);
 

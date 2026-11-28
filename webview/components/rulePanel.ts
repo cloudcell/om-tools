@@ -93,6 +93,12 @@ export class RulePanel {
   private renderRules(content: HTMLElement) {
     const v = this.store.viewOf(this.gid);
     this.activeCubeId = v?.cubeId || null;
+    // No view open in this pane: show the empty state rather than falling back
+    // to all cubes' rules — an inspector next to an empty canvas reads as a leak.
+    if (!v) {
+      content.appendChild(el("div", { class: "muted", style: { padding: "12px" } }, ["Open a view to see its rules."]));
+      return;
+    }
     // Qt rule_panel.rebuild: rules in rule_order (evaluation order), then any the order does not list
     const order = this.store.state.ruleOrder;
     const pos = (id: string) => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
