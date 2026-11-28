@@ -75,9 +75,11 @@ const SERVER_INSTRUCTIONS =
 const COMMAND_TOOL_DESC =
   "Run an om-core command against the connected runtime (mutates the live workspace — " +
   "open GUI views refresh automatically). command_id is an om-core command name " +
-  "(e.g. create_dimension, create_dimension_item, create_cube, create_view, " +
-  "set_cell_hardvalue_by_addr, clear_cell_hardvalue, set_rule, set_rule_anchored, " +
-  "delete_rule, run_recalculation, undo, redo); params is the command's parameter object " +
+  "(e.g. create_dimension, create_dimension_item, create_dimension_items_batch, " +
+  "create_cube, create_view, set_cell_hardvalue_by_addr, " +
+  "set_cell_hardvalues_batch_by_addr, clear_cell_hardvalue, set_rule, set_rule_anchored, " +
+  "apply_rule_batch, delete_rule, set_dependency_tracking, run_recalculation, undo, redo); " +
+  "params is the command's parameter object " +
   "(see om-core lib_command). Required-param gotchas: create_dimension needs dim_type " +
   "(\"set\"|\"seq\"); set_rule needs is_anchored (bool) and targets as [[dim_name, item_name]]; " +
   "set_cell_hardvalue_by_addr addr is item ids in dimension order including the '@' channel " +
