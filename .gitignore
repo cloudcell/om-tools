@@ -35,3 +35,4 @@ model.json
 *.om-session.json
 New_Model*.json
 /tmp/
+.dev-host-extensions/
