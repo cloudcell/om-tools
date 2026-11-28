@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.24
+
+- **Dependency-tracking visibility**: recalc live/off pill in the status
+  bar plus an Options-dialog toggle; `dep_tracking` now boots on so the
+  pill reads live on a fresh engine (engine @`d9df0a3`); `set_engine`
+  echoes refetch tracking state deterministically.
+- Skill: bulk-load batch guidance; MCP discovery notes.
+- About dialog: personal name dropped.
+
 ## 0.1.23
 
 - Status-bar version chip now shows the host repo's git7 source commit;
