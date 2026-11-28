@@ -4,6 +4,8 @@
 
 - Model Browser: cube nodes expand to show attached dims (Qt parity).
 - Rules panel: correct empty-state when no view is open.
+- **Engine**: vendored wasm resynced to zig `4fe516e` — create_view
+  fill test + helper refactor; provenance verified.
 
 ## 0.1.25
 
