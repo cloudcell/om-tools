@@ -9,7 +9,7 @@
   "engine_commit": "d9df0a3fede7b24172ad56018395d6bfea582307",
   "engine_commit_verified": true,
   "source_provenance": "Matched local clean Zig repository build and git commit",
-  "ts_runtime_version": "ts_runtime 0.1.0 @ 95a0513 (synced 2026-11-28T01:31:34Z)",
+  "ts_runtime_version": "ts_runtime 0.1.0 @ f3c4794 (synced 2026-11-28T02:08:25Z)",
   "binary_license": "legal/ENGINE-BINARY-LICENSE.md",
   "third_party_notices": [
     "legal/CORE-MATH-MIT.txt"
