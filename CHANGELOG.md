@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.26
+
+- Model Browser: cube nodes expand to show attached dims (Qt parity).
+- Rules panel: correct empty-state when no view is open.
+
 ## 0.1.25
 
 - `launch-dev.sh`: the Extension Development Host now gets its own
