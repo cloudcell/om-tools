@@ -134,7 +134,7 @@ export class AppShell {
     app.appendChild(this.ruleBar());
     this.bodyEl = el("div", { class: "body" });
     app.appendChild(this.bodyEl);
-    app.appendChild(new StatusBar(this.store).render());
+    app.appendChild(new StatusBar(this.store, () => this.openOptions()).render());
 
     // Saved layout first: panel renders already check whether it is collapsed.
     const layout = this.store.state.layout;
@@ -742,8 +742,24 @@ export class AppShell {
   }
 
   private async openOptions() {
-    const result = await optionsDialog(this.store.state.options, () => resetTips());
-    if (result) this.store.setOptions(result);
+    const result = await optionsDialog(this.store.state.options, () => resetTips(), this.store.state.depTrackingEnabled);
+    if (!result) return;
+    this.store.setOptions(result.options);
+    if (result.depTrackingEnabled !== this.store.state.depTrackingEnabled) {
+      // Mark before sending so the flag's own echo-refetch doesn't flash the pill.
+      this.store.noteLocalDepTrackingToggle();
+      try { await this.store.api.setDependencyTracking(result.depTrackingEnabled); }
+      catch (e: any) { await alertDialog("Recalculation toggle failed", e?.message || String(e)); return; }
+      // Refetch directly — the pill shows truth immediately rather than
+      // waiting on the command echo (which in socket mode rides poll_events).
+      await this.store.refreshDepTracking();
+      // Excel's Manual→Automatic behavior: edits made while tracking was off
+      // never marked dependents dirty, so a "dirty" recalc finds nothing —
+      // re-enabling must full-recalc or stale values persist indefinitely.
+      if (result.depTrackingEnabled) {
+        try { await this.store.api.recalc("all"); } catch {}
+      }
+    }
   }
 
   private windowMenuItems(): MenuItem[] {
@@ -799,7 +815,7 @@ export class AppShell {
       { icon: msym("open_in_new"), label: "Get the VS Code Extension…", fn: () => this.openExternalLink(LINKS.vscodeExt) },
       { sep: true },
       { icon: msym("info"), label: "About OM Core", fn: () => alertDialog("About OM Core",
-        `OM Core — multidimensional modeling engine\nfor structured financial, operational, and analytical models.\n\nCopyright © 2026 Alexander Bikeyev.\nPublished by Cloudcell Limited.\n\nLicensed under the GNU Affero General Public License v3.0.\nCommercial licensing may be available separately.\n\nVersion: gui ${guiVersionShort}`, logoPng,
+        `OM Core — multidimensional modeling engine\nfor structured financial, operational, and analytical models.\n\nPublished by Cloudcell Limited.\n\nLicensed under the GNU Affero General Public License v3.0.\nCommercial licensing may be available separately.\n\nVersion: gui ${guiVersionShort}`, logoPng,
         { label: "cloudcell.github.io/om-docs", url: LINKS.docs, open: (u) => this.openExternalLink(u) }) },
     ];
   }

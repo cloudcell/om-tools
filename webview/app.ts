@@ -87,6 +87,7 @@ export async function mount(root: HTMLElement, opts: MountOptions): Promise<OmGu
     // UI-state commands (set_selection on every click, width persists) cannot
     // change model or cell data — refreshing on their echo just repaints twice.
     if (cmd && Store.UI_ONLY_COMMANDS.has(cmd)) return;
+    store.notePendingEdit(cmd);
     store.refreshModel(); store.refreshRules();
     // Any succeeded command may have changed cell data — reload open views so
     // mutations from other clients (MCP om_command, REPL) show up immediately.

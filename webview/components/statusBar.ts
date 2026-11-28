@@ -8,7 +8,7 @@ import { guiVersion, guiVersionShort, guiGitSha, shortForm } from "../version";
  *  checkable actions (Average, CountA, Count, Maximum, Minimum, Sum, Selection
  *  count — plus Scientific format and None). Qt defaults: Average + Sum. */
 export class StatusBar {
-  constructor(private store: Store) {}
+  constructor(private store: Store, private onOpenOptions?: () => void) {}
 
   /** Qt _render_stats_from_dto._fmt: None -> "0", ints bare, else %.6f trimmed,
    *  or %.6e with a two-digit exponent when scientific is on. */
@@ -80,6 +80,19 @@ export class StatusBar {
 
   render(): HTMLElement {
     const bar = el("div", { class: "statusbar", "data-tour": "statusbar" });
+    // `● recalc:` pill — leftmost (the bar's anchor slot, like Excel's
+    // Ready/Calculate). A safety indicator, not a mode chip: the off state
+    // must be unmissable. Display-only — click jumps to Tools → Options,
+    // the deliberate toggle path (same as Excel's Calculation Options).
+    const recalcPill = el("span", {
+      class: "sb-section sb-recalc", tabindex: "0", role: "button",
+      title: "Live recalculation — change via Tools → Options",
+    });
+    const recalcDot = el("span", { class: "sb-recalc-dot" }, ["●"]);
+    const recalcTxt = el("span", {}, [""]);
+    recalcPill.appendChild(recalcDot);
+    recalcPill.appendChild(recalcTxt);
+    const sep0 = el("span", { class: "sb-sep" }, ["|"]);
     const focusPath = el("span", { class: "sb-section" }, ["OM Core"]);
     const sep1 = el("span", { class: "sb-sep" }, ["|"]);
     const cellAddr = el("span", { class: "sb-section" }, ["—"]);
@@ -132,6 +145,13 @@ export class StatusBar {
       else if (e.key === "Escape") document.querySelector(".ctx-menu")?.remove();
     });
 
+    recalcPill.addEventListener("click", () => this.onOpenOptions?.());
+    recalcPill.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.onOpenOptions?.(); }
+    });
+
+    bar.appendChild(recalcPill);
+    bar.appendChild(sep0);
     bar.appendChild(focusPath);
     bar.appendChild(sep1);
     bar.appendChild(cellAddr);
@@ -144,8 +164,22 @@ export class StatusBar {
     bar.appendChild(dirty);
     bar.appendChild(version);
 
+    let lastFlipSeq = this.store.state.depTrackingFlipSeq;
     this.store.subscribe(() => {
       const s = this.store.state;
+      const dep = s.depTrackingEnabled;
+      const pend = s.pendingEditsWhileUntracked;
+      recalcPill.className = "sb-section sb-recalc" + (dep ? "" : " off");
+      recalcTxt.textContent = dep ? " recalc: live" : ` recalc: off${pend > 0 ? ` · ${pend} pending` : ""}`;
+      recalcPill.title = dep
+        ? "Live recalculation: ON — edits update dependent cells.\nChange via Tools → Options."
+        : `Live recalculation: OFF — dependency tracking suspended.\nEdits won't update dependent cells until the next recalculation.\nChange via Tools → Options.`;
+      if (s.depTrackingFlipSeq !== lastFlipSeq) {
+        lastFlipSeq = s.depTrackingFlipSeq;
+        recalcPill.classList.remove("flash");
+        void recalcPill.offsetWidth;
+        recalcPill.classList.add("flash");
+      }
       focusPath.textContent = s.focusPath;
       const v = s.activeView;
       if (v && v.selectedRow >= 0 && v.selectedCol >= 0) {

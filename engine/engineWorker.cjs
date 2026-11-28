@@ -829,6 +829,7 @@ function createEngineSession(om, hooks) {
     "set_rule_order",
     "set_rule_anchored",
     "update_cell_rule",
+    "apply_rule_batch",
     "undo",
     "redo",
     "set_view_axes",
@@ -862,7 +863,6 @@ function createEngineSession(om, hooks) {
     detach_dimension_from_cube: "detach_dimension",
     set_range_values: "set_range",
     set_dimension_outline: "dimension_outline",
-    create_dimension_items_batch: "create_dimension_items_batch",
     set_cell_hardvalues_batch_by_addr: "batch_set_cell_hardvalues_by_addr"
   };
   const ADDR_ARRAY_METHODS = /* @__PURE__ */ new Set(["set_rule_anchored", "set_rule_anchored_by_addr", "delete_rule_anchored", "find_anchored_rule"]);

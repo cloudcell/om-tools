@@ -183,6 +183,44 @@ Never delete unrelated cubes or dimensions.
 Use `cell_range` only after reading the view's `view_row_keys` and
 `view_col_keys`.
 
+## Bulk loading and batch commands
+
+Populate the model inside a dependency-tracking window, using the batch
+commands instead of one call per object. Per-mutation dependent-graph
+maintenance becomes an O(1) write, and each batch is one transaction —
+one undo entry, one structure event, atomic failure.
+
+Sequence:
+
+1. `set_dependency_tracking` with `enabled: false`.
+2. Create and populate: `create_dimension_items_batch`,
+   `set_cell_hardvalues_batch_by_addr`, `apply_rule_batch`.
+3. `set_dependency_tracking` with `enabled: true`.
+4. `run_recalculation` with `scope: "all"` — the recalc force-enables
+   tracking during the sweep, so this ordering is safe.
+
+Params:
+
+```text
+create_dimension_items_batch:
+  {entries: [{dim_id: "...", name: "..."}, ...]}
+  — emit entries in display order; position is accepted but ignored.
+  Atomic: one bad dim_id or name fails the whole batch.
+
+set_cell_hardvalues_batch_by_addr:
+  {cube_id: "...", entries: [{addr: ["at_value", ...item ids in cube dim order], value: ...}, ...]}
+  — cube-scoped; cube_id is required alongside entries.
+
+apply_rule_batch:
+  {rules: [{cube_id, expression, targets: [[dim_name, item_name]], is_anchored: bool}, ...]}
+  — rules with invalid expressions are skipped with a warning, not
+  failed; the reply carries {applied: N}. Always compare applied
+  against the submitted count and verify with workspace_rules.
+```
+
+Cells read inside the tracking-off window may be stale — dirty
+propagation is suspended. Verify only after recalculation.
+
 ## Formatting
 
 Formatting is semantic and rule-driven, not a spreadsheet presentation pass.
@@ -250,17 +288,21 @@ specificity and rule order produce the intended hierarchy.
    Reasonable defaults are Base/Upside/Downside, 2024A–2025A actuals,
    2026E–2030E forecast, and DCF valuation.
 2. Discover existing workspace objects before creating anything.
-3. Create years, scenarios, statement line-item dimensions, DCF metrics, and
-   check metrics.
+3. Suspend dependency tracking (`set_dependency_tracking` false), then
+   create years, scenarios, statement line-item dimensions, DCF metrics, and
+   check metrics — dimension items via `create_dimension_items_batch`.
 4. Create four statement/valuation cubes and a checks cube.
 5. Create one view for each cube.
-6. Enter only actual and assumption hardcodes.
-7. Add slice formulas for totals and derived values. Prefer one rule covering
+6. Enter only actual and assumption hardcodes with
+   `set_cell_hardvalues_batch_by_addr`.
+7. Add slice formulas for totals and derived values with
+   `apply_rule_batch`. Prefer one rule covering
    all Year and Scenario items by omitting those dimensions from the target,
    over repeated per-year or per-scenario rules.
 8. Link statements with explicit cube-qualified formulas only where necessary.
    Carry shared dimensions from context only when the binding is unambiguous.
-9. Run recalculation.
+9. Re-enable dependency tracking (`set_dependency_tracking` true), then run
+   recalculation with `scope:"all"`.
 10. Add broad number formats and visual hierarchy through `@` channels.
 11. Verify every output with `cell_range`.
 12. Add or update checks to prove ties and roll-forwards.
