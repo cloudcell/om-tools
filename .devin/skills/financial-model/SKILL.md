@@ -125,6 +125,16 @@ inside an aggregate:
 SUM(CashFlowStatement::CashFlowItem.UFCF:Year.2026E..2030E)
 ```
 
+For lagged/look-ahead point lookups on a sequential dimension (the Excel
+`INDEX(row, COLUMN()-lag)` pattern), use `XLS_INDEX` over an **explicit range** —
+never a `.*` wildcard. Wildcards inside `XLS_INDEX`/`INDEX` collapse to a
+one-item slice on the embedded (wasm) runtime, so any index > 1 returns
+`#EXPRESSION!`:
+
+```text
+IF(PosX<1, 0, XLS_INDEX(Revenue::[Month.M1..M120:RevItem.ProgramsLaunchedCum], PosX))
+```
+
 Compact shorthand is useful only when cube-relative binding is unambiguous:
 
 ```text
