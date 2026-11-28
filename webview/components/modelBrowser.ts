@@ -79,7 +79,7 @@ export class ModelBrowser {
           const dim = this.store.state.dimensions.find((d) => d.id === dimId);
           cubeNodeChildren.appendChild(this.makeTreeNode(
             dim ? dim.name : this.store.dimName(dimId), kindIcon("dimension"), false,
-            dim ? () => this.cubeDimMenu(cube, dim) : undefined));
+            dim && dimId !== "@" ? () => this.cubeDimMenu(cube, dim) : undefined));
         }
       } else if (!this.loadingCubeDims.has(cube.id)) {
         // cube_detail loads once per cube; refresh re-renders the children when it lands.

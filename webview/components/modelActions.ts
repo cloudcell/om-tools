@@ -100,7 +100,7 @@ export class ModelActions {
     let dimIds: string[] = [];
     try { dimIds = ((await this.store.api.cubeDetail(v.cube))?.dimension_ids || []).filter((d: string) => d !== "@"); }
     catch (e: any) { await alertDialog("New View", e?.message || String(e)); return; }
-    if (!dimIds.length) { await alertDialog("New View", "Cube has no dimensions."); return; }
+    // An '@'-only cube is a scalar — its view is a single cell with '@' on page.
     const view = await this.createDefaultView(v.name.trim() || "View", v.cube, dimIds);
     if (view) await this.store.afterStructureChange(view);
   }
@@ -108,7 +108,7 @@ export class ModelActions {
   private async createDefaultView(name: string, cubeId: string, dimIds: string[]): Promise<{ viewId: string; viewName: string } | undefined> {
     const user = dimIds.filter((d) => d !== "@");
     try {
-      const r = await this.store.api.createView(name, cubeId, [user[0]], user[1] ? [user[1]] : [], ["@", ...user.slice(2)]);
+      const r = await this.store.api.createView(name, cubeId, user.length ? [user[0]] : [], user[1] ? [user[1]] : [], ["@", ...user.slice(2)]);
       return r?.id ? { viewId: r.id, viewName: name } : undefined;
     } catch (e: any) { await alertDialog("Create View", e?.message || String(e)); return undefined; }
   }
