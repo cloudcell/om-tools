@@ -347,6 +347,29 @@ export class Store {
     this.set({ pendingEditsWhileUntracked: this.state.pendingEditsWhileUntracked + 1 });
   }
 
+  /** Merge a refetched dep-tracking flag into state. A flip that did not
+   *  originate from this client's own toggle bumps depTrackingFlipSeq → the
+   *  pill flashes; refetching true also drains the pending counter. */
+  private applyDepTracking(raw: any) {
+    const depEnabled = typeof raw === "boolean" ? raw
+      : (raw?.dependency_tracking_enabled ?? this.state.depTrackingEnabled);
+    const flipped = depEnabled !== this.state.depTrackingEnabled;
+    const externalFlip = flipped && !this.depTrackingToggledLocally;
+    this.depTrackingToggledLocally = false;
+    this.set({
+      depTrackingEnabled: depEnabled,
+      depTrackingFlipSeq: this.state.depTrackingFlipSeq + (externalFlip ? 1 : 0),
+      pendingEditsWhileUntracked: depEnabled ? 0 : this.state.pendingEditsWhileUntracked,
+    });
+  }
+
+  /** Direct flag refetch — used after this client's own toggle so the pill
+   *  doesn't depend on the command echo round-trip to show truth. */
+  async refreshDepTracking() {
+    const dep = await this.api.diagnosticsDependencyTrackingState().catch(() => null);
+    if (dep !== null) this.applyDepTracking(dep);
+  }
+
   async refreshModel() {
     const [dims, cubes, views, ws, dep] = await Promise.all([
       this.api.dimensionList(),
@@ -355,21 +378,8 @@ export class Store {
       this.api.workspaceSummary(),
       this.api.diagnosticsDependencyTrackingState().catch(() => null),
     ]);
-    // diagnostics_dependency_tracking_state resolves a bare boolean on some
-    // runtimes, {dependency_tracking_enabled} on others — accept both.
-    const depEnabled = typeof dep === "boolean" ? dep
-      : (dep?.dependency_tracking_enabled ?? this.state.depTrackingEnabled);
-    // External flip (MCP om_command, REPL, second GUI) → bump the seq so the
-    // pill flashes; an own toggle's echo is not a surprise.
-    const flipped = depEnabled !== this.state.depTrackingEnabled;
-    const externalFlip = flipped && !this.depTrackingToggledLocally;
-    this.depTrackingToggledLocally = false;
-    this.set({
-      dimensions: dims.dimensions, cubes: cubes.cubes, views: views.views, workspaceSummary: ws,
-      depTrackingEnabled: depEnabled,
-      depTrackingFlipSeq: this.state.depTrackingFlipSeq + (externalFlip ? 1 : 0),
-      pendingEditsWhileUntracked: depEnabled ? 0 : this.state.pendingEditsWhileUntracked,
-    });
+    this.set({ dimensions: dims.dimensions, cubes: cubes.cubes, views: views.views, workspaceSummary: ws });
+    if (dep !== null) this.applyDepTracking(dep);
     this.syncTabsWithViews();
     // Externally-driven changes (MCP agent, second client) re-run refreshModel via
     // event.* subscriptions but never invalidateDimCache — a dim cached before its

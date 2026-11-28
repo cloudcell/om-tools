@@ -750,6 +750,9 @@ export class AppShell {
       this.store.noteLocalDepTrackingToggle();
       try { await this.store.api.setDependencyTracking(result.depTrackingEnabled); }
       catch (e: any) { await alertDialog("Recalculation toggle failed", e?.message || String(e)); return; }
+      // Refetch directly — the pill shows truth immediately rather than
+      // waiting on the command echo (which in socket mode rides poll_events).
+      await this.store.refreshDepTracking();
       // Excel's Manual→Automatic behavior: edits made while tracking was off
       // never marked dependents dirty, so a "dirty" recalc finds nothing —
       // re-enabling must full-recalc or stale values persist indefinitely.
