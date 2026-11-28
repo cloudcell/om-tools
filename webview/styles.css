@@ -585,8 +585,10 @@ body.splitter-dragging-y, body.splitter-dragging-y * { cursor: row-resize !impor
 .tree-label .seq-link { color: var(--text-muted); }
 .tree-row.active .seq-link { color: inherit; }
 /* Group rows (Dimensions / Cubes / Views): small caps label */
-.tree-node:has(> .tree-children) > .tree-row { margin-top: 6px; }
-.tree-node:has(> .tree-children) > .tree-row .tree-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+/* Section roots only (.tree > .tree-node) — a node merely having children
+ * (e.g. expandable cubes) must not inherit the section-header style. */
+.tree > .tree-node:has(> .tree-children) > .tree-row { margin-top: 6px; }
+.tree > .tree-node:has(> .tree-children) > .tree-row .tree-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 .tree-children { margin-left: 6px; }
 
 /* ---- View workspace tabs ---- */

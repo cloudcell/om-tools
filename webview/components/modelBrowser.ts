@@ -10,6 +10,8 @@ export class ModelBrowser {
   private actions: ModelActions;
   /** Cubes whose `cube_detail` is loading for the dim children (fetched once per cube). */
   private loadingCubeDims = new Set<string>();
+  /** Cube expansion survives refresh() rebuilds — collapsed is the default. */
+  private expandedCubes = new Set<string>();
   /** Where the last right click happened; the context menu opens there (issue #4). */
   private menuPos = { x: 0, y: 0 };
   constructor(private store: Store) { this.actions = new ModelActions(store); }
@@ -58,6 +60,19 @@ export class ModelBrowser {
       // Qt model_browser: cube nodes expand to their dimensions (cube_dim rows, in cube order).
       const cubeNode = this.makeTreeNode(`${cube.name} (${cube.dimensions})`, kindIcon("cube"), true, () => this.cubeMenu(cube));
       const cubeNodeChildren = (cubeNode as any)._children as HTMLElement;
+      // Collapsed by default; expansion is remembered across refresh() rebuilds.
+      const cubeTwisty = cubeNode.querySelector(":scope > .tree-row .tree-twisty") as HTMLElement;
+      const applyExpanded = (on: boolean) => {
+        cubeNodeChildren.style.display = on ? "block" : "none";
+        cubeTwisty.textContent = on ? "▾" : "▸";
+      };
+      applyExpanded(this.expandedCubes.has(cube.id));
+      const syncExpanded = () => {
+        if (cubeNodeChildren.style.display !== "none") this.expandedCubes.add(cube.id);
+        else this.expandedCubes.delete(cube.id);
+      };
+      cubeTwisty.addEventListener("click", syncExpanded);
+      (cubeNode.querySelector(":scope > .tree-row .tree-label") as HTMLElement).addEventListener("click", syncExpanded);
       const dimIds = this.store.cubeDimensionIds(cube.id);
       if (dimIds) {
         for (const dimId of dimIds) {
