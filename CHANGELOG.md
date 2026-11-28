@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.27
+
+- Model Browser: attach/detach dimension↔cube via the context menu;
+  cube rows styled as items (not sections) and collapsed by default.
+- `@` channel dim protected from cube mutations; scalar-cube views allowed.
+- Diagnostics: `engine_log` ring rendered as an `[engine stderr]` section;
+  session chip-skip dialog surfaces the underlying error.
+- **Engine**: vendored wasm @`085fd4d` + resync to ts_runtime `1983887`
+  (attach `default_item_id` kwargs fix); provenance verified.
+
 ## 0.1.26
 
 - Model Browser: cube nodes expand to show attached dims (Qt parity).
