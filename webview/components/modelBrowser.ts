@@ -1,7 +1,7 @@
 import { Store } from "../state";
 import { el, clear } from "../dom";
 import { seqLinkIcon, kindIcon } from "../menuIcons";
-import { inputDialog, alertDialog, confirmDialog } from "./dialogs";
+import { inputDialog, alertDialog, confirmDialog, formDialog } from "./dialogs";
 import { ModelActions } from "./modelActions";
 
 /** ModelBrowser — left dock with tree: Dimensions, Cubes, Views.
@@ -169,9 +169,56 @@ export class ModelBrowser {
   private cubeMenu(cube: any) {
     this.popup([
       { label: `New view of '${cube.name}'…`, fn: () => this.actions.newView(cube.id) },
+      { label: `Attach dimension to '${cube.name}'…`, fn: () => this.attachDimToCube(cube) },
       { label: `Rename cube '${cube.name}'…`, fn: () => this.rename("Rename Cube", cube.name, (n) => this.store.api.renameCube(cube.id, n)) },
       { label: `Delete cube '${cube.name}'…`, fn: () => this.actions.deleteCube(cube.id) },
     ]);
+  }
+
+  // Qt `_on_attach_dimension_to_cube`: pick an unattached dim (or create one),
+  // choose the default item — existing cells land on it; the engine pages the
+  // dim into every view of the cube.
+  private async attachDimToCube(cube: any) {
+    const NEW = "__new__";
+    try {
+      await this.store.ensureCubeDetail(cube.id);
+      const attached = new Set(this.store.cubeDimensionIds(cube.id));
+      const available = this.store.state.dimensions
+        .filter((d) => !attached.has(d.id))
+        .sort(ModelBrowser.byName);
+      if (!available.length) { await alertDialog("Attach Dimension", "All dimensions are already attached to this cube."); return; }
+      const itemLists: Record<string, { id: string; name: string }[]> = {};
+      await Promise.all(available.map(async (d) => {
+        itemLists[d.id] = d.item_list ?? (await this.store.api.dimensionDetail(d.id).catch(() => null))?.items ?? [];
+      }));
+      const v = await formDialog(`Add Dimension to ${cube.name}`, [
+        { kind: "select", key: "dim", label: "Dimension", options: [{ value: NEW, label: "— create new dimension —" }, ...available.map((d) => ({ value: d.id, label: d.name }))] },
+        { kind: "text", key: "new_name", label: "New name", placeholder: "Dimension name", visibleIf: (v) => v.dim === NEW },
+        { kind: "select", key: "new_type", label: "Type", value: "set", options: [{ value: "set", label: "Set (unordered)" }, { value: "seq", label: "Sequence (ordered)" }], visibleIf: (v) => v.dim === NEW },
+        { kind: "text", key: "new_items", label: "Items", placeholder: "Item names, comma-separated (e.g. Jan,Feb,Mar)", visibleIf: (v) => v.dim === NEW },
+        { kind: "select", key: "default_item", label: "Default item", options: (v) => (itemLists[v.dim] ?? []).map((i) => ({ value: i.id, label: i.name })), visibleIf: (v) => v.dim !== NEW },
+      ], { validate: (v) => {
+        if (v.dim === NEW) return v.new_name.trim() ? null : "Dimension name is required.";
+        return (itemLists[v.dim] ?? []).length ? null : "The selected dimension has no items. Please add items to the dimension before attaching it to a cube.";
+      } });
+      if (!v) return;
+      let dimId = v.dim, itemId = v.default_item;
+      if (dimId === NEW) {
+        const d = await this.store.api.createDimension(v.new_name.trim(), v.new_type);
+        dimId = d?.id;
+        if (!dimId) throw new Error("create_dimension returned no dimension id");
+        const names = v.new_items.split(",").map((s: string) => s.trim()).filter(Boolean);
+        if (!names.length) names.push("Item 1");
+        itemId = undefined;
+        for (const n of names) { const r = await this.store.api.createDimensionItem(dimId, n); itemId = itemId ?? r?.id; }
+        if (!itemId) throw new Error("No items were created");
+      }
+      await this.store.api.attachDimensionToCube(cube.id, dimId, itemId);
+    } catch (e: any) {
+      await alertDialog("Attach Dimension", e?.message || String(e));
+      return;
+    }
+    await this.store.afterStructureChange();
   }
 
   private cubeDimMenu(cube: any, dim: any) {
